@@ -1,0 +1,138 @@
+This is chrony.info, produced by makeinfo version 4.3 from chrony.texi.
+
+INFO-DIR-SECTION Net Utilities
+START-INFO-DIR-ENTRY
+* chrony: (chrony).			How to use chronyd and chronyc
+* chronyd: (chrony)Starting chronyd.	Reference for chronyd
+* chronyc: (chrony)Running chronyc.	Reference for chronyc
+END-INFO-DIR-ENTRY
+
+
+Indirect:
+chrony.info-1: 315
+chrony.info-2: 47895
+chrony.info-3: 97862
+chrony.info-4: 141712
+
+Tag Table:
+(Indirect)
+Node: Top315
+Node: Introduction792
+Node: Overview1365
+Node: Acknowledgements2887
+Node: Availability3537
+Node: Getting the software3835
+Node: Platforms4076
+Node: Other time synchronisation packages5252
+Node: Comparison with xntpd5534
+Node: Comparison with timed8680
+Node: Distribution and warranty10646
+Node: Bug reporting10991
+Node: Contributing12437
+Node: Installation14229
+Node: readline support17541
+Node: package builders18687
+Node: Typical scenarios19963
+Node: Computers on the net20677
+Node: Infrequent connection22530
+Node: Configuration for infrequent connections23051
+Node: Advising chronyd of internet availability25862
+Node: Isolated networks27215
+Node: Dial-up home PCs29195
+Node: Dial-up overview29570
+Node: Dial-up configuration34895
+Node: Configuration options overview38169
+Node: Usage reference39329
+Node: Starting chronyd39675
+Node: Configuration file43615
+Node: comments in config file46633
+Node: acquisitionport directive47061
+Node: allow directive47895
+Node: bindaddress directive50324
+Node: bindcmdaddress directive51711
+Node: broadcast directive52659
+Node: cmdallow directive54322
+Node: cmddeny directive54975
+Node: commandkey directive55421
+Node: cmdport directive56152
+Node: deny directive56655
+Node: driftfile directive57081
+Node: dumpdir directive58382
+Node: dumponexit directive59605
+Node: initstepslew directive59956
+Node: keyfile directive62760
+Node: local directive63875
+Node: linux_hz directive65384
+Node: linux_freq_scale directive66094
+Node: log directive67087
+Node: measurements log68174
+Node: statistics log70143
+Node: tracking log72655
+Node: RTC log73855
+Node: logchange directive75674
+Node: logdir directive76519
+Node: mailonchange directive76825
+Node: manual directive77333
+Node: maxupdateskew directive78047
+Node: noclientlog directive79504
+Node: peer directive79863
+Node: pidfile directive80181
+Node: port directive80619
+Node: rtcdevice directive81246
+Node: rtcfile directive81674
+Node: rtconutc directive82968
+Node: server directive83902
+Node: Running chronyc89343
+Node: Chronyc basic use89927
+Node: Chronyc command line options90504
+Node: Security with chronyc91417
+Node: Chronyc command reference93200
+Node: accheck command96177
+Node: activity command96706
+Node: add peer command97862
+Node: add server command98398
+Node: allow command98947
+Node: allow all command99494
+Node: burst command99769
+Node: clients command102301
+Node: cmdaccheck command104112
+Node: cmdallow command104488
+Node: cmdallow all command104820
+Node: cmddeny command105159
+Node: cmddeny all command105488
+Node: cyclelogs command105826
+Node: delete command106600
+Node: deny command107025
+Node: deny all command107443
+Node: dump command107711
+Node: exit command108392
+Node: help command108621
+Node: local command108826
+Node: makestep command109666
+Node: manual command110528
+Node: maxdelay command112638
+Node: maxdelayratio command113440
+Node: maxpoll command114366
+Node: maxupdateskew command115285
+Node: minpoll command115579
+Node: offline command116489
+Node: online command119059
+Node: password command119476
+Node: quit command120399
+Node: rtcdata command120635
+Node: settime command122781
+Node: sources command124829
+Ref: sources command-Footnote-1128030
+Node: sourcestats command128146
+Node: tracking command130260
+Node: trimrtc command135552
+Node: writertc command137112
+Node: Porting guide137541
+Node: System driver files138130
+Node: Quirks of particular systems139060
+Node: Linux porting quirks139450
+Node: Solaris 2.5 porting quirks140445
+Node: SunOS 4.1.4 porting quirks141136
+Node: GPL141712
+
+End Tag Table
