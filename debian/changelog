@@ -1,3 +1,14 @@
+chrony (1.20-6) unstable; urgency=low
+
+  * Fixed error in chrony.conf where the non-existent 'online' directive
+    was mentioned.
+    Closes: #257235 misleading instructions in chrony.conf
+  
+  * Patched Makefile.in to generate faq.html.
+    Closes: #265936 /usr/share/doc/chrony/faq.txt.gz: how to read?
+  
+ -- John Hasler <jhasler@debian.org>  Sat,  4 Dec 2004 17:47:31 -0600
+
 chrony (1.20-5) unstable; urgency=low
   
   * Put pool.ntp.org servers in chrony.conf as defaults.
