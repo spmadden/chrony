@@ -1,3 +1,72 @@
+chrony (1.23-3) unstable; urgency=high
+
+  * Rewrote UTI_NormaliseTimeval()in util.c to use divide/remainder
+    instead of loops at the suggestion of Gabor Gombas.  This prevents the
+    problem of the loop running until the sun goes out when the function
+    is called with a very large value for tv_usec on 64-bit architectures.
+    Also fixed some other spots where the same loop was being used.
+  
+    Closes: #474294 Goes into endless loop
+    Closes: #447011 chronyd stalls with 100% CPU usage
+     
+    I still don't know why the function is being called with such a 
+    large value, however.
+
+  * Changed default servers in chrony,conf to Debian servers.
+  
+    Closes: #434483: chrony: Should use NTP servers in Debian pool
+  
+ -- John Hasler <jhasler@debian.org>  Sat, 26 Apr 2008 11:47:44 -0500
+
+chrony (1.23-2) experimental; urgency=low
+
+  * Added default IOC's to io_linux.h.
+    Closes: #477043: chrony_1.23-1(ia64/experimental): FTBFS: IOC 
+    constants unknown on ia64
+    Closes: #476963: chrony_1.23-1(hppa/experimental): FTBFS: "I don't 
+    know the values of the _IOC_* constants for your architecture" 
+  
+ -- John Hasler <jhasler@debian.org>  Sun, 20 Apr 2008 13:29:29 -0500
+
+chrony (1.23-1) experimental; urgency=low
+
+  * New upstream release
+    This is 1.23 with Debian patches applied (including some for LP64).
+    I'm uploading this to Experimental to get it tested on x86_64 to see
+    if  #474294 is fixed.
+  
+ -- John Hasler <jhasler@debian.org>  Sat, 19 Apr 2008 14:49:15 -0500
+
+chrony (1.21z-6) unstable; urgency=low
+
+  * Applied patches from Eric Lammerts <eric@lammerts.org> and Goswin von
+    Brederlow <brederlo@informatik.uni-tuebingen.de> to cast the value
+    returned by ntohl to int32_t and so cause correct sign-extension near
+    line 1655 in client.c.  Also fixed similar bugs in the same area.  I'm
+    not sure this entirely fixes the chronyc number display problem,
+    though.  I've not closed #348412 here because chrony is still not
+    fully LP64 compliant.
+    Closes: #195620: Strange "System time : xxx seconds slow of
+    NTP time" output
+
+  * Replaced addrfilt.c with addrfilt.c from upstream git repository.
+    This fixes the recursive structure definition problems.
+
+  * Replaced 'route' with 'netstat -r' in the initscript.
+
+  * Applied patch for configure script from Nathanael Nerode
+    <neroden@gcc.gnu.org> to delete the superfluous "lncurses" at line
+    327.
+    Closes: #392273: Recursive dependency disease: chrony shouldn't depend
+    on ncurses
+
+  * Added test to reject servers claiming stratum less than 1 in
+    ntp_core.c "Test 7".  Bill Unruh <unruh@physics.ubc.ca> has run across
+    a server that sometimes claims to be stratum 0, which causes
+    considerable confusion.
+
+ -- John Hasler <jhasler@debian.org>  Fri, 16 Feb 2007 17:47:40 -0600
+
 chrony (1.21z-5) unstable; urgency=high
   
   * Applied postinst patch from Lionel Elie Mamane to test for the
