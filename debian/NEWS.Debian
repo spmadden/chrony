@@ -1,7 +1,7 @@
-Upstream has fixed the HPET error message problem so updating of the
-real-time clock has been enabled.  However, RTC may still not work on
-systems with HPET: it just won't flood the log.
+chrony (1.23-3) unstable; urgency=high
 
-The 'z' in the version number did not originate upstream.  I had to add
-it to satisfy the Debian archive software after I corrected my error of
-uploading an impure tarball.
+    New upstream release.
+
+    Changed default chrony.conf to use Debian servers.  
+  
+ -- John Hasler <jhasler@debian.org>  Sat, 26 Apr 2008 18:29:29 -0500
