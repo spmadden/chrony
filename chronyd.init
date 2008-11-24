@@ -1,0 +1,158 @@
+#!/bin/bash
+#
+# chronyd <summary>
+#
+# chkconfig:   - 58 74
+# description: Client/server for the Network Time Protocol, \
+#              this program keeps your computer's clock accurate.
+
+### BEGIN INIT INFO
+# Provides: chronyd
+# Required-Start: $network $local_fs $remote_fs
+# Required-Stop: 
+# Should-Start: $syslog $named
+# Should-Stop: $syslog
+# Short-Description: NTP client/server
+# Description: Client/server for the Network Time Protocol,
+#              this program keeps your computer's clock accurate.
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+exec=/usr/sbin/chronyd
+prog=chronyd
+config=/etc/chrony.conf
+keyfile=/etc/chrony.keys
+chronyc=/usr/bin/chronyc
+
+[ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
+
+lockfile=/var/lock/subsys/$prog
+
+get_key() {
+    awk '/^[ \t]*'$1'\>/ { print $2; exit }' < $keyfile
+}
+
+get_commandkeyid() {
+    awk '/^[ \t]*commandkey\>/ { keyid=$2 } END { print keyid }' < $config
+}
+
+chrony_command() {
+    commandkeyid=$(get_commandkeyid)
+    [ -z "$commandkeyid" ] && return 1
+    commandkey=$(get_key $commandkeyid)
+    [ -z "$commandkey" ] && return 2
+
+    ! (
+        $chronyc <<EOF &
+password $commandkey
+$1
+EOF
+        chronycpid=$!
+
+        # chronyc will hang if the daemon doesn't respond, kill it after 3 s 
+        (sleep 3; kill $chronycpid) < /dev/null &> /dev/null &
+        killerpid=$!
+
+        wait $chronycpid &> /dev/null
+        kill $killerpid &> /dev/null || echo "chronyd not responding"
+    ) | grep -v '200 OK'
+}
+
+generate_commandkey() {
+    commandkeyid=$(get_commandkeyid)
+    [ -z "$commandkeyid" ] && return 1
+    commandkey=$(get_key $commandkeyid)
+    [ -z "$commandkey" ] || return 0
+
+    echo -n $"Generating chrony command key: "
+    commandkey=$(tr -c -d '[\041-\176]' < /dev/urandom | head -c 8)
+    [ -n "$commandkey" ] && echo "$commandkeyid $commandkey" >> $keyfile &&
+        success || failure
+    echo
+}
+
+start() {
+    [ "$NETWORKING" = "no" ] && exit 1
+    [ -x $exec ] || exit 5
+    [ -f $config ] || exit 6
+    generate_commandkey
+    echo -n $"Starting $prog: "
+    daemon $exec $OPTIONS
+    retval=$?
+    echo
+    [ $retval -eq 0 ] && touch $lockfile
+    return $retval
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc $prog
+    retval=$?
+    echo
+    [ $retval -eq 0 ] && rm -f $lockfile
+    return $retval
+}
+
+restart() {
+    stop
+    start
+}
+
+reload() {
+    restart
+}
+
+force_reload() {
+    restart
+}
+
+rh_status() {
+    status $prog
+}
+
+rh_status_q() {
+    rh_status >/dev/null 2>&1
+}
+
+
+case "$1" in
+    start)
+        rh_status_q && exit 0
+        $1
+        ;;
+    stop)
+        rh_status_q || exit 0
+        $1
+        ;;
+    restart)
+        $1
+        ;;
+    reload)
+        rh_status_q || exit 7
+        $1
+        ;;
+    force-reload)
+        force_reload
+        ;;
+    status)
+        rh_status
+        ;;
+    condrestart|try-restart)
+        rh_status_q || exit 0
+        restart
+        ;;
+    online|offline|cyclelogs)
+        rh_status_q || exit 7
+        chrony_command $1
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload|cyclelogs|online|offline}"
+        exit 2
+esac
+exit $?
+
