@@ -1,0 +1,12 @@
+diff -up chrony-1.23/io_linux.h.ppc chrony-1.23/io_linux.h
+--- chrony-1.23/io_linux.h.ppc	2007-12-02 15:53:09.000000000 +0100
++++ chrony-1.23/io_linux.h	2008-11-05 19:23:53.000000000 +0100
+@@ -16,7 +16,7 @@
+ #define CHRONY_IOC_WRITE	1U
+ #define CHRONY_IOC_READ	2U
+ 
+-#elif defined(__alpha__) || defined(__sparc__) || defined(__ppc__) || defined(__ppc64__) || defined(__sparc64__)
++#elif defined(__alpha__) || defined(__sparc__) || defined(__ppc__) || defined(__ppc64__) || defined(__sparc64__) || defined(__PPC__)
+ #define CHRONY_IOC_NRBITS	8
+ #define CHRONY_IOC_TYPEBITS	8
+ #define CHRONY_IOC_SIZEBITS	13
