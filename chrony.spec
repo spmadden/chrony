@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.23
-Release:        2.20081106gitbe42b4%{?dist}
+Release:        3.20081106gitbe42b4%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -121,6 +121,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Feb 23 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.23-3.20081106gitbe42b4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_11_Mass_Rebuild
+
 * Wed Nov 19 2008 Miroslav Lichvar <mlichvar@redhat.com> 1.23-2.20081106gitbe42b4
 - fix info uninstall
 - generate random command key in init script
