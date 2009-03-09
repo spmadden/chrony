@@ -1,0 +1,33 @@
+diff -up chrony-1.23/sys_linux.c.cap chrony-1.23/sys_linux.c
+--- chrony-1.23/sys_linux.c.cap	2009-03-09 14:56:29.000000000 +0100
++++ chrony-1.23/sys_linux.c	2009-03-09 14:57:24.000000000 +0100
+@@ -39,14 +39,6 @@
+ #include <assert.h>
+ #include <sys/utsname.h>
+ 
+-#ifdef FEAT_LINUXCAPS
+-#include <sys/types.h>
+-#include <pwd.h>
+-#include <sys/prctl.h>
+-#include <sys/capability.h>
+-#include <grp.h>
+-#endif
+-
+ #include "localp.h"
+ #include "sys_linux.h"
+ #include "sched.h"
+@@ -55,6 +47,14 @@
+ #include "logging.h"
+ #include "wrap_adjtimex.h"
+ 
++#ifdef FEAT_LINUXCAPS
++#include <sys/types.h>
++#include <pwd.h>
++#include <sys/prctl.h>
++#include <sys/capability.h>
++#include <grp.h>
++#endif
++
+ static long current_tick;
+ 
+ /* This is the value of tick, in seconds, including the current vernier

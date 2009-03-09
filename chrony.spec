@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.23
-Release:        3.20081106gitbe42b4%{?dist}
+Release:        4.20081106gitbe42b4%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -18,6 +18,7 @@ Patch1:         chrony-1.23-gitbe42b4.patch
 Patch2:         chrony-1.23-ppc.patch
 Patch3:         chrony-1.23-gethost.patch
 Patch4:         chrony-1.23-res.patch
+Patch5:         chrony-1.23-cap.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel readline-devel bison texinfo
@@ -40,6 +41,7 @@ cp -p %{SOURCE6} .
 %patch2 -p1 -b .ppc
 %patch3 -p1 -b .gethost
 %patch4 -p1 -b .res
+%patch5 -p1 -b .cap
 
 # don't link with ncurses
 sed -i 's|-lncurses||' configure
@@ -121,6 +123,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Mar 09 2009 Miroslav Lichvar <mlichvar@redhat.com> 1.23-4.20081106gitbe42b4
+- fix building with broken libcap header (#483548)
+
 * Mon Feb 23 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.23-3.20081106gitbe42b4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_11_Mass_Rebuild
 
