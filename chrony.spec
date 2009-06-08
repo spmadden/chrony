@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.23
-Release:        4.20081106gitbe42b4%{?dist}
+Release:        5.20081106gitbe42b4%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -19,6 +19,7 @@ Patch2:         chrony-1.23-ppc.patch
 Patch3:         chrony-1.23-gethost.patch
 Patch4:         chrony-1.23-res.patch
 Patch5:         chrony-1.23-cap.patch
+Patch6:         chrony-1.23-s390.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel readline-devel bison texinfo
@@ -42,6 +43,7 @@ cp -p %{SOURCE6} .
 %patch3 -p1 -b .gethost
 %patch4 -p1 -b .res
 %patch5 -p1 -b .cap
+%patch6 -p1 -b .s390
 
 # don't link with ncurses
 sed -i 's|-lncurses||' configure
@@ -123,6 +125,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Jun 08 2009 Dan Horak <dan[at]danny.cz> 1.23-5.20081106gitbe42b4
+- add patch with support for s390/s390x
+
 * Mon Mar 09 2009 Miroslav Lichvar <mlichvar@redhat.com> 1.23-4.20081106gitbe42b4
 - fix building with broken libcap header (#483548)
 
