@@ -150,8 +150,12 @@ case "$1" in
         rh_status_q || exit 7
         chrony_command $1
         ;;
+    command)
+        rh_status_q || exit 7
+        chrony_command "$2"
+        ;;
     *)
-        echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload|cyclelogs|online|offline}"
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload|cyclelogs|online|offline|command}"
         exit 2
 esac
 exit $?

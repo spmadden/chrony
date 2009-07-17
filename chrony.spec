@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.23
-Release:        5.20081106gitbe42b4%{?dist}
+Release:        6.20081106gitbe42b4%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -20,9 +20,10 @@ Patch3:         chrony-1.23-gethost.patch
 Patch4:         chrony-1.23-res.patch
 Patch5:         chrony-1.23-cap.patch
 Patch6:         chrony-1.23-s390.patch
+Patch7:         chrony-1.23-editline.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libcap-devel readline-devel bison texinfo
+BuildRequires:  libcap-devel libedit-devel bison texinfo
 
 Requires(pre):  shadow-utils
 Requires(post): /sbin/chkconfig /sbin/install-info
@@ -44,16 +45,14 @@ cp -p %{SOURCE6} .
 %patch4 -p1 -b .res
 %patch5 -p1 -b .cap
 %patch6 -p1 -b .s390
-
-# don't link with ncurses
-sed -i 's|-lncurses||' configure
+%patch7 -p1 -b .editline
 
 %build
 bison -o getdate.c getdate.y
 
 export CFLAGS="$RPM_OPT_FLAGS -pie -fpie"
 # configure doesn't support --bindir --sbindir options, install manually
-./configure --enable-linuxcaps
+./configure --enable-linuxcaps --with-editline
 make %{?_smp_mflags} all docs
 
 %install
@@ -125,6 +124,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Jul 17 2009 Miroslav Lichvar <mlichvar@redhat.com> 1.23-6.20081106gitbe42b4
+- switch to editline
+- support arbitrary chronyc commands in init script
+
 * Mon Jun 08 2009 Dan Horak <dan[at]danny.cz> 1.23-5.20081106gitbe42b4
 - add patch with support for s390/s390x
 
