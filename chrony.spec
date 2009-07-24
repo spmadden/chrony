@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.23
-Release:        6.20081106gitbe42b4%{?dist}
+Release:        7.20081106gitbe42b4%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -124,6 +124,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Jul 24 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.23-7.20081106gitbe42b4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
+
 * Fri Jul 17 2009 Miroslav Lichvar <mlichvar@redhat.com> 1.23-6.20081106gitbe42b4
 - switch to editline
 - support arbitrary chronyc commands in init script
