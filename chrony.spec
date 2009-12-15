@@ -1,26 +1,18 @@
+%define prerelease -pre1
 Name:           chrony
-Version:        1.23
-Release:        7.20081106gitbe42b4%{?dist}
+Version:        1.24
+Release:        0.1.pre1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
 License:        GPLv2
-URL:            http://chrony.sunsite.dk
-Source0:        http://chrony.sunsite.dk/download/chrony-%{version}.tar.gz
+URL:            http://chrony.tuxfamily.org
+Source0:        http://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
 Source1:        chrony.conf
 Source2:        chrony.keys
 Source3:        chronyd.sysconfig
 Source4:        chronyd.init
 Source5:        chrony.logrotate
-# taken from GNU tar-1.13 
-Source6:        getdate.y
-Patch1:         chrony-1.23-gitbe42b4.patch
-Patch2:         chrony-1.23-ppc.patch
-Patch3:         chrony-1.23-gethost.patch
-Patch4:         chrony-1.23-res.patch
-Patch5:         chrony-1.23-cap.patch
-Patch6:         chrony-1.23-s390.patch
-Patch7:         chrony-1.23-editline.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel libedit-devel bison texinfo
@@ -37,38 +29,22 @@ systems with dial-up Internet connections, and also supports computers
 in permanently connected environments. 
 
 %prep
-%setup -q
-cp -p %{SOURCE6} .
-%patch1 -p1
-%patch2 -p1 -b .ppc
-%patch3 -p1 -b .gethost
-%patch4 -p1 -b .res
-%patch5 -p1 -b .cap
-%patch6 -p1 -b .s390
-%patch7 -p1 -b .editline
+%setup -q -n %{name}-%{version}%{?prerelease}
 
 %build
-bison -o getdate.c getdate.y
-
 export CFLAGS="$RPM_OPT_FLAGS -pie -fpie"
-# configure doesn't support --bindir --sbindir options, install manually
-./configure --enable-linuxcaps --with-editline
-make %{?_smp_mflags} all docs
+%configure --docdir=%{_docdir}
+make %{?_smp_mflags} getdate all docs
 
 %install
 rm -rf $RPM_BUILD_ROOT
 
-mkdir -p $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}
-mkdir -p $RPM_BUILD_ROOT{%{_infodir},%{_mandir}/man{1,5,8}}
+make install install-docs DESTDIR=$RPM_BUILD_ROOT
+
+rm -rf $RPM_BUILD_ROOT%{_docdir}
+
 mkdir -p $RPM_BUILD_ROOT{%{_sysconfdir}/{sysconfig,logrotate.d},%{_initrddir}}
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/{lib,log}/chrony
-
-install -m 755 chronyc $RPM_BUILD_ROOT%{_bindir}
-install -m 755 chronyd $RPM_BUILD_ROOT%{_sbindir}
-install -m 644 -p -t $RPM_BUILD_ROOT%{_infodir} chrony.info*
-install -m 644 -p -t $RPM_BUILD_ROOT%{_mandir}/man1 chrony*.1
-install -m 644 -p -t $RPM_BUILD_ROOT%{_mandir}/man5 chrony*.5
-install -m 644 -p -t $RPM_BUILD_ROOT%{_mandir}/man8 chrony*.8
 
 install -m 644 -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
 install -m 640 -p %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
@@ -124,6 +100,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Dec 15 2009 Miroslav Lichvar <mlichvar@redhat.com> 1.24-0.1.pre1
+- update to 1.24-pre1
+
 * Fri Jul 24 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.23-7.20081106gitbe42b4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
 
