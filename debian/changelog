@@ -1,3 +1,15 @@
+chrony (1.23-7) unstable; urgency=high
+
+  * Applied patches from upstream to fix remote DOS:
+  
+    CVE-2010-0292 Don't reply to invalid cmdmon packets
+
+    CVE-2010-0293 Limit client log memory size
+
+    CVE-2010-0294 Limit rate of syslog messages 
+
+ -- John G. Hasler <jhasler@newsguy.com>  Tue, 02 Feb 2010 19:37:50 -0600
+
 chrony (1.23-6) unstable; urgency=low
 
   * Commented out rtcfile directive in chrony.conf because it can cause
