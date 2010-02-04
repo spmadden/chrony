@@ -1,7 +1,6 @@
-%define prerelease -pre1
 Name:           chrony
 Version:        1.24
-Release:        0.1.pre1%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -32,7 +31,14 @@ in permanently connected environments.
 %setup -q -n %{name}-%{version}%{?prerelease}
 
 %build
-export CFLAGS="$RPM_OPT_FLAGS -pie -fpie"
+CFLAGS="$RPM_OPT_FLAGS"
+%ifarch %{sparc}
+CFLAGS="$CFLAGS -pie -fPIE"
+%else
+CFLAGS="$CFLAGS -pie -fpie"
+%endif
+export CFLAGS
+
 %configure --docdir=%{_docdir}
 make %{?_smp_mflags} getdate all docs
 
@@ -100,6 +106,13 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Feb 04 2010 Miroslav Lichvar <mlichvar@redhat.com> 1.24-1
+- update to 1.24 (#555367, CVE-2010-0292 CVE-2010-0293 CVE-2010-0294)
+- modify default config
+  - step clock on start if it is off by more than 100 seconds
+  - disable client log
+- build with -fPIE on sparc
+
 * Tue Dec 15 2009 Miroslav Lichvar <mlichvar@redhat.com> 1.24-0.1.pre1
 - update to 1.24-pre1
 
