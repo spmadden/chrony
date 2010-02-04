@@ -1,0 +1,266 @@
+From 7269f9aad2cb3e7afe7fec601e52df4154502abc Mon Sep 17 00:00:00 2001
+From: Miroslav Lichvar <mlichvar@redhat.com>
+Date: Thu, 14 Jan 2010 15:34:56 +0100
+Subject: [PATCH 3/3] Add option to limit clientlog memory
+
+---
+ chrony.texi |   16 ++++++++++++++++
+ clientlog.c |   39 +++++++++++++++++++++++++++++++++++++++
+ conf.c      |   28 ++++++++++++++++++++++++++++
+ conf.h      |    1 +
+ logging.h   |    1 +
+ 5 files changed, 85 insertions(+), 0 deletions(-)
+
+diff --git a/chrony.texi b/chrony.texi
+index 909a0cc..f4d4a2c 100644
+--- a/chrony.texi
++++ b/chrony.texi
+@@ -1177,6 +1177,7 @@ directives can occur in any order in the file.
+ * manual directive::            Allow manual entry using chronyc's settime cmd.
+ * maxupdateskew directive::     Stop bad estimates upsetting machine clock
+ * noclientlog directive::       Prevent chronyd from gathering data about clients
++* clientloglimit directive::    Set client log memory limit
+ * peer directive::              Specify an NTP peer
+ * pidfile directive::           Specify the file where chronyd's pid is written
+ * port directive::              Set port to use for NTP packets
+@@ -2066,6 +2067,21 @@ This directive, which takes no arguments, specifies that client accesses
+ are not to be logged.  Normally they are logged, allowing statistics to
+ be reported using the @code{clients} command in @code{chronyc}.
+ @c }}}
++@c {{{ clientloglimit
++@node clientloglimit directive
++@subsection clientloglimit
++This directive specifies the maximum size of the memory allocated to
++log client accesses.  When the limit is reached, only information for
++clients that have already been logged will be updated.  If 0 is
++specified, the memory size will be unlimited.  The default is 524288
++bytes.
++
++An example of the use of this directive is
++
++@example
++clientloglimit 1048576
++@end example
++@c }}}
+ @c {{{ peer
+ @node peer directive
+ @subsection peer
+diff --git a/clientlog.c b/clientlog.c
+index a66c883..97649ec 100644
+--- a/clientlog.c
++++ b/clientlog.c
+@@ -40,6 +40,7 @@
+ #include "memory.h"
+ #include "reports.h"
+ #include "util.h"
++#include "logging.h"
+ 
+ /* Number of bits of address per layer of the table.  This value has
+    been chosen on the basis that a server will predominantly be serving
+@@ -86,6 +87,13 @@ static int max_nodes = 0;
+ /* Flag indicating whether facility is turned on or not */
+ static int active = 0;
+ 
++/* Flag indicating whether memory allocation limit has been reached
++   and no new nodes or subnets should be allocated */
++static int alloc_limit_reached;
++
++static unsigned long alloc_limit;
++static unsigned long alloced;
++
+ /* ================================================== */
+ 
+ static void
+@@ -128,6 +136,9 @@ CLG_Initialise(void)
+   max_nodes = 0;
+   n_nodes = 0;
+ 
++  alloced = 0;
++  alloc_limit = CNF_GetClientLogLimit();
++  alloc_limit_reached = 0;
+ }
+ 
+ /* ================================================== */
+@@ -140,11 +151,25 @@ CLG_Finalise(void)
+ 
+ /* ================================================== */
+ 
++static void check_alloc_limit() {
++  if (alloc_limit_reached)
++    return;
++
++  if (alloced >= alloc_limit) {
++    LOG(LOGS_WARN, LOGF_ClientLog, "Client log memory limit reached");
++    alloc_limit_reached = 1;
++  }
++}
++
++/* ================================================== */
++
+ static void
+ create_subnet(Subnet *parent_subnet, int the_entry)
+ {
+   parent_subnet->entry[the_entry] = (void *) MallocNew(Subnet);
+   clear_subnet((Subnet *) parent_subnet->entry[the_entry]);
++  alloced += sizeof (Subnet);
++  check_alloc_limit();
+ }
+ 
+ /* ================================================== */
+@@ -157,6 +182,8 @@ create_node(Subnet *parent_subnet, int the_entry)
+   parent_subnet->entry[the_entry] = (void *) new_node;
+   clear_node(new_node);
+ 
++  alloced += sizeof (Node);
++
+   if (n_nodes == max_nodes) {
+     if (nodes) {
+       max_nodes += NODE_TABLE_INCREMENT;
+@@ -168,8 +195,10 @@ create_node(Subnet *parent_subnet, int the_entry)
+       max_nodes = NODE_TABLE_INCREMENT;
+       nodes = MallocArray(Node *, max_nodes);
+     }
++    alloced += sizeof (Node *) * (max_nodes - n_nodes);
+   }
+   nodes[n_nodes++] = (Node *) new_node;
++  check_alloc_limit();
+ }
+ 
+ /* ================================================== */
+@@ -195,11 +224,15 @@ find_subnet(Subnet *subnet, CLG_IP_Addr addr, int bits_left)
+ 
+   if (new_bits_left > 0) {
+     if (!subnet->entry[this_subnet]) {
++      if (alloc_limit_reached)
++        return NULL;
+       create_subnet(subnet, this_subnet);
+     }
+     return find_subnet((Subnet *) subnet->entry[this_subnet], new_subnet, new_bits_left);
+   } else {
+     if (!subnet->entry[this_subnet]) {
++      if (alloc_limit_reached)
++        return NULL;
+       create_node(subnet, this_subnet);
+     }
+     return subnet->entry[this_subnet];
+@@ -248,6 +281,8 @@ CLG_LogNTPClientAccess (CLG_IP_Addr client, time_t now)
+   Node *node;
+   if (active) {
+     node = (Node *) find_subnet(&top_subnet, client, 32);
++    if (node == NULL)
++      return;
+     node->ip_addr = client;
+     ++node->client_hits;
+     node->last_ntp_hit = now;
+@@ -262,6 +297,8 @@ CLG_LogNTPPeerAccess(CLG_IP_Addr client, time_t now)
+   Node *node;
+   if (active) {
+     node = (Node *) find_subnet(&top_subnet, client, 32);
++    if (node == NULL)
++      return;
+     node->ip_addr = client;
+     ++node->peer_hits;
+     node->last_ntp_hit = now;
+@@ -276,6 +313,8 @@ CLG_LogCommandAccess(CLG_IP_Addr client, CLG_Command_Type type, time_t now)
+   Node *node;
+   if (active) {
+     node = (Node *) find_subnet(&top_subnet, client, 32);
++    if (node == NULL)
++      return;
+     node->ip_addr = client;
+     node->last_cmd_hit = now;
+     switch (type) {
+diff --git a/conf.c b/conf.c
+index e34927e..3aed626 100644
+--- a/conf.c
++++ b/conf.c
+@@ -83,6 +83,7 @@ static void parse_cmddeny(const char *);
+ static void parse_cmdport(const char *);
+ static void parse_rtconutc(const char *);
+ static void parse_noclientlog(const char *);
++static void parse_clientloglimit(const char *);
+ static void parse_logchange(const char *);
+ static void parse_mailonchange(const char *);
+ static void parse_bindaddress(const char *);
+@@ -146,6 +147,9 @@ static double mail_change_threshold = 0.0;
+    memory */
+ static int no_client_log = 0;
+ 
++/* Limit memory allocated for the clients log */
++static unsigned long client_log_limit = 524288;
++
+ /* IP address (host order) for binding the NTP socket to.  0 means INADDR_ANY
+    will be used */
+ static unsigned long bind_address = 0UL;
+@@ -200,6 +204,7 @@ static const Command commands[] = {
+   {"cmdport", 7, parse_cmdport},
+   {"rtconutc", 8, parse_rtconutc},
+   {"noclientlog", 11, parse_noclientlog},
++  {"clientloglimit", 14, parse_clientloglimit},
+   {"logchange", 9, parse_logchange},
+   {"mailonchange", 12, parse_mailonchange},
+   {"bindaddress", 11, parse_bindaddress},
+@@ -635,6 +640,21 @@ parse_noclientlog(const char *line)
+ /* ================================================== */
+ 
+ static void
++parse_clientloglimit(const char *line)
++{
++  if (sscanf(line, "%lu", &client_log_limit) != 1) {
++    LOG(LOGS_WARN, LOGF_Configure, "Could not read clientlog memory limit at line %d", line_number);
++  }
++
++  if (client_log_limit == 0) {
++    /* unlimited */
++    client_log_limit = (unsigned long)-1;
++  }
++}
++
++/* ================================================== */
++
++static void
+ parse_logchange(const char *line)
+ {
+   if (sscanf(line, "%lf", &log_change_threshold) == 1) {
+@@ -1195,6 +1215,14 @@ CNF_GetNoClientLog(void)
+ 
+ /* ================================================== */
+ 
++unsigned long
++CNF_GetClientLogLimit(void)
++{
++  return client_log_limit;
++}
++
++/* ================================================== */
++
+ void
+ CNF_GetBindAddress(unsigned long *addr)
+ {
+diff --git a/conf.h b/conf.h
+index 166cd1b..1e7c14d 100644
+--- a/conf.h
++++ b/conf.h
+@@ -59,6 +59,7 @@ extern int CNF_GetRTCOnUTC(void);
+ extern void CNF_GetLogChange(int *enabled, double *threshold);
+ extern void CNF_GetMailOnChange(int *enabled, double *threshold, char **user);
+ extern int CNF_GetNoClientLog(void);
++extern unsigned long CNF_GetClientLogLimit(void);
+ extern void CNF_GetBindAddress(unsigned long *addr);
+ extern void CNF_GetBindCommandAddress(unsigned long *addr);
+ extern char *CNF_GetPidFile(void);
+diff --git a/logging.h b/logging.h
+index 41975ec..ac82ff6 100644
+--- a/logging.h
++++ b/logging.h
+@@ -53,6 +53,7 @@ typedef enum {
+   LOGF_Local,
+   LOGF_Util,
+   LOGF_Main,
++  LOGF_ClientLog,
+   LOGF_Configure,
+   LOGF_CmdMon,
+   LOGF_Acquire,
+-- 
+1.6.5.2
+

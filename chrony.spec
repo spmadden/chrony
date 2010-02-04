@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.23
-Release:        5.20081106gitbe42b4%{?dist}
+Release:        6.20081106gitbe42b4%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -20,6 +20,9 @@ Patch3:         chrony-1.23-gethost.patch
 Patch4:         chrony-1.23-res.patch
 Patch5:         chrony-1.23-cap.patch
 Patch6:         chrony-1.23-s390.patch
+Patch8:         chrony-1.23-invalidcmdmon.patch
+Patch9:         chrony-1.23-syslograte.patch
+Patch10:        chrony-1.23-clientloglimit.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel readline-devel bison texinfo
@@ -44,6 +47,9 @@ cp -p %{SOURCE6} .
 %patch4 -p1 -b .res
 %patch5 -p1 -b .cap
 %patch6 -p1 -b .s390
+%patch8 -p1 -b .invalidcmdmon
+%patch9 -p1 -b .syslograte
+%patch10 -p1 -b .clientloglimit
 
 # don't link with ncurses
 sed -i 's|-lncurses||' configure
@@ -125,6 +131,11 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Feb 04 2010 Miroslav Lichvar <mlichvar@redhat.com> 1.23-6.20081106gitbe42b4
+- don't reply to invalid cmdmon packets (#555367, CVE-2010-0292)
+- limit client log memory size (#555367, CVE-2010-0293)
+- limit rate of syslog messages (#555367, CVE-2010-0294)
+
 * Mon Jun 08 2009 Dan Horak <dan[at]danny.cz> 1.23-5.20081106gitbe42b4
 - add patch with support for s390/s390x
 

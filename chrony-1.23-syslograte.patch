@@ -1,0 +1,172 @@
+From 0b710499f994823bd938fc6895f097eefb9cc59f Mon Sep 17 00:00:00 2001
+From: Miroslav Lichvar <mlichvar@redhat.com>
+Date: Wed, 13 Jan 2010 19:02:07 +0100
+Subject: [PATCH 2/3] Limit rate of syslog messages
+
+Error messages caused by incoming packets need to be rate limited
+to avoid filling up disk space.
+---
+ cmdmon.c   |   22 +++++++++++-----------
+ logging.c  |   18 ++++++++++++++++++
+ logging.h  |    3 +++
+ ntp_core.c |    4 ++--
+ ntp_io.c   |    6 ++++--
+ 5 files changed, 38 insertions(+), 15 deletions(-)
+
+diff --git a/cmdmon.c b/cmdmon.c
+index c9ce0e9..f79d282 100644
+--- a/cmdmon.c
++++ b/cmdmon.c
+@@ -654,7 +654,7 @@ transmit_reply(CMD_Reply *msg, struct sockaddr_in *where_to)
+   status = sendto(sock_fd, (void *) msg, tx_message_length, 0,
+                   (struct sockaddr *) where_to, sizeof(struct sockaddr_in));
+ 
+-  if (status < 0) {
++  if (status < 0 && !LOG_RateLimited()) {
+     remote_ip = ntohl(where_to->sin_addr.s_addr);
+     remote_port = ntohs(where_to->sin_port);
+     LOG(LOGS_WARN, LOGF_CmdMon, "Could not send response to %s:%hu", UTI_IPToDottedQuad(remote_ip), remote_port);
+@@ -1659,7 +1659,9 @@ read_from_cmd_socket(void *anything)
+   }
+ 
+   if (read_length != expected_length) {
+-    LOG(LOGS_WARN, LOGF_CmdMon, "Read incorrectly sized packet from %s:%hu", UTI_IPToDottedQuad(remote_ip), remote_port);
++    if (!LOG_RateLimited()) {
++      LOG(LOGS_WARN, LOGF_CmdMon, "Read incorrectly sized packet from %s:%hu", UTI_IPToDottedQuad(remote_ip), remote_port);
++    }
+     if (allowed)
+       CLG_LogCommandAccess(remote_ip, CLG_CMD_BAD_PKT, cooked_now.tv_sec);
+     /* For now, just ignore the packet.  We may want to send a reply
+@@ -1673,13 +1675,11 @@ read_from_cmd_socket(void *anything)
+        regardless of the defined access rules - otherwise, we could
+        shut ourselves out completely! */
+ 
+-    /* We ought to find another way to log this, there is an attack
+-       here against the host because an adversary can just keep
+-       hitting us with bad packets until our log file(s) fill up. */
+-
+-    LOG(LOGS_WARN, LOGF_CmdMon, "Command packet received from unauthorised host %s port %d",
+-        UTI_IPToDottedQuad(remote_ip),
+-        remote_port);
++    if (!LOG_RateLimited()) {
++      LOG(LOGS_WARN, LOGF_CmdMon, "Command packet received from unauthorised host %s port %d",
++          UTI_IPToDottedQuad(remote_ip),
++          remote_port);
++    }
+ 
+     tx_message.status = htons(STT_NOHOSTACCESS);
+     transmit_reply(&tx_message, &where_from);
+@@ -1764,7 +1764,7 @@ read_from_cmd_socket(void *anything)
+       tx_message_length = PKL_ReplyLength(prev_tx_message);
+       status = sendto(sock_fd, (void *) prev_tx_message, tx_message_length, 0,
+                       (struct sockaddr *) &where_from, sizeof(where_from));
+-      if (status < 0) {
++      if (status < 0 && !LOG_RateLimited()) {
+         LOG(LOGS_WARN, LOGF_CmdMon, "Could not send response to %s:%hu", UTI_IPToDottedQuad(remote_ip), remote_port);
+       }
+       return;
+@@ -1884,7 +1884,7 @@ read_from_cmd_socket(void *anything)
+ 
+         case REQ_LOGON:
+           /* If the log-on fails, record the reason why */
+-          if (!issue_token) {
++          if (!issue_token && !LOG_RateLimited()) {
+             LOG(LOGS_WARN, LOGF_CmdMon,
+                 "Bad command logon from %s port %d (md5_ok=%d valid_ts=%d)\n",
+                 UTI_IPToDottedQuad(remote_ip),
+diff --git a/logging.c b/logging.c
+index d432762..8311640 100644
+--- a/logging.c
++++ b/logging.c
+@@ -40,6 +40,8 @@ static int initialised = 0;
+ 
+ static int is_detached = 0;
+ 
++static time_t last_limited = 0;
++
+ #ifdef WINNT
+ static FILE *logfile;
+ #endif
+@@ -214,3 +216,19 @@ LOG_GoDaemon(void)
+ }
+ 
+ /* ================================================== */
++
++int
++LOG_RateLimited(void)
++{
++  time_t now;
++
++  now = time(NULL);
++
++  if (last_limited + 10 > now && last_limited <= now)
++    return 1;
++
++  last_limited = now;
++  return 0;
++}
++
++/* ================================================== */
+diff --git a/logging.h b/logging.h
+index 6e73dbb..41975ec 100644
+--- a/logging.h
++++ b/logging.h
+@@ -84,6 +84,9 @@ extern void LOG_Position(const char *filename, int line_number, const char *func
+ 
+ extern void LOG_GoDaemon(void);
+ 
++/* Return zero once per 10 seconds */
++extern int LOG_RateLimited(void);
++
+ /* Line logging macro.  If the compiler is GNU C, we take advantage of
+    being able to get the function name also. */
+ #if defined(__GNUC__)
+diff --git a/ntp_core.c b/ntp_core.c
+index 60d433c..9576296 100644
+--- a/ntp_core.c
++++ b/ntp_core.c
+@@ -1358,7 +1358,7 @@ process_known
+                         &inst->local_ntp_tx,
+                         &inst->remote_addr);
+ 
+-      } else {
++      } else if (!LOG_RateLimited()) {
+         LOG(LOGS_WARN, LOGF_NtpCore, "NTP packet received from unauthorised host %s port %d",
+             UTI_IPToDottedQuad(inst->remote_addr.ip_addr),
+             inst->remote_addr.port);
+@@ -1526,7 +1526,7 @@ NCR_ProcessNoauthUnknown(NTP_Packet *message, struct timeval *now, NTP_Remote_Ad
+                       remote_addr);
+       
+     }
+-  } else {
++  } else if (!LOG_RateLimited()) {
+     LOG(LOGS_WARN, LOGF_NtpCore, "NTP packet received from unauthorised host %s port %d",
+         UTI_IPToDottedQuad(remote_addr->ip_addr),
+         remote_addr->port);
+diff --git a/ntp_io.c b/ntp_io.c
+index afb6ad1..aaa3cbc 100644
+--- a/ntp_io.c
++++ b/ntp_io.c
+@@ -243,7 +243,8 @@ NIO_SendNormalPacket(NTP_Packet *packet, NTP_Remote_Address *remote_addr)
+   remote.sin_addr.s_addr = htonl(remote_addr->ip_addr);
+ 
+   if (sendto(sock_fd, (void *) packet, NTP_NORMAL_PACKET_SIZE, 0,
+-             (struct sockaddr *) &remote, sizeof(remote)) < 0) {
++             (struct sockaddr *) &remote, sizeof(remote)) < 0 &&
++      !LOG_RateLimited()) {
+     LOG(LOGS_WARN, LOGF_NtpIO, "Could not send to %s:%d : %s",
+         UTI_IPToDottedQuad(remote_addr->ip_addr), remote_addr->port, strerror(errno));
+   }
+@@ -266,7 +267,8 @@ NIO_SendAuthenticatedPacket(NTP_Packet *packet, NTP_Remote_Address *remote_addr)
+   remote.sin_addr.s_addr = htonl(remote_addr->ip_addr);
+ 
+   if (sendto(sock_fd, (void *) packet, sizeof(NTP_Packet), 0,
+-             (struct sockaddr *) &remote, sizeof(remote)) < 0) {
++             (struct sockaddr *) &remote, sizeof(remote)) < 0 &&
++      !LOG_RateLimited()) {
+     LOG(LOGS_WARN, LOGF_NtpIO, "Could not send to %s:%d : %s",
+         UTI_IPToDottedQuad(remote_addr->ip_addr), remote_addr->port, strerror(errno));
+   }
+-- 
+1.6.5.2
+
