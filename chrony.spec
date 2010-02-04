@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.23
-Release:        7.20081106gitbe42b4%{?dist}
+Release:        8.20081106gitbe42b4%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -21,6 +21,9 @@ Patch4:         chrony-1.23-res.patch
 Patch5:         chrony-1.23-cap.patch
 Patch6:         chrony-1.23-s390.patch
 Patch7:         chrony-1.23-editline.patch
+Patch8:         chrony-1.23-invalidcmdmon.patch
+Patch9:         chrony-1.23-syslograte.patch
+Patch10:        chrony-1.23-clientloglimit.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel libedit-devel bison texinfo
@@ -46,6 +49,9 @@ cp -p %{SOURCE6} .
 %patch5 -p1 -b .cap
 %patch6 -p1 -b .s390
 %patch7 -p1 -b .editline
+%patch8 -p1 -b .invalidcmdmon
+%patch9 -p1 -b .syslograte
+%patch10 -p1 -b .clientloglimit
 
 %build
 bison -o getdate.c getdate.y
@@ -124,6 +130,11 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Feb 04 2010 Miroslav Lichvar <mlichvar@redhat.com> 1.23-8.20081106gitbe42b4
+- don't reply to invalid cmdmon packets (#555367, CVE-2010-0292)
+- limit client log memory size (#555367, CVE-2010-0293)
+- limit rate of syslog messages (#555367, CVE-2010-0294)
+
 * Fri Jul 24 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.23-7.20081106gitbe42b4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
 
