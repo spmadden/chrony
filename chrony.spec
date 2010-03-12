@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.24
-Release:        2.20100302git5fb555%{?dist}
+Release:        3.20100302git5fb555%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -112,7 +112,7 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
-* Fri Mar 12 2010 Miroslav Lichvar <mlichvar@redhat.com> 1.24-2.20100302git5fb555
+* Fri Mar 12 2010 Miroslav Lichvar <mlichvar@redhat.com> 1.24-3.20100302git5fb555
 - update to snapshot 20100302git5fb555
 - compile with PPS API support
 
