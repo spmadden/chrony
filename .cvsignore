@@ -1,1 +1,3 @@
 chrony-1.24.tar.gz
+chrony-1.24-git5fb555.patch.gz
+timepps.h

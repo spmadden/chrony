@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.24
-Release:        1%{?dist}
+Release:        2.20100302git5fb555%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -12,6 +12,9 @@ Source2:        chrony.keys
 Source3:        chronyd.sysconfig
 Source4:        chronyd.init
 Source5:        chrony.logrotate
+# wget -O timepps.h 'http://gitweb.enneenne.com/?p=linuxpps;a=blob_plain;f=Documentation/pps/timepps.h;hb=b895b1a28558b83907c691aad231c41a0d14df88'
+Source6:        timepps.h
+Patch0:         chrony-1.24-git5fb555.patch.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel libedit-devel bison texinfo
@@ -29,6 +32,8 @@ in permanently connected environments.
 
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease}
+mkdir pps; cp -p %{SOURCE6} pps
+%patch0 -p1
 
 %build
 CFLAGS="$RPM_OPT_FLAGS"
@@ -38,6 +43,7 @@ CFLAGS="$CFLAGS -pie -fPIE"
 CFLAGS="$CFLAGS -pie -fpie"
 %endif
 export CFLAGS
+export CPPFLAGS="-Ipps"
 
 %configure --docdir=%{_docdir}
 make %{?_smp_mflags} getdate all docs
@@ -106,6 +112,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Mar 12 2010 Miroslav Lichvar <mlichvar@redhat.com> 1.24-2.20100302git5fb555
+- update to snapshot 20100302git5fb555
+- compile with PPS API support
+
 * Thu Feb 04 2010 Miroslav Lichvar <mlichvar@redhat.com> 1.24-1
 - update to 1.24 (#555367, CVE-2010-0292 CVE-2010-0293 CVE-2010-0294)
 - modify default config
