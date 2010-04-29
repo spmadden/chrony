@@ -28,6 +28,7 @@ prog=chronyd
 config=/etc/chrony.conf
 keyfile=/etc/chrony.keys
 chronyc=/usr/bin/chronyc
+dhclient_servers=/var/lib/dhclient/chrony.servers.*
 
 [ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
 
@@ -54,8 +55,8 @@ $1
 EOF
         chronycpid=$!
 
-        # chronyc will hang if the daemon doesn't respond, kill it after 3 s 
-        (sleep 3; kill $chronycpid) < /dev/null &> /dev/null &
+        # chronyc will hang if the daemon doesn't respond, kill it after 4 s 
+        (sleep 4; kill $chronycpid) < /dev/null &> /dev/null &
         killerpid=$!
 
         wait $chronycpid &> /dev/null
@@ -76,6 +77,18 @@ generate_commandkey() {
     echo
 }
 
+add_dhclient_servers() {
+    command=$(cat $dhclient_servers 2> /dev/null |
+        while read server serverargs; do
+            echo "add server $server $serverargs"
+        done)
+    if [ -n "$command" ]; then
+        echo -n $"Adding dhclient NTP servers to chrony: "
+        chrony_command "$command" &> /dev/null && success || failure
+	echo
+    fi
+}
+
 start() {
     [ "$NETWORKING" = "no" ] && exit 1
     [ -x $exec ] || exit 5
@@ -86,6 +99,7 @@ start() {
     retval=$?
     echo
     [ $retval -eq 0 ] && touch $lockfile
+    [ $retval -eq 0 ] && add_dhclient_servers
     return $retval
 }
 
