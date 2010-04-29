@@ -1,6 +1,7 @@
+%define gitpatch 20100428git73d775
 Name:           chrony
 Version:        1.24
-Release:        3.20100302git5fb555%{?dist}
+Release:        4.%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -14,7 +15,10 @@ Source4:        chronyd.init
 Source5:        chrony.logrotate
 # wget -O timepps.h 'http://gitweb.enneenne.com/?p=linuxpps;a=blob_plain;f=Documentation/pps/timepps.h;hb=b895b1a28558b83907c691aad231c41a0d14df88'
 Source6:        timepps.h
-Patch0:         chrony-1.24-git5fb555.patch.gz
+Source7:        chrony.nm-dispatcher
+Source8:        chrony.dhclient
+Patch0:         chrony-%{version}-%{gitpatch}.patch.gz
+Patch1:         chrony-retryres.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel libedit-devel bison texinfo
@@ -34,6 +38,9 @@ in permanently connected environments.
 %setup -q -n %{name}-%{version}%{?prerelease}
 mkdir pps; cp -p %{SOURCE6} pps
 %patch0 -p1
+%patch1 -p1 -b .retryres
+
+%{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
 %build
 CFLAGS="$RPM_OPT_FLAGS"
@@ -57,12 +64,18 @@ rm -rf $RPM_BUILD_ROOT%{_docdir}
 
 mkdir -p $RPM_BUILD_ROOT{%{_sysconfdir}/{sysconfig,logrotate.d},%{_initrddir}}
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/{lib,log}/chrony
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d
 
 install -m 644 -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
 install -m 640 -p %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
 install -m 644 -p %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/chronyd
 install -m 755 -p %{SOURCE4} $RPM_BUILD_ROOT%{_initrddir}/chronyd
 install -m 644 -p %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/chrony
+install -m 755 -p %{SOURCE7} \
+        $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
+install -m 755 -p %{SOURCE8} \
+        $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d/chrony.sh
 
 touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 
@@ -98,9 +111,11 @@ fi
 %defattr(-,root,root,-)
 %doc COPYING NEWS README chrony.txt faq.txt examples/*
 %config(noreplace) %{_sysconfdir}/chrony.conf
-%config(noreplace) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
+%config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
 %config(noreplace) %{_sysconfdir}/sysconfig/chronyd
 %config(noreplace) %{_sysconfdir}/logrotate.d/chrony
+%{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
+%{_sysconfdir}/dhcp/dhclient.d/chrony.sh
 %{_initrddir}/chronyd
 %{_bindir}/chronyc
 %{_sbindir}/chronyd
@@ -112,6 +127,15 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Apr 29 2010 Miroslav Lichvar <mlichvar@redhat.com> 1.24-4.20100428git73d775
+- update to 20100428git73d775
+- replace initstepslew directive with makestep in default config
+- add NetworkManager dispatcher script
+- add dhclient script
+- retry server/peer name resolution at least once to workaround
+  NetworkManager race condition on boot
+- don't verify chrony.keys
+
 * Fri Mar 12 2010 Miroslav Lichvar <mlichvar@redhat.com> 1.24-3.20100302git5fb555
 - update to snapshot 20100302git5fb555
 - compile with PPS API support
