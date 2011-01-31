@@ -23,9 +23,9 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  libcap-devel libedit-devel bison texinfo
 
 Requires(pre):  shadow-utils
-Requires(post): /sbin/chkconfig /sbin/install-info
-Requires(preun): /sbin/chkconfig /sbin/service /sbin/install-info
-Requires(postun): /sbin/service
+Requires(post): chkconfig info
+Requires(preun): chkconfig initscripts info
+Requires(postun): initscripts
 
 %description
 A client/server for the Network Time Protocol, this program keeps your
