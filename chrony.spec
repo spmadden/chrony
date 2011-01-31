@@ -10,6 +10,7 @@ URL:            http://chrony.tuxfamily.org
 Source0:        http://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
 Source1:        chrony.conf
 Source2:        chrony.keys
+Source3:        chronyd.service
 Source4:        chronyd.init
 Source5:        chrony.logrotate
 # wget -O timepps.h 'http://gitweb.enneenne.com/?p=linuxpps;a=blob_plain;f=Documentation/pps/timepps.h;hb=b895b1a28558b83907c691aad231c41a0d14df88'
@@ -65,9 +66,11 @@ mkdir -p $RPM_BUILD_ROOT{%{_sysconfdir}/{sysconfig,logrotate.d},%{_initrddir}}
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/{lib,log}/chrony
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d
+mkdir -p $RPM_BUILD_ROOT/lib/systemd/system
 
 install -m 644 -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
 install -m 640 -p %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
+install -m 644 -p %{SOURCE3} $RPM_BUILD_ROOT/lib/systemd/system/chronyd.service
 install -m 755 -p %{SOURCE4} $RPM_BUILD_ROOT%{_initrddir}/chronyd
 install -m 644 -p %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/chrony
 install -m 755 -p %{SOURCE7} \
@@ -88,6 +91,9 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 
 %post
 /sbin/chkconfig --add chronyd
+/sbin/chkconfig chronyd &> /dev/null &&
+        /bin/systemctl enable chronyd.service &> /dev/null ||
+        /bin/systemctl daemon-reload &> /dev/null
 /sbin/install-info  %{_infodir}/chrony.info.gz %{_infodir}/dir
 :
 
@@ -95,6 +101,7 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 if [ "$1" -eq 0 ]; then
         /sbin/service chronyd stop &> /dev/null
         /sbin/chkconfig --del chronyd
+        /bin/systemctl disable chronyd.service &> /dev/null
         /sbin/install-info --delete %{_infodir}/chrony.info.gz %{_infodir}/dir
 fi
 :
@@ -117,6 +124,7 @@ fi
 %{_bindir}/chronyc
 %{_sbindir}/chronyd
 %{_infodir}/chrony.info*
+/lib/systemd/system/chronyd.service
 %{_mandir}/man[158]/%{name}*.[158]*
 %dir %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony
 %ghost %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony/drift

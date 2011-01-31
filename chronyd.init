@@ -153,6 +153,12 @@ case "$1" in
         rh_status_q || exit 7
         chrony_command $1
         ;;
+    generate-commandkey)
+        generate_commandkey
+        ;;
+    add-dhclient-servers)
+        add_dhclient_servers
+        ;;
     command)
         rh_status_q || exit 7
         chrony_command "$2"
