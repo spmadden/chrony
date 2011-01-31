@@ -91,14 +91,15 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 
 %post
 /sbin/chkconfig --add chronyd
-/sbin/install-info  %{_infodir}/chrony.info.gz %{_infodir}/dir
+/sbin/install-info  %{_infodir}/chrony.info.gz %{_infodir}/dir &> /dev/null
 :
 
 %preun
 if [ "$1" -eq 0 ]; then
         /sbin/service chronyd stop &> /dev/null
         /sbin/chkconfig --del chronyd
-        /sbin/install-info --delete %{_infodir}/chrony.info.gz %{_infodir}/dir
+        /sbin/install-info --delete %{_infodir}/chrony.info.gz \
+                %{_infodir}/dir &> /dev/null
 fi
 :
 
