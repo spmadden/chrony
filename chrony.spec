@@ -1,7 +1,7 @@
-%define gitpatch 20100428git73d775
+%define prerelease -pre1
 Name:           chrony
-Version:        1.24
-Release:        4.%{?gitpatch}%{?dist}
+Version:        1.25
+Release:        0.1.pre1%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -17,7 +17,7 @@ Source5:        chrony.logrotate
 Source6:        timepps.h
 Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
-Patch0:         chrony-%{version}-%{gitpatch}.patch.gz
+%{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
 Patch1:         chrony-retryres.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -37,7 +37,7 @@ in permanently connected environments.
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease}
 mkdir pps; cp -p %{SOURCE6} pps
-%patch0 -p1
+%{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .retryres
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
