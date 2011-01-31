@@ -94,7 +94,7 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 /sbin/chkconfig chronyd &> /dev/null &&
         /bin/systemctl enable chronyd.service &> /dev/null ||
         /bin/systemctl daemon-reload &> /dev/null
-/sbin/install-info  %{_infodir}/chrony.info.gz %{_infodir}/dir
+/sbin/install-info  %{_infodir}/chrony.info.gz %{_infodir}/dir &> /dev/null
 :
 
 %preun
@@ -102,7 +102,8 @@ if [ "$1" -eq 0 ]; then
         /sbin/service chronyd stop &> /dev/null
         /sbin/chkconfig --del chronyd
         /bin/systemctl disable chronyd.service &> /dev/null
-        /sbin/install-info --delete %{_infodir}/chrony.info.gz %{_infodir}/dir
+        /sbin/install-info --delete %{_infodir}/chrony.info.gz \
+                %{_infodir}/dir &> /dev/null
 fi
 :
 
