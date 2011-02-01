@@ -133,6 +133,13 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Feb 01 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.25-0.1.pre1
+- update to 1.25-pre1
+- use iburst, four pool servers, rtcsync, stratumweight in default config
+- add systemd support
+- drop sysconfig file 
+- suppress install-info errors
+
 * Thu Apr 29 2010 Miroslav Lichvar <mlichvar@redhat.com> 1.24-4.20100428git73d775
 - update to 20100428git73d775
 - replace initstepslew directive with makestep in default config
