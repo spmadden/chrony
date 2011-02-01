@@ -29,10 +29,9 @@ config=/etc/chrony.conf
 keyfile=/etc/chrony.keys
 chronyc=/usr/bin/chronyc
 dhclient_servers=/var/lib/dhclient/chrony.servers.*
-
-[ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
-
 lockfile=/var/lock/subsys/$prog
+
+OPTIONS="-u chrony"
 
 get_key() {
     awk '/^[ \t]*'$1'\>/ { print $2; exit }' < $keyfile

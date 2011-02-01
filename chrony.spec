@@ -10,7 +10,6 @@ URL:            http://chrony.tuxfamily.org
 Source0:        http://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
 Source1:        chrony.conf
 Source2:        chrony.keys
-Source3:        chronyd.sysconfig
 Source4:        chronyd.init
 Source5:        chrony.logrotate
 # wget -O timepps.h 'http://gitweb.enneenne.com/?p=linuxpps;a=blob_plain;f=Documentation/pps/timepps.h;hb=b895b1a28558b83907c691aad231c41a0d14df88'
@@ -69,7 +68,6 @@ mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d
 
 install -m 644 -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
 install -m 640 -p %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
-install -m 644 -p %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/chronyd
 install -m 755 -p %{SOURCE4} $RPM_BUILD_ROOT%{_initrddir}/chronyd
 install -m 644 -p %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/chrony
 install -m 755 -p %{SOURCE7} \
@@ -112,7 +110,6 @@ fi
 %doc COPYING NEWS README chrony.txt faq.txt examples/*
 %config(noreplace) %{_sysconfdir}/chrony.conf
 %config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
-%config(noreplace) %{_sysconfdir}/sysconfig/chronyd
 %config(noreplace) %{_sysconfdir}/logrotate.d/chrony
 %{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
 %{_sysconfdir}/dhcp/dhclient.d/chrony.sh
