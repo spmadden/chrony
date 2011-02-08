@@ -1,7 +1,7 @@
 %define prerelease -pre1
 Name:           chrony
 Version:        1.25
-Release:        0.1.pre1%{?gitpatch}%{?dist}
+Release:        0.2.pre1%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -133,6 +133,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.25-0.2.pre1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
 * Tue Feb 01 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.25-0.1.pre1
 - update to 1.25-pre1
 - use iburst, four pool servers, rtcsync, stratumweight in default config
