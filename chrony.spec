@@ -51,6 +51,7 @@ CFLAGS="$CFLAGS -pie -fpie"
 %endif
 export CFLAGS
 export CPPFLAGS="-Ipps"
+export LDFLAGS="-Wl,-z,relro,-z,now"
 
 %configure --docdir=%{_docdir}
 make %{?_smp_mflags} getdate all docs
