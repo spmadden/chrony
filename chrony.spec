@@ -1,7 +1,7 @@
-%define prerelease -pre1
+%define prerelease -pre2
 Name:           chrony
 Version:        1.25
-Release:        0.2.pre1%{?gitpatch}%{?dist}
+Release:        0.3.pre2%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -18,7 +18,6 @@ Source6:        timepps.h
 Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
 %{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
-Patch1:         chrony-retryres.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel libedit-devel bison texinfo
@@ -38,7 +37,6 @@ in permanently connected environments.
 %setup -q -n %{name}-%{version}%{?prerelease}
 mkdir pps; cp -p %{SOURCE6} pps
 %{?gitpatch:%patch0 -p1}
-%patch1 -p1 -b .retryres
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -52,7 +50,7 @@ CFLAGS="$CFLAGS -pie -fpie"
 export CFLAGS
 export CPPFLAGS="-Ipps"
 
-%configure --docdir=%{_docdir}
+%configure --docdir=%{_docdir} --enable-forcednsretry
 make %{?_smp_mflags} getdate all docs
 
 %install
