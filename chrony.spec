@@ -1,7 +1,6 @@
-%define prerelease -pre2
 Name:           chrony
 Version:        1.25
-Release:        0.3.pre2%{?gitpatch}%{?dist}
+Release:        1%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -133,6 +132,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed May 04 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.25-1
+- update to 1.25
+
 * Wed Apr 20 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.25-0.3.pre2
 - update to 1.25-pre2
 - link with -Wl,-z,relro,-z,now options
