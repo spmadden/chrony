@@ -30,7 +30,7 @@ Requires(postun): initscripts
 %description
 A client/server for the Network Time Protocol, this program keeps your
 computer's clock accurate. It was specially designed to support
-systems with dial-up Internet connections, and also supports computers
+systems with intermittent internet connections, but it also works well
 in permanently connected environments. It can use also hardware reference
 clocks, system real-time clock or manual input as time references.
 
