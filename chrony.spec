@@ -90,11 +90,12 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 
 %post
 /sbin/chkconfig --add chronyd
-/sbin/chkconfig chronyd &> /dev/null &&
-        /bin/systemctl enable chronyd.service &> /dev/null ||
-        /bin/systemctl daemon-reload &> /dev/null
-/sbin/install-info  %{_infodir}/chrony.info.gz %{_infodir}/dir &> /dev/null
-:
+/bin/systemctl daemon-reload &> /dev/null || :
+
+%triggerun -- chrony < 1.25
+if /sbin/chkconfig --level 3 chronyd ; then
+	/bin/systemctl enable chronyd.esrvice &> /dev/null || :
+fi
 
 %preun
 if [ "$1" -eq 0 ]; then
