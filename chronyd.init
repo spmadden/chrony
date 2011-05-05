@@ -48,20 +48,10 @@ chrony_command() {
     commandkey=$(get_key $commandkeyid)
     [ -z "$commandkey" ] && return 2
 
-    ! (
-        $chronyc <<EOF &
+    $chronyc <<EOF | grep -v '200 OK'
 password $commandkey
 $1
 EOF
-        chronycpid=$!
-
-        # chronyc will hang if the daemon doesn't respond, kill it after 4 s 
-        (sleep 4; kill $chronycpid) < /dev/null &> /dev/null &
-        killerpid=$!
-
-        wait $chronycpid &> /dev/null
-        kill $killerpid &> /dev/null || echo "chronyd not responding"
-    ) | grep -v '200 OK'
 }
 
 generate_commandkey() {
@@ -85,7 +75,7 @@ add_dhclient_servers() {
     if [ -n "$command" ]; then
         echo -n $"Adding dhclient NTP servers to chrony: "
         chrony_command "$command" &> /dev/null && success || failure
-	echo
+        echo
     fi
 }
 

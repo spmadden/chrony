@@ -1,7 +1,6 @@
-%define gitpatch 20100428git73d775
 Name:           chrony
-Version:        1.24
-Release:        4.%{?gitpatch}%{?dist}
+Version:        1.25
+Release:        1%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -17,8 +16,7 @@ Source5:        chrony.logrotate
 Source6:        timepps.h
 Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
-Patch0:         chrony-%{version}-%{gitpatch}.patch.gz
-Patch1:         chrony-retryres.patch
+%{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel libedit-devel bison texinfo
@@ -38,8 +36,7 @@ clocks, system real-time clock or manual input as time references.
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease}
 mkdir pps; cp -p %{SOURCE6} pps
-%patch0 -p1
-%patch1 -p1 -b .retryres
+%{?gitpatch:%patch0 -p1}
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -54,7 +51,7 @@ export CFLAGS
 export CPPFLAGS="-Ipps"
 export LDFLAGS="-Wl,-z,relro,-z,now"
 
-%configure --docdir=%{_docdir}
+%configure --docdir=%{_docdir} --enable-forcednsretry
 make %{?_smp_mflags} getdate all docs
 
 %install
