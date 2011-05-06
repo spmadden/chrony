@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.25
-Release:        1%{?gitpatch}%{?dist}
+Release:        2%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -91,7 +91,7 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %post
 /sbin/chkconfig --add chronyd
 /bin/systemctl daemon-reload &> /dev/null || :
-/sbin/install-info  %{_infodir}/chrony.info.gz %{_infodir}/dir &> /dev/null
+/sbin/install-info  %{_infodir}/chrony.info.gz %{_infodir}/dir &> /dev/null || :
 
 %triggerun -- chrony < 1.25
 if /sbin/chkconfig --level 3 chronyd ; then
@@ -134,6 +134,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri May 06 2011 Bill Nottingham <notting@redhat.com> 1.25-2
+- fix systemd scriptlets for the upgrade case
+
 * Wed May 04 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.25-1
 - update to 1.25
 
