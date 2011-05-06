@@ -91,6 +91,7 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %post
 /sbin/chkconfig --add chronyd
 /bin/systemctl daemon-reload &> /dev/null || :
+/sbin/install-info  %{_infodir}/chrony.info.gz %{_infodir}/dir &> /dev/null
 
 %triggerun -- chrony < 1.25
 if /sbin/chkconfig --level 3 chronyd ; then
