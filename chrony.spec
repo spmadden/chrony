@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.25
-Release:        1%{?gitpatch}%{?dist}
+Release:        2%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -114,6 +114,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu May 19 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.25-2
+- remove timepps.h, NM and dhclient scripts
+- build with readline
+
 * Thu May 05 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.25-1
 - update to 1.25
 - link with -Wl,-z,relro,-z,now options
