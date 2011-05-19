@@ -13,7 +13,6 @@ Source3:        chronyd.sysconfig
 Source4:        chronyd.init
 Source5:        chrony.logrotate
 # wget -O timepps.h 'http://gitweb.enneenne.com/?p=linuxpps;a=blob_plain;f=Documentation/pps/timepps.h;hb=b895b1a28558b83907c691aad231c41a0d14df88'
-Source6:        timepps.h
 Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
 %{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
@@ -35,7 +34,6 @@ clocks, system real-time clock or manual input as time references.
 
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease}
-mkdir pps; cp -p %{SOURCE6} pps
 %{?gitpatch:%patch0 -p1}
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
@@ -48,7 +46,6 @@ CFLAGS="$CFLAGS -pie -fPIE"
 CFLAGS="$CFLAGS -pie -fpie"
 %endif
 export CFLAGS
-export CPPFLAGS="-Ipps"
 export LDFLAGS="-Wl,-z,relro,-z,now"
 
 %configure --docdir=%{_docdir} --enable-forcednsretry
