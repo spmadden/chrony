@@ -14,7 +14,6 @@ Source4:        chronyd.init
 Source5:        chrony.logrotate
 # wget -O timepps.h 'http://gitweb.enneenne.com/?p=linuxpps;a=blob_plain;f=Documentation/pps/timepps.h;hb=b895b1a28558b83907c691aad231c41a0d14df88'
 Source7:        chrony.nm-dispatcher
-Source8:        chrony.dhclient
 %{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -61,7 +60,6 @@ rm -rf $RPM_BUILD_ROOT%{_docdir}
 mkdir -p $RPM_BUILD_ROOT{%{_sysconfdir}/{sysconfig,logrotate.d},%{_initrddir}}
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/{lib,log}/chrony
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d
 
 install -m 644 -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
 install -m 640 -p %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
@@ -70,8 +68,6 @@ install -m 755 -p %{SOURCE4} $RPM_BUILD_ROOT%{_initrddir}/chronyd
 install -m 644 -p %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/chrony
 install -m 755 -p %{SOURCE7} \
         $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
-install -m 755 -p %{SOURCE8} \
-        $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d/chrony.sh
 
 touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 
@@ -112,7 +108,6 @@ fi
 %config(noreplace) %{_sysconfdir}/sysconfig/chronyd
 %config(noreplace) %{_sysconfdir}/logrotate.d/chrony
 %{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
-%{_sysconfdir}/dhcp/dhclient.d/chrony.sh
 %{_initrddir}/chronyd
 %{_bindir}/chronyc
 %{_sbindir}/chronyd
