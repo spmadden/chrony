@@ -16,7 +16,7 @@ Source5:        chrony.logrotate
 %{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libcap-devel libedit-devel bison texinfo
+BuildRequires:  libcap-devel readline-devel ncurses-devel bison texinfo
 
 Requires(pre):  shadow-utils
 Requires(post): chkconfig info
