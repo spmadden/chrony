@@ -1,3 +1,12 @@
+chrony (1.24-3ubuntu1) oneiric; urgency=low
+
+  * Support Linux 3.0 and later (patch taken from upstream;
+    commit ec7d302a6ca9e7974a05d338267b40491a1d7abb)
+    (lp: #793387, closes: #628919)
+  * Drop libreadline5-dev from Build-Depends (use libreadline-dev).
+
+ -- Michael Bienia <geser@ubuntu.com>  Sun, 12 Jun 2011 15:41:48 +0200
+
 chrony (1.24-3) unstable; urgency=high
 
   * Applied (modifed) patch from Gregor Herrmann.

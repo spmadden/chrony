@@ -735,7 +735,9 @@ get_version_specific_details(void)
   if (uname(&uts) < 0) {
     LOG_FATAL(LOGF_SysLinux, "Cannot uname(2) to get kernel version, sorry.");
   }
-  if (sscanf(uts.release, "%d.%d.%d", &major, &minor, &patch) != 3) {
+
+  patch = 0;
+  if (sscanf(uts.release, "%d.%d.%d", &major, &minor, &patch) < 2) {
     LOG_FATAL(LOGF_SysLinux, "Cannot read information from uname, sorry");
   }
 
@@ -807,20 +809,19 @@ get_version_specific_details(void)
             have_readonly_adjtime = 0;
             break;
           }
-          /* Let's be optimistic that these will be the same until proven
-             otherwise :-) */
-        case 7:
-        case 8:
+          /* fall through */
+        default:
           /* These don't need scaling */
           freq_scale = 1.0;
           have_readonly_adjtime = 2;
           break;
-        default:
-          LOG_FATAL(LOGF_SysLinux, "Kernel version not supported yet, sorry.");
       }
       break;
     default:
-      LOG_FATAL(LOGF_SysLinux, "Kernel's major version not supported yet, sorry");
+      /* Let's be optimistic that these will be the same until proven
+         otherwise :-) */
+      freq_scale = 1.0;
+      have_readonly_adjtime = 2;
       break;
   }
 
