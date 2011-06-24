@@ -1,6 +1,7 @@
+%define prerelease -pre1
 Name:           chrony
-Version:        1.25
-Release:        2%{?gitpatch}%{?dist}
+Version:        1.26
+Release:        0.1.pre1%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -51,7 +52,10 @@ export CFLAGS
 export CPPFLAGS="-Ipps"
 export LDFLAGS="-Wl,-z,relro,-z,now"
 
-%configure --docdir=%{_docdir} --enable-forcednsretry
+%configure \
+        --docdir=%{_docdir} \
+        --enable-forcednsretry \
+        --with-sendmail=%{_sbindir}/sendmail
 make %{?_smp_mflags} getdate all docs
 
 %install
