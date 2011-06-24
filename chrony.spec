@@ -17,6 +17,7 @@ Source5:        chrony.logrotate
 Source6:        timepps.h
 Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
+Source9:        chrony-wait.service
 %{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -81,6 +82,8 @@ install -m 755 -p %{SOURCE7} \
         $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
 install -m 755 -p %{SOURCE8} \
         $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d/chrony.sh
+install -m 644 -p %{SOURCE9} \
+        $RPM_BUILD_ROOT/lib/systemd/system/chrony-wait.service
 
 touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 
@@ -106,8 +109,9 @@ fi
 
 %preun
 if [ "$1" -eq 0 ]; then
-        /bin/systemctl --no-reload disable chronyd.service &> /dev/null
-        /bin/systemctl stop chronyd.service &> /dev/null
+        /bin/systemctl --no-reload disable \
+                chrony-wait.service chronyd.service &> /dev/null
+        /bin/systemctl stop chrony-wait.service chronyd.service &> /dev/null
         /sbin/install-info --delete %{_infodir}/chrony.info.gz \
                 %{_infodir}/dir &> /dev/null
 fi
@@ -132,7 +136,7 @@ fi
 %{_sbindir}/chronyd
 %{_libexecdir}/chrony-helper
 %{_infodir}/chrony.info*
-/lib/systemd/system/chronyd.service
+/lib/systemd/system/chrony*.service
 %{_mandir}/man[158]/%{name}*.[158]*
 %dir %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony
 %ghost %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony/drift
