@@ -3,6 +3,6 @@
     nocreate
     sharedscripts
     postrotate
-        /sbin/service chronyd cyclelogs 2> /dev/null > /dev/null || true
+        /usr/libexec/chrony-helper command cyclelogs > /dev/null 2>&1 || true
     endscript
 }

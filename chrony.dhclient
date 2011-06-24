@@ -5,7 +5,7 @@ SERVERFILE=$SAVEDIR/chrony.servers.$interface
 chrony_config() {
 	rm -f $SERVERFILE
 	if [ "$PEERNTP" != "no" ]; then
-		/etc/init.d/chronyd command "$(
+		/usr/libexec/chrony-helper command "$(
 			for server in $new_ntp_servers; do
 				echo "add server $server $NTPSERVERARGS"
 				echo "$server $NTPSERVERARGS" >> $SERVERFILE
@@ -15,7 +15,7 @@ chrony_config() {
 
 chrony_restore() {
 	if [ -f $SERVERFILE ]; then
-		/etc/init.d/chronyd command "$(
+		/usr/libexec/chrony-helper command "$(
 			while read server serverargs; do
 				echo "delete $server"
 			done < $SERVERFILE)" &> /dev/null

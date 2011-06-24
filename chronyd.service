@@ -4,9 +4,9 @@ After=syslog.target ntpdate.service
 Conflicts=ntpd.service
 
 [Service]
-ExecStartPre=/etc/init.d/chronyd generate-commandkey
+ExecStartPre=/usr/libexec/chrony-helper generate-commandkey
 ExecStart=/usr/sbin/chronyd -n -u chrony
-ExecStartPost=/etc/init.d/chronyd add-dhclient-servers
+ExecStartPost=/usr/libexec/chrony-helper add-dhclient-servers
 
 [Install]
 WantedBy=multi-user.target
