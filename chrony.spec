@@ -144,6 +144,12 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Jun 24 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.26-0.1.pre1
+- update to 1.26-pre1
+- fix service name in %%triggerun
+- drop SysV init script
+- add chrony-wait service
+
 * Fri May 06 2011 Bill Nottingham <notting@redhat.com> 1.25-2
 - fix systemd scriptlets for the upgrade case
 
