@@ -4,8 +4,9 @@ After=syslog.target ntpdate.service
 Conflicts=ntpd.service
 
 [Service]
+EnvironmentFile=-/etc/sysconfig/chronyd
 ExecStartPre=/usr/libexec/chrony-helper generate-commandkey
-ExecStart=/usr/sbin/chronyd -n -u chrony
+ExecStart=/usr/sbin/chronyd -n -u chrony $OPTIONS
 ExecStartPost=/usr/libexec/chrony-helper add-dhclient-servers
 
 [Install]
