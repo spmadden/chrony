@@ -12,15 +12,13 @@ Source2:        chrony.keys
 Source3:        chronyd.service
 Source4:        chrony.helper
 Source5:        chrony.logrotate
-# wget -O timepps.h 'http://gitweb.enneenne.com/?p=linuxpps;a=blob_plain;f=Documentation/pps/timepps.h;hb=b895b1a28558b83907c691aad231c41a0d14df88'
-Source6:        timepps.h
 Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
 Source9:        chrony-wait.service
 %{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libcap-devel libedit-devel bison texinfo
+BuildRequires:  libcap-devel libedit-devel pps-tools-devel bison texinfo
 
 Requires(pre):  shadow-utils
 Requires(post): systemd-units info chkconfig
@@ -36,7 +34,6 @@ clocks, system real-time clock or manual input as time references.
 
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease}
-mkdir pps; cp -p %{SOURCE6} pps
 %{?gitpatch:%patch0 -p1}
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
@@ -49,7 +46,6 @@ CFLAGS="$CFLAGS -pie -fPIE"
 CFLAGS="$CFLAGS -pie -fpie"
 %endif
 export CFLAGS
-export CPPFLAGS="-Ipps"
 export LDFLAGS="-Wl,-z,relro,-z,now"
 
 %configure \
