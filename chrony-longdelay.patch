@@ -1,0 +1,67 @@
+commit e0c9ed44f90940b24f1c18d70452ea0ee65960be
+Author: Miroslav Lichvar <mlichvar@redhat.com>
+Date:   Fri Aug 12 14:49:23 2011 +0200
+
+    Limit skew used in NTP test4
+    
+    With iburst and very jittery sources the source skew can reach very high
+    values which makes the NTP test4 fail even with relatively small delays.
+    Limit the skew to 2000 ppm to avoid getting state where a source is unable
+    to accept more than first three iburst samples.
+
+diff --git a/sourcestats.c b/sourcestats.c
+index 257b6f5..88e9911 100644
+--- a/sourcestats.c
++++ b/sourcestats.c
+@@ -528,6 +528,14 @@ SST_GetFrequencyRange(SST_Stats inst,
+   skew = inst->skew;
+   *lo = freq - skew;
+   *hi = freq + skew;
++
++  /* This function is currently used only to determine the values of delta
++     and epsilon in the ntp_core module. Limit the skew to a reasonable maximum
++     to avoid failing the dispersion test too easily. */
++  if (skew > WORST_CASE_FREQ_BOUND) {
++    *lo = -WORST_CASE_FREQ_BOUND;
++    *hi = WORST_CASE_FREQ_BOUND;
++  }
+ }
+ 
+ /* ================================================== */
+
+commit 27b0b5824a492e97232336eefc6bbf1476eb8e26
+Author: Miroslav Lichvar <mlichvar@redhat.com>
+Date:   Fri Aug 12 15:34:11 2011 +0200
+
+    Disable maxdelayratio test by default
+    
+    Change default maxdelayratio from 16384.0 to 0.0. A value larger
+    than 1.0 is required to enable the test.
+
+diff --git a/ntp_core.c b/ntp_core.c
+index d2ba6d8..39dc02f 100644
+--- a/ntp_core.c
++++ b/ntp_core.c
+@@ -932,7 +932,8 @@ receive_packet(NTP_Packet *message, struct timeval *now, double now_err, NCR_Ins
+      round trip delay to the minimum one currently in the stats data
+      register is less than an administrator-defined value */
+ 
+-  if (fabs(delta/SRC_MinRoundTripDelay(inst->source)) > inst->max_delay_ratio) {
++  if (inst->max_delay_ratio > 1.0 &&
++      fabs(delta/SRC_MinRoundTripDelay(inst->source)) > inst->max_delay_ratio) {
+     test4b = 0; /* Failed */
+   } else {
+     test4b = 1; /* Success */
+diff --git a/srcparams.h b/srcparams.h
+index 19eadcf..4e01d3b 100644
+--- a/srcparams.h
++++ b/srcparams.h
+@@ -50,7 +50,7 @@ typedef struct {
+ #define SRC_DEFAULT_MAXPOLL 10
+ #define SRC_DEFAULT_PRESEND_MINPOLL 0
+ #define SRC_DEFAULT_MAXDELAY 16.0
+-#define SRC_DEFAULT_MAXDELAYRATIO 16384.0
++#define SRC_DEFAULT_MAXDELAYRATIO 0.0
+ #define SRC_DEFAULT_MAXDELAYDEVRATIO 10.0
+ #define SRC_DEFAULT_MINSTRATUM 0
+ #define SRC_DEFAULT_POLLTARGET 6
