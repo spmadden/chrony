@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.26
-Release:        1%{?gitpatch}%{?dist}
+Release:        2%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -140,6 +140,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Aug 15 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.26-2
+- fix iburst with very high jitters and long delays
+- use timepps header from pps-tools-devel
+
 * Wed Jul 13 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.26-1
 - update to 1.26
 - read options from sysconfig file if it exists
