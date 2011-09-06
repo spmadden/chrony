@@ -1,6 +1,7 @@
+%define gitpatch 20110831gitb088b7
 Name:           chrony
 Version:        1.26
-Release:        2%{?gitpatch}%{?dist}
+Release:        3%{?gitpatch:.%{gitpatch}}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -16,7 +17,6 @@ Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
 Source9:        chrony-wait.service
 %{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
-Patch1:         chrony-longdelay.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel libedit-devel pps-tools-devel bison texinfo
@@ -36,7 +36,6 @@ clocks, system real-time clock or manual input as time references.
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease}
 %{?gitpatch:%patch0 -p1}
-%patch1 -p1 -b .longdelay
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
