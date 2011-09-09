@@ -1,6 +1,7 @@
+%define gitpatch 20110831gitb088b7
 Name:           chrony
 Version:        1.26
-Release:        1%{?gitpatch}%{?dist}
+Release:        3%{?gitpatch:.%{gitpatch}}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -138,6 +139,16 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Sep 06 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.26-3.20110831gitb088b7
+- update to git snapshot 20110831gitb088b7
+- on first start generate password with 16 chars
+- change systemd service type to forking
+- add forced-command to chrony-helper (#735821)
+
+* Mon Aug 15 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.26-2
+- fix iburst with very high jitters and long delays
+- use timepps header from pps-tools-devel
+
 * Wed Jul 13 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.26-1
 - update to 1.26
 - read options from sysconfig file if it exists
