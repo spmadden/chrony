@@ -1,3 +1,9 @@
+chrony (1.24-3.1ubuntu1) precise; urgency=low
+
+  * Fix -Werror=format-security issues
+
+ -- Bhavani Shankar <bhavi@ubuntu.com>  Sun, 23 Oct 2011 20:39:12 +0530
+
 chrony (1.24-3.1) unstable; urgency=low
 
   * Non-maintainer upload.
