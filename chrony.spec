@@ -1,7 +1,7 @@
 %define gitpatch 20110831gitb088b7
 Name:           chrony
 Version:        1.26
-Release:        3%{?gitpatch:.%{gitpatch}}%{?dist}
+Release:        4%{?gitpatch:.%{gitpatch}}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -139,6 +139,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Jan 12 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.26-4.20110831gitb088b7
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
 * Tue Sep 06 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.26-3.20110831gitb088b7
 - update to git snapshot 20110831gitb088b7
 - on first start generate password with 16 chars
