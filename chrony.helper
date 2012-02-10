@@ -4,6 +4,7 @@ config=/etc/chrony.conf
 keyfile=/etc/chrony.keys
 chronyc=/usr/bin/chronyc
 dhclient_servers=/var/lib/dhclient/chrony.servers.*
+dhclient_added_servers=/var/lib/dhclient/chrony.added_servers
 service_name=chronyd.service
 
 get_key() {
@@ -36,14 +37,43 @@ generate_commandkey() {
     [ -n "$commandkey" ] && echo "$commandkeyid $commandkey" >> $keyfile
 }
 
+update_dhclient_added_servers() {
+    new_servers=$(echo "$1" | sort -u)
+    old_servers=$(cat $dhclient_added_servers 2> /dev/null)
+    [ "$old_servers" = "$new_servers" ] && return 0
+    [ -n "$new_servers" ] && echo "$new_servers" > $dhclient_added_servers ||
+        rm -f $dhclient_added_servers
+}
+
 add_dhclient_servers() {
-    command=$(cat $dhclient_servers 2> /dev/null |
-        while read server serverargs; do
-            echo "add server $server $serverargs"
-        done)
-    if [ -n "$command" ]; then
-        chrony_command "$command" &> /dev/null
-    fi
+    shopt -s nullglob
+    servers_files=($dhclient_servers)
+    shopt -u nullglob
+    (( ${#servers_files[*]} )) || return 0
+
+    added_servers=$(
+        cat $dhclient_added_servers 2> /dev/null
+        cat ${servers_files[*]} |
+            while read server serverargs; do
+                chrony_command "add server $server $serverargs" &> /dev/null &&
+                    echo "$server"
+            done)
+    update_dhclient_added_servers "$added_servers"
+}
+
+remove_dhclient_servers() {
+    [ -f $dhclient_added_servers ] || return 0
+    all_servers=$(
+        cat $dhclient_servers 2> /dev/null |
+            while read server serverargs; do
+                echo "$server"
+            done | sort -u)
+    echo "$all_servers" | comm -23 $dhclient_added_servers - |
+        while read server; do
+            chrony_command "delete $server" &> /dev/null
+        done
+    added_servers=$(echo "$all_servers" | comm -12 $dhclient_added_servers -)
+    update_dhclient_added_servers "$added_servers"
 }
 
 is_running() {
@@ -57,6 +87,12 @@ case "$1" in
     add-dhclient-servers)
         add_dhclient_servers
         ;;
+    remove-dhclient-servers)
+        remove_dhclient_servers
+        ;;
+    is-running)
+        is_running
+        ;;
     command)
         is_running && chrony_command "$2"
         ;;
@@ -64,7 +100,7 @@ case "$1" in
         chrony_command "$2"
         ;;
     *)
-        echo $"Usage: $0 {generate-commandkey|add-dhclient-servers|command|forced-command}"
+        echo $"Usage: $0 {generate-commandkey|add-dhclient-servers|remove-dhclient-servers|is-running|command|forced-command}"
         exit 2
 esac
 exit $?
