@@ -9,7 +9,7 @@ chrony_config() {
 			for server in $new_ntp_servers; do
 				echo "add server $server $NTPSERVERARGS"
 				echo "$server $NTPSERVERARGS" >> $SERVERFILE
-			done)" &> /dev/null
+			done)" &> /dev/null || :
 	fi
 }
 
