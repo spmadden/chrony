@@ -1,7 +1,7 @@
 %define gitpatch 20110831gitb088b7
 Name:           chrony
 Version:        1.26
-Release:        4%{?gitpatch:.%{gitpatch}}%{?dist}
+Release:        5%{?gitpatch:.%{gitpatch}}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -139,6 +139,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Feb 10 2012 Miroslav Lichvar <mlichvar@redhat.com> 1.26-5.20110831gitb088b7
+- improve chrony-helper to keep track of servers added from DHCP (#787042)
+- fix dhclient script to always return with zero exit code (#767859)
+
 * Thu Jan 12 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.26-4.20110831gitb088b7
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
 
