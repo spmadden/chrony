@@ -1,7 +1,7 @@
 %define gitpatch 20110831gitb088b7
 Name:           chrony
 Version:        1.26
-Release:        3%{?gitpatch:.%{gitpatch}}%{?dist}
+Release:        4%{?gitpatch:.%{gitpatch}}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -139,6 +139,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Feb 10 2012 Miroslav Lichvar <mlichvar@redhat.com> 1.26-4.20110831gitb088b7
+- improve chrony-helper to keep track of servers added from DHCP (#787042)
+- fix dhclient script to always return with zero exit code (#767859)
+
 * Tue Sep 06 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.26-3.20110831gitb088b7
 - update to git snapshot 20110831gitb088b7
 - on first start generate password with 16 chars
