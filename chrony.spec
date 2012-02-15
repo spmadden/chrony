@@ -1,7 +1,7 @@
 %define gitpatch 20110831gitb088b7
 Name:           chrony
 Version:        1.26
-Release:        5%{?gitpatch:.%{gitpatch}}%{?dist}
+Release:        6%{?gitpatch:.%{gitpatch}}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -139,6 +139,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Feb 15 2012 Miroslav Lichvar <mlichvar@redhat.com> 1.26-6.20110831gitb088b7
+- remove old servers on DHCP update (#787042)
+
 * Fri Feb 10 2012 Miroslav Lichvar <mlichvar@redhat.com> 1.26-5.20110831gitb088b7
 - improve chrony-helper to keep track of servers added from DHCP (#787042)
 - fix dhclient script to always return with zero exit code (#767859)
