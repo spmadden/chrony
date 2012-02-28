@@ -1,7 +1,7 @@
-%define gitpatch 20110831gitb088b7
+%define prerelease -pre1
 Name:           chrony
-Version:        1.26
-Release:        6%{?gitpatch:.%{gitpatch}}%{?dist}
+Version:        1.27
+Release:        0.1.pre1%{?gitpatch:.%{gitpatch}}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -19,7 +19,7 @@ Source9:        chrony-wait.service
 %{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libcap-devel libedit-devel pps-tools-devel bison texinfo
+BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel bison texinfo
 
 Requires(pre):  shadow-utils
 Requires(post): systemd-units info chkconfig
