@@ -139,6 +139,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Feb 28 2012 Miroslav Lichvar <mlichvar@redhat.com> 1.27-0.1.pre1
+- update to 1.27-pre1
+- generate SHA1 command key instead of MD5
+
 * Wed Feb 15 2012 Miroslav Lichvar <mlichvar@redhat.com> 1.26-6.20110831gitb088b7
 - remove old servers on DHCP update (#787042)
 
