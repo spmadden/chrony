@@ -8,7 +8,8 @@ dhclient_added_servers=/var/lib/dhclient/chrony.added_servers
 service_name=chronyd.service
 
 get_key() {
-    awk '/^[ \t]*'$1'\>/ { print $2; exit }' < $keyfile
+    awk '/^[ \t]*'$1'\>/ { if ($3 == "") print "MD5", $2;
+         else print $2, $3; exit }' < $keyfile
 }
 
 get_commandkeyid() {
@@ -21,8 +22,12 @@ chrony_command() {
     commandkey=$(get_key $commandkeyid)
     [ -z "$commandkey" ] && return 2
 
+    authhash=${commandkey% *}
+    password=${commandkey#* }
+
     $chronyc <<EOF
-password $commandkey
+authhash $authhash
+password $password
 $1
 EOF
 }
@@ -33,8 +38,9 @@ generate_commandkey() {
     commandkey=$(get_key $commandkeyid)
     [ -z "$commandkey" ] || return 0
 
-    commandkey=$(tr -c -d '[\041-\176]' < /dev/urandom | head -c 16)
-    [ -n "$commandkey" ] && echo "$commandkeyid $commandkey" >> $keyfile
+    password=$(tr -c -d '0-9A-F' < /dev/urandom | head -c 40)
+    [ ${#password} -eq 40 ] &&
+        echo "$commandkeyid SHA1 HEX:$password" >> $keyfile
 }
 
 update_dhclient_added_servers() {
