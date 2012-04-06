@@ -83,7 +83,7 @@ remove_dhclient_servers() {
 }
 
 is_running() {
-    systemctl status $service_name &> /dev/null
+    systemctl is-active -q $service_name
 }
 
 case "$1" in
