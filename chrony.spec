@@ -1,7 +1,7 @@
 %define prerelease -pre1
 Name:           chrony
 Version:        1.27
-Release:        0.2.pre1%{?gitpatch:.%{gitpatch}}%{?dist}
+Release:        0.3.pre1%{?gitpatch:.%{gitpatch}}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -144,6 +144,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Apr 27 2012 Miroslav Lichvar <mlichvar@redhat.com> 1.27-0.3.pre1
+- update service file for systemd-timedated-ntp target (#816493)
+
 * Fri Apr 06 2012 Miroslav Lichvar <mlichvar@redhat.com> 1.27-0.2.pre1
   use systemctl is-active instead of status in chrony-helper (#794771)
 
