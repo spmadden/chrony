@@ -2,7 +2,6 @@
 Description=NTP client/server
 After=syslog.target ntpdate.service
 Conflicts=ntpd.service
-BindTo=systemd-timedated-ntp.target
 
 [Service]
 Type=forking

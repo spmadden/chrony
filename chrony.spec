@@ -74,8 +74,7 @@ mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/{lib,log}/chrony
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d
 mkdir -p $RPM_BUILD_ROOT%{_libexecdir}
-mkdir -p $RPM_BUILD_ROOT/lib/systemd/system/systemd-timedated-ntp.target.wants
-
+mkdir -p $RPM_BUILD_ROOT/lib/systemd/{system,ntp-units.d}
 
 install -m 644 -p chrony.conf $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
 install -m 640 -p %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
@@ -91,8 +90,7 @@ install -m 644 -p %{SOURCE9} \
 
 touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 
-ln -sf ../chronyd.service \
-        $RPM_BUILD_ROOT/lib/systemd/system/systemd-timedated-ntp.target.wants
+echo 'chronyd.service' > $RPM_BUILD_ROOT/lib/systemd/ntp-units.d/50-chronyd.list
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -143,8 +141,8 @@ fi
 %{_sbindir}/chronyd
 %{_libexecdir}/chrony-helper
 %{_infodir}/chrony.info*
+/lib/systemd/ntp-units.d
 /lib/systemd/system/chrony*.service
-/lib/systemd/system/systemd-timedated-ntp.target.wants
 %{_mandir}/man[158]/%{name}*.[158]*
 %dir %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony
 %ghost %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony/drift
