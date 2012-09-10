@@ -33,11 +33,19 @@ systems with intermittent internet connections, but it also works well
 in permanently connected environments. It can use also hardware reference
 clocks, system real-time clock or manual input as time references.
 
+%if 0%{!?vendorzone:1}
+%{?fedora: %global vendorzone fedora.}
+%{?rhel: %global vendorzone rhel.}
+%endif
+
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease}
 %{?gitpatch:%patch0 -p1}
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
+
+sed -e 's|VENDORZONE\.|%{vendorzone}|' < %{SOURCE1} > chrony.conf
+touch -r %{SOURCE1} chrony.conf
 
 %build
 CFLAGS="$RPM_OPT_FLAGS"
@@ -69,7 +77,7 @@ mkdir -p $RPM_BUILD_ROOT%{_libexecdir}
 mkdir -p $RPM_BUILD_ROOT/lib/systemd/system/systemd-timedated-ntp.target.wants
 
 
-install -m 644 -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
+install -m 644 -p chrony.conf $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
 install -m 640 -p %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
 install -m 644 -p %{SOURCE3} $RPM_BUILD_ROOT/lib/systemd/system/chronyd.service
 install -m 755 -p %{SOURCE4} $RPM_BUILD_ROOT%{_libexecdir}/chrony-helper
