@@ -103,31 +103,39 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 :
 
 %post
+%if 0%{?systemd_post:1}
+%systemd_post chronyd.service chrony-wait.service
+%else
 /bin/systemctl daemon-reload &> /dev/null
+%endif
 /sbin/install-info %{_infodir}/chrony.info.gz %{_infodir}/dir &> /dev/null
 :
 
-%triggerun -- chrony < 1.25
-if /sbin/chkconfig --level 3 chronyd; then
-        /bin/systemctl enable chronyd.service &> /dev/null
-fi
-:
-
 %preun
+%if 0%{?systemd_preun:1}
+%systemd_preun chronyd.service chrony-wait.service
+%else
 if [ "$1" -eq 0 ]; then
         /bin/systemctl --no-reload disable \
                 chrony-wait.service chronyd.service &> /dev/null
         /bin/systemctl stop chrony-wait.service chronyd.service &> /dev/null
+fi
+%endif
+if [ "$1" -eq 0 ]; then
         /sbin/install-info --delete %{_infodir}/chrony.info.gz \
                 %{_infodir}/dir &> /dev/null
 fi
 :
 
 %postun
+%if 0%{?systemd_postun_with_restart:1}
+%systemd_postun_with_restart chronyd.service
+%else
 /bin/systemctl daemon-reload &> /dev/null
 if [ "$1" -ge 1 ]; then
         /bin/systemctl try-restart chronyd.service &> /dev/null
 fi
+%endif
 :
 
 %files
