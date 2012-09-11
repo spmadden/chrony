@@ -11,6 +11,7 @@ Type=oneshot
 # clock correction to be less than 0.1 seconds
 ExecStart=/usr/bin/chronyc waitsync 60 0.1
 RemainAfterExit=yes
+StandardOutput=null
 
 [Install]
 WantedBy=multi-user.target
