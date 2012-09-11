@@ -1,4 +1,5 @@
 %define prerelease -pre1
+%define gitpatch git1ca844
 Name:           chrony
 Version:        1.27
 Release:        0.4.pre1%{?gitpatch:.%{gitpatch}}%{?dist}
@@ -16,7 +17,7 @@ Source5:        chrony.logrotate
 Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
 Source9:        chrony-wait.service
-%{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
+%{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel bison texinfo
