@@ -2,7 +2,7 @@
 %define gitpatch git1ca844
 Name:           chrony
 Version:        1.27
-Release:        0.4.pre1%{?gitpatch:.%{gitpatch}}%{?dist}
+Release:        0.5.pre1%{?gitpatch:.%{gitpatch}}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -159,6 +159,13 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Sep 11 2012 Miroslav Lichvar <mlichvar@redhat.com> 1.27-0.5.pre1.git1ca844
+- update to git snapshot 1ca844
+- update systemd integration (#846303)
+- use systemd macros if available (#850151)
+- use correct vendor pool.ntp.org zone on RHEL (#845981)
+- don't log output of chrony-wait service
+
 * Wed Jul 18 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.27-0.4.pre1
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
 
