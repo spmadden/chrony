@@ -1,3 +1,19 @@
+chrony (1.24-3.1+deb7u1) wheezy; urgency=medium
+
+  * Non-maintainer upload.
+
+  * Fix: Remove obsolete check for supported kernel versions (rtc_linux.c)
+      to run also for kernel versions 3.0 and higher. Since kernel 2.2 all
+      kernels have RTC support. Backport of upstream patch for version 1.26.
+      Solves: #642209 for version 1.24. Closes: #691340
+
+  * Fix: Enable full support for kernel versions 3.0 and higher (sys_linux.c)
+      and ignore nonexistent patch level of kernel version (which come with
+      some kernel versions). Backport of upstream patch for version 1.26.
+      Solves: #628919 for version 1.24. Closes: #689012
+
+ -- Joachim Wiedorn <ad_debian@joonet.de>  Fri, 16 Nov 2012 10:01:01 +0100
+
 chrony (1.24-3.1) unstable; urgency=low
 
   * Non-maintainer upload.

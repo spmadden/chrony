@@ -735,7 +735,12 @@ get_version_specific_details(void)
   if (uname(&uts) < 0) {
     LOG_FATAL(LOGF_SysLinux, "Cannot uname(2) to get kernel version, sorry.");
   }
-  if (sscanf(uts.release, "%d.%d.%d", &major, &minor, &patch) != 3) {
+
+  /* default patch level if not defined */
+  patch = 0;
+
+  /* first check about kernel version */
+  if (sscanf(uts.release, "%d.%d.%d", &major, &minor, &patch) < 2) {
     LOG_FATAL(LOGF_SysLinux, "Cannot read information from uname, sorry");
   }
 
@@ -746,30 +751,8 @@ get_version_specific_details(void)
   version_patchlevel = patch;
   
   switch (major) {
-    case 1:
-      /* Does Linux v1.x even support HZ!=100? */
-      switch (minor) {
-        case 2:
-          if (patch == 13) {
-            freq_scale = (hz==100) ? (128.0 / 100.0) : basic_freq_scale ; /* I _think_! */
-	    have_readonly_adjtime = 1;
-          } else {
-            LOG_FATAL(LOGF_SysLinux, "Kernel version not supported yet, sorry.");
-          }
-          break;
-        case 3:
-          /* I guess the change from the 1.2.x scaling to the 2.0.x
-             scaling must have happened during 1.3 development.  I
-             haven't a clue where though, until someone looks it
-             up. */
-          LOG_FATAL(LOGF_SysLinux, "Kernel version not supported yet, sorry.");
-          break;
-        default:
-          LOG_FATAL(LOGF_SysLinux, "Kernel version not supported yet, sorry.");
-          break;
-      }
-      break;
     case 2:
+      /* for kernel 2.x */
       switch (minor) {
         case 0:
           if (patch < 32) {
@@ -807,20 +790,15 @@ get_version_specific_details(void)
             have_readonly_adjtime = 0;
             break;
           }
-          /* Let's be optimistic that these will be the same until proven
-             otherwise :-) */
-        case 7:
-        case 8:
+        default:
           /* These don't need scaling */
           freq_scale = 1.0;
           have_readonly_adjtime = 2;
           break;
-        default:
-          LOG_FATAL(LOGF_SysLinux, "Kernel version not supported yet, sorry.");
       }
       break;
     case 3:
-      /* These don't need scaling (treat like 2.6.28 and later) */
+      /* for kernel 3.x: These don't need scaling */
       freq_scale = 1.0;
       have_readonly_adjtime = 2;
       break;
@@ -867,16 +845,6 @@ SYS_Linux_Finalise(void)
   /* Must *NOT* leave a fast slew running - clock would drift way off
      if the daemon is not restarted */
   abort_slew();
-}
-
-/* ================================================== */
-
-void
-SYS_Linux_GetKernelVersion(int *major, int *minor, int *patchlevel)
-{
-  *major = version_major;
-  *minor = version_minor;
-  *patchlevel = version_patchlevel;
 }
 
 /* ================================================== */
