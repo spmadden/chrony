@@ -150,6 +150,12 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Feb 01 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.27-1
+- update to 1.27
+- start chrony-wait service with chronyd
+- start chronyd service after sntp
+- remove obsolete macros
+
 * Tue Sep 11 2012 Miroslav Lichvar <mlichvar@redhat.com> 1.27-0.5.pre1.git1ca844
 - update to git snapshot 1ca844
 - update systemd integration (#846303)
