@@ -1,8 +1,6 @@
-%define prerelease -pre1
-%define gitpatch git1ca844
 Name:           chrony
 Version:        1.27
-Release:        0.5.pre1%{?gitpatch:.%{gitpatch}}%{?dist}
+Release:        1%{?gitpatch:.%{gitpatch}}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -22,7 +20,7 @@ Source9:        chrony-wait.service
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel bison texinfo
 
 Requires(pre):  shadow-utils
-Requires(post): systemd-units info chkconfig
+Requires(post): systemd-units info
 Requires(preun): systemd-units info
 Requires(postun): systemd-units
 
@@ -50,12 +48,12 @@ touch -r %{SOURCE1} chrony.conf
 %build
 CFLAGS="$RPM_OPT_FLAGS"
 %ifarch %{sparc}
-CFLAGS="$CFLAGS -pie -fPIE"
+CFLAGS="$CFLAGS -fPIE"
 %else
-CFLAGS="$CFLAGS -pie -fpie"
+CFLAGS="$CFLAGS -fpie"
 %endif
 export CFLAGS
-export LDFLAGS="-Wl,-z,relro,-z,now"
+export LDFLAGS="-pie -Wl,-z,relro,-z,now"
 
 %configure \
         --docdir=%{_docdir} \
