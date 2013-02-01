@@ -18,7 +18,6 @@ Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
 Source9:        chrony-wait.service
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel bison texinfo
 
@@ -64,8 +63,6 @@ export LDFLAGS="-Wl,-z,relro,-z,now"
 make %{?_smp_mflags} getdate all docs
 
 %install
-rm -rf $RPM_BUILD_ROOT
-
 make install install-docs DESTDIR=$RPM_BUILD_ROOT
 
 rm -rf $RPM_BUILD_ROOT%{_docdir}
@@ -92,9 +89,6 @@ install -m 644 -p %{SOURCE9} \
 touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 
 echo 'chronyd.service' > $RPM_BUILD_ROOT/lib/systemd/ntp-units.d/50-chronyd.list
-
-%clean
-rm -rf $RPM_BUILD_ROOT
 
 %pre
 getent group chrony > /dev/null || /usr/sbin/groupadd -r chrony
@@ -139,7 +133,6 @@ fi
 :
 
 %files
-%defattr(-,root,root,-)
 %doc COPYING NEWS README chrony.txt faq.txt examples/*
 %config(noreplace) %{_sysconfdir}/chrony.conf
 %config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
