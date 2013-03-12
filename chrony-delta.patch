@@ -1,0 +1,24 @@
+commit 0bb772c575b3842c38e6a58591ecea94449e9bae
+Author: Miroslav Lichvar <mlichvar@redhat.com>
+Date:   Fri Mar 8 13:54:10 2013 +0100
+
+    Fix delta calculation with extreme frequency offsets
+    
+    This should prevent chronyd from getting stuck and refusing new samples
+    due to failing test4 when the current measured frequency offset is close
+    to 1.0. That can happen when the system clock is stepped forward behind
+    chronyd's back.
+
+diff --git a/ntp_core.c b/ntp_core.c
+index 0fb93e1..be9f613 100644
+--- a/ntp_core.c
++++ b/ntp_core.c
+@@ -793,7 +793,7 @@ receive_packet(NTP_Packet *message, struct timeval *now, double now_err, NCR_Ins
+        assuming worst case frequency error between us and the other
+        source */
+     
+-    delta = local_interval - remote_interval / (1.0 - source_freq_lo);
++    delta = local_interval - remote_interval * (1.0 + source_freq_lo);
+     
+     /* Calculate theta.  Following the NTP definition, this is negative
+        if we are fast of the remote source. */
