@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.27
-Release:        1%{?gitpatch:.%{gitpatch}}%{?dist}
+Release:        2%{?gitpatch:.%{gitpatch}}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -152,6 +152,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Mar 12 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.27-2
+- suppress error messages from tr when generating key (#907914)
+- fix delta calculation with extreme frequency offsets
+
 * Fri Feb 01 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.27-1
 - update to 1.27
 - start chrony-wait service with chronyd
