@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.27
-Release:        2%{?gitpatch:.%{gitpatch}}%{?dist}
+Release:        3%{?gitpatch:.%{gitpatch}}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -132,6 +132,13 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu May 09 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.27-3
+- disable chrony-wait service by default (#961047)
+- drop old systemd scriptlets
+- don't own ntp-units.d directory
+- move files from /lib
+- remove unncessary dependency on syslog target
+
 * Tue Mar 12 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.27-2
 - suppress error messages from tr when generating key (#907914)
 - fix delta calculation with extreme frequency offsets
