@@ -72,23 +72,23 @@ mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/{lib,log}/chrony
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d
 mkdir -p $RPM_BUILD_ROOT%{_libexecdir}
-mkdir -p $RPM_BUILD_ROOT/lib/systemd/{system,ntp-units.d}
+mkdir -p $RPM_BUILD_ROOT{%{_unitdir},%{_prefix}/lib/systemd/ntp-units.d}
 
 install -m 644 -p chrony.conf $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
 install -m 640 -p %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
-install -m 644 -p %{SOURCE3} $RPM_BUILD_ROOT/lib/systemd/system/chronyd.service
+install -m 644 -p %{SOURCE3} $RPM_BUILD_ROOT%{_unitdir}/chronyd.service
 install -m 755 -p %{SOURCE4} $RPM_BUILD_ROOT%{_libexecdir}/chrony-helper
 install -m 644 -p %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/chrony
 install -m 755 -p %{SOURCE7} \
         $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
 install -m 755 -p %{SOURCE8} \
         $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d/chrony.sh
-install -m 644 -p %{SOURCE9} \
-        $RPM_BUILD_ROOT/lib/systemd/system/chrony-wait.service
+install -m 644 -p %{SOURCE9} $RPM_BUILD_ROOT%{_unitdir}/chrony-wait.service
 
 touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 
-echo 'chronyd.service' > $RPM_BUILD_ROOT/lib/systemd/ntp-units.d/50-chronyd.list
+echo 'chronyd.service' > \
+        $RPM_BUILD_ROOT%{_prefix}/lib/systemd/ntp-units.d/50-chronyd.list
 
 %pre
 getent group chrony > /dev/null || /usr/sbin/groupadd -r chrony
@@ -123,8 +123,8 @@ fi
 %{_sbindir}/chronyd
 %{_libexecdir}/chrony-helper
 %{_infodir}/chrony.info*
-/lib/systemd/ntp-units.d
-/lib/systemd/system/chrony*.service
+%{_prefix}/lib/systemd/ntp-units.d
+%{_unitdir}/chrony*.service
 %{_mandir}/man[158]/%{name}*.[158]*
 %dir %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony
 %ghost %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony/drift
