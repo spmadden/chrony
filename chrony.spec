@@ -123,7 +123,7 @@ fi
 %{_sbindir}/chronyd
 %{_libexecdir}/chrony-helper
 %{_infodir}/chrony.info*
-%{_prefix}/lib/systemd/ntp-units.d
+%{_prefix}/lib/systemd/ntp-units.d/*.list
 %{_unitdir}/chrony*.service
 %{_mandir}/man[158]/%{name}*.[158]*
 %dir %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony
