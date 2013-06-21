@@ -1,6 +1,7 @@
+%global prerelease -pre1
 Name:           chrony
-Version:        1.27
-Release:        3%{?gitpatch:.%{gitpatch}}%{?dist}
+Version:        1.28
+Release:        0.1.pre1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -16,7 +17,6 @@ Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
 Source9:        chrony-wait.service
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
-Patch1:         chrony-delta.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel bison texinfo
 
@@ -40,7 +40,6 @@ clocks, system real-time clock or manual input as time references.
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease}
 %{?gitpatch:%patch0 -p1}
-%patch1 -p1 -b .delta
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
