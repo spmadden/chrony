@@ -131,6 +131,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Jun 21 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.28-0.1.pre1
+- update to 1.28-pre1
+- listen for commands only on localhost by default
+
 * Thu May 09 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.27-3
 - disable chrony-wait service by default (#961047)
 - drop old systemd scriptlets
