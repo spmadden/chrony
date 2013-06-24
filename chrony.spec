@@ -1,7 +1,7 @@
 %global prerelease -pre1
 Name:           chrony
 Version:        1.28
-Release:        0.1.pre1%{?dist}
+Release:        0.2.pre1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -132,6 +132,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Jun 24 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.28-0.2.pre1
+- buildrequire systemd-units
+
 * Fri Jun 21 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.28-0.1.pre1
 - update to 1.28-pre1
 - listen for commands only on localhost by default
