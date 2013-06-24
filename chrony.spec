@@ -18,7 +18,8 @@ Source8:        chrony.dhclient
 Source9:        chrony-wait.service
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
 
-BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel bison texinfo
+BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
+BuildRequires:  bison texinfo systemd-units
 
 Requires(pre):  shadow-utils
 Requires(post): systemd info
