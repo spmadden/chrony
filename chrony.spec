@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.28
-Release:        0.2.pre1%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -131,6 +131,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Jul 17 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.28-1
+- update to 1.28
+- change default makestep limit to 10 seconds
+
 * Mon Jun 24 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.28-0.2.pre1
 - buildrequire systemd-units
 
