@@ -1,4 +1,3 @@
-%global prerelease -pre1
 Name:           chrony
 Version:        1.28
 Release:        0.2.pre1%{?dist}
