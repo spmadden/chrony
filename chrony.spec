@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.28
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -131,6 +131,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.28-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
 * Wed Jul 17 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.28-1
 - update to 1.28
 - change default makestep limit to 10 seconds
