@@ -1,5 +1,5 @@
 Name:           chrony
-Version:        1.28
+Version:        1.29
 Release:        2%{?dist}
 Summary:        An NTP client/server
 
