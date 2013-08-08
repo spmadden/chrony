@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.29
-Release:        2%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -131,6 +131,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Aug 08 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.29-1
+- update to 1.29 (CVE-2012-4502, CVE-2012-4503)
+
 * Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.28-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
 
