@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.25
-Release:        2%{?gitpatch}%{?dist}
+Release:        3%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -131,6 +131,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Aug 09 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.25-3
+- fix buffer overflow when processing crafted command packets (CVE-2012-4502)
+- don't send uninitialized data in command replies (CVE-2012-4503)
+
 * Thu May 19 2011 Miroslav Lichvar <mlichvar@redhat.com> 1.25-2
 - bump release
 
