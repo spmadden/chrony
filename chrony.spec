@@ -15,6 +15,7 @@ Source5:        chrony.logrotate
 # wget -O timepps.h 'http://gitweb.enneenne.com/?p=linuxpps;a=blob_plain;f=Documentation/pps/timepps.h;hb=b895b1a28558b83907c691aad231c41a0d14df88'
 %{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
 Patch1:         chrony-cve-2012-4502.patch
+Patch2:         chrony-cve-2012-4503.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel readline-devel ncurses-devel bison texinfo
@@ -35,6 +36,7 @@ clocks, system real-time clock or manual input as time references.
 %setup -q -n %{name}-%{version}%{?prerelease}
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .cve-2012-4502
+%patch2 -p1 -b .cve-2012-4503
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
