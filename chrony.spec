@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.29
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -131,6 +131,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Oct 03 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.29-2
+- add ordering dependency to not start chronyd before ntpd stopped
+
 * Thu Aug 08 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.29-1
 - update to 1.29 (CVE-2012-4502, CVE-2012-4503)
 
