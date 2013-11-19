@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.29
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -131,6 +131,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Nov 19 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.29-3
+- let systemd remove pid file (#974305)
+
 * Thu Oct 03 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.29-2
 - add ordering dependency to not start chronyd before ntpd stopped
 
