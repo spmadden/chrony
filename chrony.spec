@@ -1,3 +1,5 @@
+%global _hardened_build 1
+
 Name:           chrony
 Version:        1.29
 Release:        3%{?dist}
@@ -47,15 +49,6 @@ sed -e 's|VENDORZONE\.|%{vendorzone}|' < %{SOURCE1} > chrony.conf
 touch -r %{SOURCE1} chrony.conf
 
 %build
-CFLAGS="$RPM_OPT_FLAGS"
-%ifarch %{sparc}
-CFLAGS="$CFLAGS -fPIE"
-%else
-CFLAGS="$CFLAGS -fpie"
-%endif
-export CFLAGS
-export LDFLAGS="-pie -Wl,-z,relro,-z,now"
-
 %configure \
         --docdir=%{_docdir} \
         --with-sendmail=%{_sbindir}/sendmail
