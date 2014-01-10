@@ -52,6 +52,7 @@ chrony_command() {
 password $commandkey
 $1
 EOF
+   return ${PIPESTATUS[0]}
 }
 
 generate_commandkey() {
