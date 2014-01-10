@@ -19,6 +19,8 @@ Source8:        chrony.dhclient
 %{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
 Patch1:         chrony-cve-2012-4502.patch
 Patch2:         chrony-cve-2012-4503.patch
+# Support recent kernels
+Patch3:         chrony-kernel.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel libedit-devel bison texinfo
@@ -41,6 +43,7 @@ mkdir pps; cp -p %{SOURCE6} pps
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .cve-2012-4502
 %patch2 -p1 -b .cve-2012-4503
+%patch3 -p1 -b .kernel
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
