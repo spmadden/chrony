@@ -2,7 +2,7 @@
 
 Name:           chrony
 Version:        1.29.1
-Release:        3%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -124,6 +124,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Jan 31 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.29.1-1
+- update to 1.29.1 (CVE-2014-0021)
+- replace hardening build flags with _hardened_build
+
 * Tue Nov 19 2013 Miroslav Lichvar <mlichvar@redhat.com> 1.29-3
 - let systemd remove pid file (#974305)
 
