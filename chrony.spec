@@ -1,7 +1,7 @@
 %global _hardened_build 1
 
 Name:           chrony
-Version:        1.29
+Version:        1.29.1
 Release:        3%{?dist}
 Summary:        An NTP client/server
 
