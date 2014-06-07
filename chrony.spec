@@ -2,7 +2,7 @@
 
 Name:           chrony
 Version:        1.29.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -124,6 +124,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.29.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
 * Fri Jan 31 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.29.1-1
 - update to 1.29.1 (CVE-2014-0021)
 - replace hardening build flags with _hardened_build
