@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        1.30
-Release:        2%{?dist}
+Release:        0.1.pre1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -136,6 +136,13 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Jun 09 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.30-0.1.pre1
+- update to 1.30-pre1
+- execute test suite
+- avoid calling systemctl in helper script
+- call chronyc directly from logrotate and NM dispatcher scripts
+- add conflict with systemd-timesyncd service
+
 * Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.29.1-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
 
