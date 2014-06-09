@@ -1,7 +1,9 @@
+%global prerelease -pre1
 %global _hardened_build 1
+%bcond_with debug
 
 Name:           chrony
-Version:        1.29.1
+Version:        1.30
 Release:        2%{?dist}
 Summary:        An NTP client/server
 
@@ -50,7 +52,9 @@ touch -r %{SOURCE1} chrony.conf
 
 %build
 %configure \
+%{?with_debug: --enable-debug} \
         --docdir=%{_docdir} \
+        --with-user=chrony \
         --with-sendmail=%{_sbindir}/sendmail
 make %{?_smp_mflags} getdate all docs
 
