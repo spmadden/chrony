@@ -3,10 +3,9 @@
 chronyc=/usr/bin/chronyc
 dhclient_servers=/var/lib/dhclient/chrony.servers.*
 dhclient_added_servers=/var/lib/dhclient/chrony.added_servers
-service_name=chronyd.service
 
 chrony_command() {
-    $chronyc -a -m "$1"
+    $chronyc -a -n -m "$1"
 }
 
 update_dhclient_added_servers() {
@@ -49,7 +48,7 @@ remove_dhclient_servers() {
 }
 
 is_running() {
-    systemctl is-active -q $service_name
+    chrony_command "tracking" &> /dev/null
 }
 
 case "$1" in
@@ -62,10 +61,7 @@ case "$1" in
     is-running)
         is_running
         ;;
-    command)
-        is_running && chrony_command "$2"
-        ;;
-    forced-command)
+    command|forced-command)
         chrony_command "$2"
         ;;
     *)
