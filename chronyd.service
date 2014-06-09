@@ -1,7 +1,7 @@
 [Unit]
 Description=NTP client/server
 After=ntpdate.service sntp.service ntpd.service
-Conflicts=ntpd.service
+Conflicts=ntpd.service systemd-timesyncd.service
 
 [Service]
 Type=forking
