@@ -19,6 +19,8 @@ Source5:        chrony.logrotate
 Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
 Source9:        chrony-wait.service
+# simulator for test suite from https://github.com/mlichvar/clknetsim.git
+Source10:       clknetsim-d5a9a5.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
@@ -42,13 +44,15 @@ clocks, system real-time clock or manual input as time references.
 %endif
 
 %prep
-%setup -q -n %{name}-%{version}%{?prerelease}
+%setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
 sed -e 's|VENDORZONE\.|%{vendorzone}|' < %{SOURCE1} > chrony.conf
 touch -r %{SOURCE1} chrony.conf
+
+mv clknetsim test/simulation
 
 %build
 %configure \
@@ -85,6 +89,10 @@ touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 
 echo 'chronyd.service' > \
         $RPM_BUILD_ROOT%{_prefix}/lib/systemd/ntp-units.d/50-chronyd.list
+
+%check
+make %{?_smp_mflags} -C test/simulation/clknetsim
+make check
 
 %pre
 getent group chrony > /dev/null || /usr/sbin/groupadd -r chrony
