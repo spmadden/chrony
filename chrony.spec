@@ -1,6 +1,6 @@
 %global _hardened_build 1
 %global clknetsim_ver 2fa4c5
-%bcond_with debug
+%bcond_without debug
 
 Name:           chrony
 Version:        1.30
