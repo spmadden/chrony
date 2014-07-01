@@ -1,5 +1,5 @@
-%global prerelease -pre1
 %global _hardened_build 1
+%global clknetsim_ver 2fa4c5
 %bcond_with debug
 
 Name:           chrony
@@ -20,7 +20,7 @@ Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
 Source9:        chrony-wait.service
 # simulator for test suite from https://github.com/mlichvar/clknetsim.git
-Source10:       clknetsim-d5a9a5.tar.gz
+Source10:       clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
@@ -117,7 +117,7 @@ fi
 %systemd_postun_with_restart chronyd.service
 
 %files
-%doc COPYING NEWS README chrony.txt faq.txt examples/*
+%doc COPYING FAQ NEWS README chrony.txt examples/*
 %config(noreplace) %{_sysconfdir}/chrony.conf
 %config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
 %config(noreplace) %{_sysconfdir}/logrotate.d/chrony
