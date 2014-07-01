@@ -1,5 +1,5 @@
 Name:           chrony
-Version:        1.25
+Version:        1.30
 Release:        3%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
@@ -14,8 +14,6 @@ Source4:        chronyd.init
 Source5:        chrony.logrotate
 # wget -O timepps.h 'http://gitweb.enneenne.com/?p=linuxpps;a=blob_plain;f=Documentation/pps/timepps.h;hb=b895b1a28558b83907c691aad231c41a0d14df88'
 %{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
-Patch1:         chrony-cve-2012-4502.patch
-Patch2:         chrony-cve-2012-4503.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libcap-devel readline-devel ncurses-devel bison texinfo
@@ -35,8 +33,6 @@ clocks, system real-time clock or manual input as time references.
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease}
 %{?gitpatch:%patch0 -p1}
-%patch1 -p1 -b .cve-2012-4502
-%patch2 -p1 -b .cve-2012-4503
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -50,7 +46,12 @@ CFLAGS="$CFLAGS -pie -fpie"
 export CFLAGS
 export LDFLAGS="-Wl,-z,relro,-z,now"
 
-%configure --docdir=%{_docdir} --enable-forcednsretry
+%configure \
+        --enable-debug \
+        --docdir=%{_docdir} \
+        --with-user=chrony \
+        --with-sendmail=%{_sbindir}/sendmail
+
 make %{?_smp_mflags} getdate all docs
 
 %install
@@ -102,7 +103,7 @@ fi
 
 %files
 %defattr(-,root,root,-)
-%doc COPYING NEWS README chrony.txt faq.txt examples/*
+%doc COPYING FAQ NEWS README chrony.txt examples/*
 %config(noreplace) %{_sysconfdir}/chrony.conf
 %config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
 %config(noreplace) %{_sysconfdir}/sysconfig/chronyd
