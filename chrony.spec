@@ -1,5 +1,5 @@
 Name:           chrony
-Version:        1.25
+Version:        1.30
 Release:        4%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
@@ -17,13 +17,9 @@ Source6:        timepps.h
 Source7:        chrony.nm-dispatcher
 Source8:        chrony.dhclient
 %{?gitpatch:Patch0: chrony-%{version}-%{gitpatch}.patch.gz}
-Patch1:         chrony-cve-2012-4502.patch
-Patch2:         chrony-cve-2012-4503.patch
-# Support recent kernels
-Patch3:         chrony-kernel.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libcap-devel libedit-devel bison texinfo
+BuildRequires:  libcap-devel libedit-devel nss-devel bison texinfo
 
 Requires(pre):  shadow-utils
 Requires(post): chkconfig info
@@ -41,9 +37,6 @@ clocks, system real-time clock or manual input as time references.
 %setup -q -n %{name}-%{version}%{?prerelease}
 mkdir pps; cp -p %{SOURCE6} pps
 %{?gitpatch:%patch0 -p1}
-%patch1 -p1 -b .cve-2012-4502
-%patch2 -p1 -b .cve-2012-4503
-%patch3 -p1 -b .kernel
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -58,7 +51,12 @@ export CFLAGS
 export CPPFLAGS="-Ipps"
 export LDFLAGS="-Wl,-z,relro,-z,now"
 
-%configure --docdir=%{_docdir} --enable-forcednsretry
+%configure \
+        --enable-debug \
+        --docdir=%{_docdir} \
+        --with-user=chrony \
+        --with-sendmail=%{_sbindir}/sendmail
+
 make %{?_smp_mflags} getdate all docs
 
 %install
@@ -116,7 +114,7 @@ fi
 
 %files
 %defattr(-,root,root,-)
-%doc COPYING NEWS README chrony.txt faq.txt examples/*
+%doc COPYING FAQ NEWS README chrony.txt examples/*
 %config(noreplace) %{_sysconfdir}/chrony.conf
 %config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
 %config(noreplace) %{_sysconfdir}/sysconfig/chronyd
