@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        1.30
-Release:        0.1.pre1%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -136,6 +136,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Jul 01 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.30-1
+- update to 1.30
+- enable debug messages
+
 * Mon Jun 09 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.30-0.1.pre1
 - update to 1.30-pre1
 - execute test suite
