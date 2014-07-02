@@ -1,6 +1,6 @@
 Name:           chrony
 Version:        1.30
-Release:        4%{?gitpatch}%{?dist}
+Release:        1%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -132,6 +132,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Jul 02 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.30-1
+- update to 1.30 (CVE-2014-0021)
+
 * Fri Jan 10 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.25-4
 - support recent kernels (#982803)
 - return chronyc exit code in init script (#827466)
