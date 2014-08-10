@@ -1,3 +1,31 @@
+chrony (1.30-1) unstable; urgency=medium
+
+  * New upstream release with following bugfixes:
+    - Fix crash when selecting with multiple preferred sources.
+    - Fix frequency calculation with large frequency offsets.
+    - Fix code writing drift and RTC files to compile correctly.
+    - Fix -4/-6 options in chronyc to not reset hostname set by -h.
+    - Fix refclock sample validation with sub-second polling interval.
+    - Set stratum correctly with non-PPS SOCK refclock and local stratum.
+    - Modify dispersion accounting in refclocks to prevent PPS getting
+        stuck with large dispersion and not accepting new samples.
+    - Move faq.txt (PHP style) to a plain text file FAQ. Closes: #415729
+
+  * Add gpg signature of upstream developer for use with uscan.
+  * Update debian/watch, add check of upstream gpg signature.
+  * Update all patches.
+
+  * Bugfix: Use /etc/adjtime in postinst script to recognize
+      UTC hardware clock.  Closes: #680498
+  * Use logrotate instead of cron script. Closes: #323966
+  * debian/rules: disable test simulation.
+
+  * debian/control: remove obsolete build dependency to dpkg-dev.
+  * debian/install, debian/dirs, debian/clean: Update.
+  * debian/copyright: Update and add entries.
+
+ -- Joachim Wiedorn <ad_debian@joonet.de>  Sun, 10 Aug 2014 19:10:35 +0200
+
 chrony (1.29.1-1) unstable; urgency=high
 
   * New upstream release with bugfix:
