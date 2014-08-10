@@ -1,5 +1,4 @@
 #!/usr/bin/make -f
-# -*- makefile -*-
 
 BASE=debian/chrony
 
@@ -26,4 +25,7 @@ override_dh_install:
 override_dh_installinit:
 	# set boot sequence number for old sysv-rc style
 	dh_installinit --update-rcd-params="defaults 83"
+
+override_dh_auto_test:
+	# tests disabled
 
