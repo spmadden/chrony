@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        1.30
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -138,6 +138,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Aug 15 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.30-2
+- reconnect client sockets (#1124059)
+
 * Tue Jul 01 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.30-1
 - update to 1.30
 - enable debug messages
