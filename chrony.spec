@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        1.30
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -138,6 +138,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Sat Aug 16 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.30-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
+
 * Fri Aug 15 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.30-2
 - reconnect client sockets (#1124059)
 
