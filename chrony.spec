@@ -118,7 +118,9 @@ fi
 %systemd_postun_with_restart chronyd.service
 
 %files
-%doc COPYING FAQ NEWS README chrony.txt examples/*
+%{!?_licensedir:%global license %%doc}
+%license COPYING
+%doc FAQ NEWS README chrony.txt examples/*
 %config(noreplace) %{_sysconfdir}/chrony.conf
 %config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
 %config(noreplace) %{_sysconfdir}/logrotate.d/chrony
