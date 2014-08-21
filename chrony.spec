@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        1.31
-Release:        3%{?dist}
+Release:        0.1.pre1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -139,6 +139,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Aug 21 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.31-0.1.pre1
+- update to 1.31-pre1
+- use license macro if available
+
 * Sat Aug 16 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.30-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
 
