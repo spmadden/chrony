@@ -1,9 +1,10 @@
 %global _hardened_build 1
-%global clknetsim_ver 2fa4c5
+%global prerelease -pre1
+%global clknetsim_ver e63178
 %bcond_without debug
 
 Name:           chrony
-Version:        1.30
+Version:        1.31
 Release:        3%{?dist}
 Summary:        An NTP client/server
 
@@ -22,7 +23,6 @@ Source9:        chrony-wait.service
 # simulator for test suite from https://github.com/mlichvar/clknetsim.git
 Source10:       clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
-Patch1:         chrony-reconnect.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
 BuildRequires:  bison texinfo systemd-units
@@ -47,7 +47,6 @@ clocks, system real-time clock or manual input as time references.
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
-%patch1 -p1 -b .reconnect
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
