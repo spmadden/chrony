@@ -91,6 +91,8 @@ touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 echo 'chronyd.service' > \
         $RPM_BUILD_ROOT%{_prefix}/lib/systemd/ntp-units.d/50-chronyd.list
 
+gzip -9 -f -k chrony.txt
+
 %check
 make %{?_smp_mflags} -C test/simulation/clknetsim
 make check
@@ -120,7 +122,7 @@ fi
 %files
 %{!?_licensedir:%global license %%doc}
 %license COPYING
-%doc FAQ NEWS README chrony.txt examples/*
+%doc FAQ NEWS README chrony.txt.gz examples/*
 %config(noreplace) %{_sysconfdir}/chrony.conf
 %config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
 %config(noreplace) %{_sysconfdir}/logrotate.d/chrony
