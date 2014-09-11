@@ -6,7 +6,7 @@ chrony_config() {
 	rm -f $SERVERFILE
 	if [ "$PEERNTP" != "no" ]; then
 		for server in $new_ntp_servers; do
-			echo "$server $NTPSERVERARGS" >> $SERVERFILE
+			echo "$server ${NTPSERVERARGS:-iburst}" >> $SERVERFILE
 		done
 		/usr/libexec/chrony-helper is-running &&
 			/usr/libexec/chrony-helper add-dhclient-servers &&
