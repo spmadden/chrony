@@ -11,17 +11,14 @@ Group:          System Environment/Daemons
 License:        GPLv2
 URL:            http://chrony.tuxfamily.org
 Source0:        http://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
-Source1:        chrony.conf
-Source2:        chrony.keys
-Source3:        chronyd.service
-Source4:        chrony.helper
-Source5:        chrony.logrotate
-Source7:        chrony.nm-dispatcher
-Source8:        chrony.dhclient
-Source9:        chrony-wait.service
+Source1:        chrony.dhclient
+Source2:        chrony.helper
 # simulator for test suite from https://github.com/mlichvar/clknetsim.git
 Source10:       clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
+
+# add NTP servers from DHCP when starting service
+Patch1:         chrony-service-helper.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
 BuildRequires:  bison texinfo systemd-units
@@ -46,11 +43,26 @@ clocks, system real-time clock or manual input as time references.
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
+%patch1 -p1 -b .service-helper
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
-sed -e 's|VENDORZONE\.|%{vendorzone}|' < %{SOURCE1} > chrony.conf
-touch -r %{SOURCE1} chrony.conf
+# review changes in packaged configuration files and scripts
+md5sum -c <<-EOF | (! grep -v 'OK$')
+        5cca89b571b0780481fc6f3c518e63bf  examples/chrony-wait.service
+        d77c994ec12c247a5206e724cd70483d  examples/chrony.conf.example2
+        2e9fe409a17de5d53a65f9869c4119f5  examples/chrony.logrotate
+        d7d323d0ea7ccc258710371ea79563d1  examples/chrony.nm-dispatcher
+        1a5122f7f40446596777a6c69431c415  examples/chronyd.service
+EOF
+
+# use our vendor zone
+sed -e 's|\([0-3]\.\)\(pool.ntp.org\)|\1%{vendorzone}\2|' \
+        < examples/chrony.conf.example2 > chrony.conf
+
+echo '# Keys used by chronyd for command and NTP authentication' > chrony.keys
+
+touch -r examples/chrony.conf.example2 chrony.conf chrony.keys
 
 # regenerate the file from getdate.y
 rm -f getdate.c
@@ -78,15 +90,21 @@ mkdir -p $RPM_BUILD_ROOT%{_libexecdir}
 mkdir -p $RPM_BUILD_ROOT{%{_unitdir},%{_prefix}/lib/systemd/ntp-units.d}
 
 install -m 644 -p chrony.conf $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
-install -m 640 -p %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
-install -m 644 -p %{SOURCE3} $RPM_BUILD_ROOT%{_unitdir}/chronyd.service
-install -m 755 -p %{SOURCE4} $RPM_BUILD_ROOT%{_libexecdir}/chrony-helper
-install -m 644 -p %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/chrony
-install -m 755 -p %{SOURCE7} \
+install -m 640 -p chrony.keys $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
+
+install -m 755 -p examples/chrony.nm-dispatcher \
         $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
-install -m 755 -p %{SOURCE8} \
+install -m 755 -p %{SOURCE1} \
         $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d/chrony.sh
-install -m 644 -p %{SOURCE9} $RPM_BUILD_ROOT%{_unitdir}/chrony-wait.service
+install -m 644 -p examples/chrony.logrotate \
+        $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/chrony
+
+install -m 644 -p examples/chronyd.service \
+        $RPM_BUILD_ROOT%{_unitdir}/chronyd.service
+install -m 644 -p examples/chrony-wait.service \
+        $RPM_BUILD_ROOT%{_unitdir}/chrony-wait.service
+
+install -m 755 -p %{SOURCE2} $RPM_BUILD_ROOT%{_libexecdir}/chrony-helper
 
 touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 
