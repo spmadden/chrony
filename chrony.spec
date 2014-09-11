@@ -1,5 +1,4 @@
 %global _hardened_build 1
-%global prerelease -pre1
 %global clknetsim_ver e63178
 %bcond_without debug
 
@@ -53,6 +52,9 @@ clocks, system real-time clock or manual input as time references.
 sed -e 's|VENDORZONE\.|%{vendorzone}|' < %{SOURCE1} > chrony.conf
 touch -r %{SOURCE1} chrony.conf
 
+# regenerate the file from getdate.y
+rm -f getdate.c
+
 mv clknetsim test/simulation
 
 %build
@@ -61,7 +63,7 @@ mv clknetsim test/simulation
         --docdir=%{_docdir} \
         --with-user=chrony \
         --with-sendmail=%{_sbindir}/sendmail
-make %{?_smp_mflags} getdate all docs
+make %{?_smp_mflags} all docs
 
 %install
 make install install-docs DESTDIR=$RPM_BUILD_ROOT
