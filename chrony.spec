@@ -1,5 +1,5 @@
 Name:           chrony
-Version:        1.30
+Version:        1.31
 Release:        1%{?gitpatch}%{?dist}
 Summary:        An NTP client/server
 
