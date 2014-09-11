@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        1.31
-Release:        0.1.pre1%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -161,6 +161,13 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Sep 11 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.31-1
+- update to 1.31
+- add servers from DHCP with iburst option by default
+- use upstream configuration files and scripts
+- don't package configuration examples
+- compress chrony.txt
+
 * Thu Aug 21 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.31-0.1.pre1
 - update to 1.31-pre1
 - use license macro if available
