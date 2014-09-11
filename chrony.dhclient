@@ -7,8 +7,8 @@ chrony_config() {
 	if [ "$PEERNTP" != "no" ]; then
 		/etc/init.d/chronyd command "$(
 			for server in $new_ntp_servers; do
-				echo "add server $server $NTPSERVERARGS"
-				echo "$server $NTPSERVERARGS" >> $SERVERFILE
+				echo "add server $server ${NTPSERVERARGS:-iburst}"
+				echo "$server ${NTPSERVERARGS:-iburst}" >> $SERVERFILE
 			done)" &> /dev/null
 	fi
 }
