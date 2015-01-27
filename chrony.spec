@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        2.0
-Release:        1%{?dist}
+Release:        0.1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -162,6 +162,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Jan 27 2015 Miroslav Lichvar <mlichvar@redhat.com> 2.0-0.1.pre1
+- update to 2.0-pre1
+
 * Thu Sep 11 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.31-1
 - update to 1.31
 - add servers from DHCP with iburst option by default
