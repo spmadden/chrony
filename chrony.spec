@@ -1,9 +1,10 @@
 %global _hardened_build 1
-%global clknetsim_ver e63178
+%global prerelease -pre1
+%global clknetsim_ver 565e59
 %bcond_without debug
 
 Name:           chrony
-Version:        1.31
+Version:        2.0
 Release:        1%{?dist}
 Summary:        An NTP client/server
 
@@ -13,8 +14,8 @@ URL:            http://chrony.tuxfamily.org
 Source0:        http://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
 Source1:        chrony.dhclient
 Source2:        chrony.helper
-# simulator for test suite from https://github.com/mlichvar/clknetsim.git
-Source10:       clknetsim-%{clknetsim_ver}.tar.gz
+# simulator for test suite
+Source10:	https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
 
 # add NTP servers from DHCP when starting service
@@ -50,14 +51,14 @@ clocks, system real-time clock or manual input as time references.
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
         5cca89b571b0780481fc6f3c518e63bf  examples/chrony-wait.service
-        d77c994ec12c247a5206e724cd70483d  examples/chrony.conf.example2
+        3a5a49a9fdc344cd31893571215c2c74  examples/chrony.conf.example2
         2e9fe409a17de5d53a65f9869c4119f5  examples/chrony.logrotate
         d7d323d0ea7ccc258710371ea79563d1  examples/chrony.nm-dispatcher
         1a5122f7f40446596777a6c69431c415  examples/chronyd.service
 EOF
 
-# use our vendor zone
-sed -e 's|\([0-3]\.\)\(pool.ntp.org\)|\1%{vendorzone}\2|' \
+# use our vendor zone (2.*pool.ntp.org names include IPv6 addresses)
+sed -e 's|^\(pool \)\(pool.ntp.org\)|\12.%{vendorzone}\2|' \
         < examples/chrony.conf.example2 > chrony.conf
 
 echo '# Keys used by chronyd for command and NTP authentication' > chrony.keys
@@ -67,7 +68,7 @@ touch -r examples/chrony.conf.example2 chrony.conf chrony.keys
 # regenerate the file from getdate.y
 rm -f getdate.c
 
-mv clknetsim test/simulation
+mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
 
 %build
 %configure \
