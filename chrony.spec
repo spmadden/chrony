@@ -29,6 +29,11 @@ Requires(post): systemd info
 Requires(preun): systemd info
 Requires(postun): systemd
 
+%if 0%{?fedora} >= 22 || 0%{?rhel} >= 8
+# install timedated implementation that can control chronyd service
+Requires: timedatex
+%endif
+
 %description
 A client/server for the Network Time Protocol, this program keeps your
 computer's clock accurate. It was specially designed to support
