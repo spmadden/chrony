@@ -161,6 +161,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Apr 08 2015 Miroslav Lichvar <mlichvar@redhat.com> 1.31.1-1
+- update to 1.31.1 (CVE-2015-1853 CVE-2015-1821 CVE-2015-1822)
+
 * Thu Sep 11 2014 Miroslav Lichvar <mlichvar@redhat.com> 1.31-1
 - update to 1.31
 - add servers from DHCP with iburst option by default
