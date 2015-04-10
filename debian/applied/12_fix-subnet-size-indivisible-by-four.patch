@@ -1,0 +1,32 @@
+From cf19042ecb656b8afec0cc4906e7dd3ea9266ac8 Mon Sep 17 00:00:00 2001
+From: Miroslav Lichvar <mlichvar@redhat.com>
+Date: Mon, 30 Mar 2015 14:41:37 +0200
+Subject: addrfilt: fix access configuration with subnet size indivisible by 4
+
+When NTP or cmdmon access was configured (from chrony.conf or via
+authenticated cmdmon) with a subnet size that is indivisible by 4 and
+an address that has nonzero bits in the 4-bit subnet remainder (e.g.
+192.168.15.0/22 or f000::/3), the new setting was written to an
+incorrect location, possibly outside the allocated array.
+
+An attacker that has the command key and is allowed to access cmdmon
+(only localhost is allowed by default) could exploit this to crash
+chronyd or possibly execute arbitrary code with the privileges of the
+chronyd process.
+---
+
+diff -urNpa s11/addrfilt.c s12/addrfilt.c
+--- s11/addrfilt.c	2010-02-04 13:07:19.000000000 +0100
++++ s12/addrfilt.c	2015-04-10 22:19:33.529955832 +0200
+@@ -204,7 +204,10 @@ set_subnet(TableNode *start_node,
+ 
+       /* How many subnet entries to set : 1->8, 2->4, 3->2 */
+       N = 1 << (NBITS-bits_to_go);
+-      subnet = get_subnet(ip, bits_consumed);
++
++      subnet = get_subnet(ip, bits_consumed) & ~(N - 1);
++      assert(subnet + N <= TABLE_SIZE);
++
+       if (!(node->extended)) {
+         open_node(node);
+       }

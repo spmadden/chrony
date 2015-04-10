@@ -571,6 +571,7 @@ get_more_replies(void)
     for (i=1; i<REPLY_EXTEND_QUANTUM; i++) {
       new_replies[i-1].next = new_replies + i;
     }
+    new_replies[REPLY_EXTEND_QUANTUM - 1].next = NULL;
     free_replies = new_replies;
   }
 }

@@ -1,3 +1,15 @@
+chrony (1.24-3.1+deb7u3) wheezy-security; urgency=medium
+
+  * With the following security bugfixes (See: #782160):
+    - Fix CVE-2015-1853: Protect authenticated symmetric NTP
+                         associations against DoS attacks.
+    - Fix CVE-2015-1821: Fix access configuration with subnet
+                         size indivisible by 4.
+    - Fix CVE-2015-1822: Fix initialization of reply slots for
+                         authenticated commands.
+
+ -- Joachim Wiedorn <joodebian@joonet.de>  Fri, 10 Apr 2015 22:25:52 +0200
+
 chrony (1.24-3.1+deb7u2) wheezy-security; urgency=low
 
   * CVE-2013-4502, CVE-2013-4503
