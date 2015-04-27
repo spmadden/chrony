@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        2.0
-Release:        0.3.pre2%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -166,6 +166,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Apr 27 2015 Miroslav Lichvar <mlichvar@redhat.com> 2.0-1
+- update to 2.0
+
 * Wed Apr 08 2015 Miroslav Lichvar <mlichvar@redhat.com> 2.0-0.3.pre2
 - update to 2.0-pre2 (CVE-2015-1853 CVE-2015-1821 CVE-2015-1822)
 
