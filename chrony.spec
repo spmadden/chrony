@@ -1,9 +1,10 @@
 %global _hardened_build 1
+%global prerelease -pre1
 %global clknetsim_ver 3eb3a8
 %bcond_without debug
 
 Name:           chrony
-Version:        2.0
+Version:        2.1
 Release:        1%{?dist}
 Summary:        An NTP client/server
 
