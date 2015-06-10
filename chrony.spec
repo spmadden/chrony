@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        2.1
-Release:        1%{?dist}
+Release:        0.1.pre1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -167,6 +167,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Jun 10 2015 Miroslav Lichvar <mlichvar@redhat.com> 2.1-0.1.pre1
+- update to 2.1-pre1
+
 * Mon Apr 27 2015 Miroslav Lichvar <mlichvar@redhat.com> 2.0-1
 - update to 2.0
 
