@@ -119,6 +119,8 @@ echo 'chronyd.service' > \
 gzip -9 -f -k chrony.txt
 
 %check
+# set random seed to get deterministic results
+export CLKNETSIM_RANDOM_SEED=24501
 make %{?_smp_mflags} -C test/simulation/clknetsim
 make check
 
