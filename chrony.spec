@@ -16,7 +16,7 @@ Source2:        chrony.helper
 Source3:        chrony-dnssrv@.service
 Source4:        chrony-dnssrv@.timer
 # simulator for test suite
-Source10:	https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/clknetsim-%{clknetsim_ver}.tar.gz
+Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
 
 # add NTP servers from DHCP when starting service
