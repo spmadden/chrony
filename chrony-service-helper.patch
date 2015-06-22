@@ -5,7 +5,7 @@ diff -up chrony-1.31/examples/chronyd.service.service-helper chrony-1.31/example
  PIDFile=/var/run/chronyd.pid
  EnvironmentFile=-/etc/sysconfig/chronyd
  ExecStart=/usr/sbin/chronyd $OPTIONS
-+ExecStartPost=/usr/libexec/chrony-helper add-dhclient-servers
++ExecStartPost=/usr/libexec/chrony-helper update-daemon
  
  [Install]
  WantedBy=multi-user.target

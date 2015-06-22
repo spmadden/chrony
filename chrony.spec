@@ -13,6 +13,8 @@ URL:            http://chrony.tuxfamily.org
 Source0:        http://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
 Source1:        chrony.dhclient
 Source2:        chrony.helper
+Source3:        chrony-dnssrv@.service
+Source4:        chrony-dnssrv@.timer
 # simulator for test suite
 Source10:	https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
@@ -58,7 +60,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         3a5a49a9fdc344cd31893571215c2c74  examples/chrony.conf.example2
         2e9fe409a17de5d53a65f9869c4119f5  examples/chrony.logrotate
         d7d323d0ea7ccc258710371ea79563d1  examples/chrony.nm-dispatcher
-        1a5122f7f40446596777a6c69431c415  examples/chronyd.service
+        d65acc66bd53844a6fe72b62dfae42bd  examples/chronyd.service
 EOF
 
 # use our vendor zone (2.*pool.ntp.org names include IPv6 addresses)
@@ -108,6 +110,8 @@ install -m 644 -p examples/chronyd.service \
         $RPM_BUILD_ROOT%{_unitdir}/chronyd.service
 install -m 644 -p examples/chrony-wait.service \
         $RPM_BUILD_ROOT%{_unitdir}/chrony-wait.service
+install -m 644 -p %{SOURCE3} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.service
+install -m 644 -p %{SOURCE4} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.timer
 
 install -m 755 -p %{SOURCE2} $RPM_BUILD_ROOT%{_libexecdir}/chrony-helper
 
@@ -161,6 +165,7 @@ fi
 %{_infodir}/chrony.info*
 %{_prefix}/lib/systemd/ntp-units.d/*.list
 %{_unitdir}/chrony*.service
+%{_unitdir}/chrony*.timer
 %{_mandir}/man[158]/%{name}*.[158]*
 %dir %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony
 %ghost %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony/drift
