@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        2.1
-Release:        0.2.pre1%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -173,6 +173,11 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Jun 22 2015 Miroslav Lichvar <mlichvar@redhat.com> 2.1-1
+- update to 2.1
+- extend chrony-helper to allow using servers from DNS SRV records (#1234406)
+- set random seed in testing to get deterministic results
+
 * Wed Jun 17 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.1-0.2.pre1
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
 
