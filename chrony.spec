@@ -3,7 +3,7 @@
 %bcond_without debug
 
 Name:           chrony
-Version:        2.1
+Version:        2.1.1
 Release:        1%{?dist}
 Summary:        An NTP client/server
 
