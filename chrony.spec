@@ -120,7 +120,7 @@ touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 echo 'chronyd.service' > \
         $RPM_BUILD_ROOT%{_prefix}/lib/systemd/ntp-units.d/50-chronyd.list
 
-gzip -9 -f -k chrony.txt
+gzip -9 -f -k -n chrony.txt
 
 %check
 # set random seed to get deterministic results
