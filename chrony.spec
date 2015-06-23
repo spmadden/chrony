@@ -173,6 +173,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Jun 23 2015 Miroslav Lichvar <mlichvar@redhat.com> 2.1.1-1
+- update to 2.1.1
+- add -n option to gzip command to not save timestamp
+
 * Mon Jun 22 2015 Miroslav Lichvar <mlichvar@redhat.com> 2.1-1
 - update to 2.1
 - extend chrony-helper to allow using servers from DNS SRV records (#1234406)
