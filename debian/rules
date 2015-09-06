@@ -1,5 +1,7 @@
 #!/usr/bin/make -f
 
+export DEB_BUILD_MAINT_OPTIONS=hardening=+all
+
 BASE=debian/chrony
 
 %:
@@ -7,7 +9,9 @@ BASE=debian/chrony
 
 override_dh_auto_configure:
 	dh_auto_configure --  --mandir=/usr/share/man \
-	    --sysconfdir=/etc/chrony  --without-readline
+		--sysconfdir=/etc/chrony \
+		--without-readline \
+		--with-user=_chrony
 
 override_dh_auto_build:
 	dh_auto_build
