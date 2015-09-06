@@ -82,11 +82,14 @@ distclean : clean
 	-rm -f chrony.conf.5 chrony.texi chronyc.1 chronyd.8
 
 clean :
-	-rm -f *.o *.s chronyc chronyd core getdate.c *~ 
-	-rm -f chrony.info chrony.html chrony.txt
+	-rm -f *.o *.s chronyc chronyd core *~ chrony.info chrony.html chrony.txt
 	-rm -rf .deps
 
 getdate.c :
+	bison -o getdate.c getdate.y
+
+# This can be used to force regeneration of getdate.c
+getdate :
 	bison -o getdate.c getdate.y
 
 # For install, don't use the install command, because its switches

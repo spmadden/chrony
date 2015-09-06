@@ -33,14 +33,14 @@ Copyright: 2002, Paul Elliott
 License: GPL-2+
 
 Files: debian/*
-Copyright: 2012-2014, Joachim Wiedorn
+Copyright: 2015, Vincent Blut
+           2012-2014, Joachim Wiedorn
            2000-2012, John Hasler
 License: GPL-2
 
 Files: chrony_timex.h
-       (modified copy of /usr/include/linux/timex.h)
 Copyright: 1993, David L. Mills
-License: Old Style MIT (no advertising without permission) 
+License: Old-Style-MIT
   Permission to use, copy, modify, and distribute this software and its
   documentation for any purpose and without fee is hereby granted, provided
   that the above copyright notice appears in all copies and that both the
@@ -50,10 +50,12 @@ License: Old Style MIT (no advertising without permission)
   without specific, written prior permission.  The University of Delaware
   makes no representations about the suitability this software for any
   purpose.  It is provided "as is" without express or implied warranty.
+Comment: Modified copy of /usr/include/linux/timex.h:
+  Old Style MIT License (no advertising without permission).
 
 Files: md5.*
 Copyright: 1990, RSA Data Security, Inc. All rights reserved.
-License:
+License: RSA-MD
   License to copy and use this software is granted provided that    
   it is identified as the "RSA Data Security, Inc. MD5 Message-     
   Digest Algorithm" in all material mentioning or referencing this  

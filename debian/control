@@ -1,17 +1,19 @@
 Source: chrony
-Section: admin
-Priority: extra
-Maintainer: Joachim Wiedorn <joodebian@joonet.de>
-Uploaders: Vincent Blut <vincent.debian@free.fr>
-Standards-Version: 3.9.5
+Section: net
+Priority: optional
+Maintainer: Vincent Blut <vincent.debian@free.fr>
+Uploaders: Joachim Wiedorn <joodebian@joonet.de>
+Standards-Version: 3.9.6
 Build-Depends: debhelper (>= 9),
  texinfo, bison,
  libedit-dev,
  libnss3-dev,
- libtomcrypt-dev
+ libtomcrypt-dev,
+ libcap-dev,
+ pps-tools (>= 0.20120406+g0deb9c7e-2)
 Homepage: http://chrony.tuxfamily.org
 Vcs-Git: git://anonscm.debian.org/collab-maint/chrony.git
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/chrony.git
+Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/chrony.git
 
 Package: chrony
 Architecture: linux-any
@@ -20,12 +22,14 @@ Depends: ${misc:Depends},
  ucf, timelimit,
  install-info,
  net-tools,
- lsb-base
+ lsb-base,
+ adduser,
+ util-linux (>= 2.20.1-5)
 Recommends: udev (>= 0.124-1)
 Conflicts: time-daemon, ntp
 Provides: time-daemon
 Replaces: time-daemon
-Description: Set the computer clock from time servers on the Net
+Description: Versatile implementation of the Network Time Protocol
  It consists of a pair of programs:
  .
  chronyd:  This is a daemon which runs in background on the system.
