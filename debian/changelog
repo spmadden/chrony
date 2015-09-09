@@ -1,3 +1,10 @@
+chrony (1.30-2+deb8u1) jessie; urgency=medium
+
+  * Build depend on libcap-dev. Without it, chronyd can’t drop root
+    privileges. (Closes: #768803)
+
+ -- Vincent Blut <vincent.debian@free.fr>  Wed, 09 Sep 2015 19:50:09 +0200
+
 chrony (1.30-2) unstable; urgency=medium
 
   * With the following security bugfixes (Closes: #782160):
