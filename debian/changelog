@@ -1,3 +1,10 @@
+chrony (1.31.1-2) unstable; urgency=medium
+
+  * Rename the NEWS.Debian file to NEWS. dh_installchangelogs doesn’t seems
+    to be able to deal with the former name.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Thu, 17 Sep 2015 21:50:30 +0200
+
 chrony (1.31.1-1) unstable; urgency=medium
 
   * Import upstream version 1.31 and 1.31.1:
