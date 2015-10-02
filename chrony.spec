@@ -32,9 +32,13 @@ Requires(post): systemd info
 Requires(preun): systemd info
 Requires(postun): systemd
 
-%if 0%{?fedora} >= 22 || 0%{?rhel} >= 8
 # install timedated implementation that can control chronyd service
+%if 0%{?fedora} >= 24 || 0%{?rhel} >= 8
+Recommends: timedatex
+%else
+%if 0%{?fedora} >= 22
 Requires: timedatex
+%endif
 %endif
 
 %description
