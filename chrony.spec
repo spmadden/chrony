@@ -1,9 +1,10 @@
 %global _hardened_build 1
-%global clknetsim_ver c0e2b4
+%global prerelease -pre1
+%global clknetsim_ver e615b4
 %bcond_without debug
 
 Name:           chrony
-Version:        2.1.1
+Version:        2.2
 Release:        1%{?dist}
 Summary:        An NTP client/server
 
@@ -57,9 +58,10 @@ clocks, system real-time clock or manual input as time references.
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
         5cca89b571b0780481fc6f3c518e63bf  examples/chrony-wait.service
-        3a5a49a9fdc344cd31893571215c2c74  examples/chrony.conf.example2
-        2e9fe409a17de5d53a65f9869c4119f5  examples/chrony.logrotate
-        d7d323d0ea7ccc258710371ea79563d1  examples/chrony.nm-dispatcher
+        481bea582abf1db5fbe52239c29d9c5d  examples/chrony.conf.example2
+        9d027f59b8bf422a7d03e5386f2f282b  examples/chrony.keys.example
+        6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
+        298b7f611078aa0176aad58e936c7b0d  examples/chrony.nm-dispatcher
         d65acc66bd53844a6fe72b62dfae42bd  examples/chronyd.service
 EOF
 
@@ -67,9 +69,7 @@ EOF
 sed -e 's|^\(pool \)\(pool.ntp.org\)|\12.%{vendorzone}\2|' \
         < examples/chrony.conf.example2 > chrony.conf
 
-echo '# Keys used by chronyd for command and NTP authentication' > chrony.keys
-
-touch -r examples/chrony.conf.example2 chrony.conf chrony.keys
+touch -r examples/chrony.conf.example2 chrony.conf
 
 # regenerate the file from getdate.y
 rm -f getdate.c
@@ -97,8 +97,9 @@ mkdir -p $RPM_BUILD_ROOT%{_libexecdir}
 mkdir -p $RPM_BUILD_ROOT{%{_unitdir},%{_prefix}/lib/systemd/ntp-units.d}
 
 install -m 644 -p chrony.conf $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
-install -m 640 -p chrony.keys $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
 
+install -m 640 -p examples/chrony.keys.example \
+        $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
 install -m 755 -p examples/chrony.nm-dispatcher \
         $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
 install -m 755 -p %{SOURCE1} \
