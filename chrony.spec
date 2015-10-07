@@ -24,7 +24,9 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 Patch1:         chrony-service-helper.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
+%ifarch %{ix86} x86_64 %{arm} aarch64
 BuildRequires:  libseccomp-devel
+%endif
 BuildRequires:  bison texinfo systemd-units
 
 Requires(pre):  shadow-utils
