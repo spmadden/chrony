@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        2.2
-Release:        0.1.pre1%{?dist}
+Release:        0.2.pre1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -182,6 +182,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Oct 09 2015 Miroslav Lichvar <mlichvar@redhat.com> 2.2-0.2.pre2
+- update to 2.2-pre2
+- require libseccomp-devel on supported archs only
+
 * Fri Oct 02 2015 Miroslav Lichvar <mlichvar@redhat.com> 2.2-0.1.pre1
 - update to 2.2-pre1
 - enable seccomp support
