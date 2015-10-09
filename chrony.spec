@@ -1,5 +1,5 @@
 %global _hardened_build 1
-%global prerelease -pre1
+%global prerelease -pre2
 %global clknetsim_ver e615b4
 %bcond_without debug
 
@@ -64,8 +64,8 @@ clocks, system real-time clock or manual input as time references.
 
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
-        5cca89b571b0780481fc6f3c518e63bf  examples/chrony-wait.service
-        481bea582abf1db5fbe52239c29d9c5d  examples/chrony.conf.example2
+        285022e437ff3be7b79607929f492aac  examples/chrony-wait.service
+        74c2b50b509dc2fe4fbfd341bb5ed1aa  examples/chrony.conf.example2
         9d027f59b8bf422a7d03e5386f2f282b  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         298b7f611078aa0176aad58e936c7b0d  examples/chrony.nm-dispatcher
@@ -88,6 +88,7 @@ mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
 %{?with_debug: --enable-debug} \
         --docdir=%{_docdir} \
         --with-user=chrony \
+        --with-hwclockfile=%{_sysconfdir}/adjtime \
         --with-sendmail=%{_sbindir}/sendmail
 make %{?_smp_mflags} all docs
 
