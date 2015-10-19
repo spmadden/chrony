@@ -1,5 +1,4 @@
 %global _hardened_build 1
-%global prerelease -pre2
 %global clknetsim_ver e615b4
 %bcond_without debug
 
@@ -86,6 +85,7 @@ mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
 %build
 %configure \
 %{?with_debug: --enable-debug} \
+        --enable-scfilter \
         --docdir=%{_docdir} \
         --with-user=chrony \
         --with-hwclockfile=%{_sysconfdir}/adjtime \
