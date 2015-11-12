@@ -87,6 +87,7 @@ mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
 %{?with_debug: --enable-debug} \
         --enable-scfilter \
         --docdir=%{_docdir} \
+        --with-ntp-era=$(date -d '1970-01-01 00:00:00+00:00' +'%s') \
         --with-user=chrony \
         --with-hwclockfile=%{_sysconfdir}/adjtime \
         --with-sendmail=%{_sbindir}/sendmail
