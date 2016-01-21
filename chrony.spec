@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        2.1.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -175,6 +175,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Jan 21 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.1.1-2
+- restrict authentication of NTP server/peer to specified key (CVE-2016-1567)
+
 * Tue Jun 23 2015 Miroslav Lichvar <mlichvar@redhat.com> 2.1.1-1
 - update to 2.1.1
 - add -n option to gzip command to not save timestamp
