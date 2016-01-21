@@ -21,6 +21,7 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add NTP servers from DHCP when starting service
 Patch1:         chrony-service-helper.patch
+Patch2:         chrony-keyid.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
 BuildRequires:  bison texinfo systemd-units
@@ -51,6 +52,7 @@ clocks, system real-time clock or manual input as time references.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .service-helper
+%patch2 -p1 -b .keyid
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
