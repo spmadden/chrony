@@ -1,9 +1,10 @@
 %global _hardened_build 1
-%global clknetsim_ver e615b4
+%global prerelease -pre1
+%global clknetsim_ver ae9dfe
 %bcond_without debug
 
 Name:           chrony
-Version:        2.2.1
+Version:        2.3
 Release:        1%{?dist}
 Summary:        An NTP client/server
 
@@ -64,8 +65,8 @@ clocks, system real-time clock or manual input as time references.
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
         285022e437ff3be7b79607929f492aac  examples/chrony-wait.service
-        74c2b50b509dc2fe4fbfd341bb5ed1aa  examples/chrony.conf.example2
-        9d027f59b8bf422a7d03e5386f2f282b  examples/chrony.keys.example
+        5d29f7cefeffe28aafdf017fa8fb51dc  examples/chrony.conf.example2
+        ba6bb05c50e03f6b5ab54a2b7914800d  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         298b7f611078aa0176aad58e936c7b0d  examples/chrony.nm-dispatcher
         d65acc66bd53844a6fe72b62dfae42bd  examples/chronyd.service
