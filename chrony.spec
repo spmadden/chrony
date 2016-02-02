@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        2.3
-Release:        1%{?dist}
+Release:        0.1.pre1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -184,6 +184,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Feb 02 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.3-0.1.pre1
+- update to 2.3-pre1
+
 * Thu Jan 21 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.2.1-1
 - update to 2.2.1 (CVE-2016-1567)
 - set NTP era split explicitly
