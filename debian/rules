@@ -11,7 +11,9 @@ override_dh_auto_configure:
 	dh_auto_configure --  --mandir=/usr/share/man \
 		--sysconfdir=/etc/chrony \
 		--without-readline \
-		--with-user=_chrony
+		--with-user=_chrony \
+		--enable-scfilter \
+		--chronysockdir=/run/chrony
 
 override_dh_auto_build:
 	dh_auto_build
@@ -23,6 +25,10 @@ override_dh_installchangelogs:
 override_dh_install:
 	dh_install
 	install -m 0755 -T debian/apm   $(BASE)/etc/apm/event.d/01chrony
+	install -m 0640 -t $(BASE)/etc/chrony/ debian/chrony.keys
+
+override_dh_fixperms:
+	dh_fixperms -X etc/chrony/chrony.keys
 
 override_dh_installinit:
 	# set boot sequence number for old sysv-rc style
