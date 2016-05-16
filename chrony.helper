@@ -2,9 +2,12 @@
 # This script configures running chronyd to use NTP servers obtained from
 # DHCP and _ntp._udp DNS SRV records. Files with servers from DHCP are managed
 # externally (e.g. by a dhclient script). Files with servers from DNS SRV
-# records are updated here using the dig utility.
+# records are updated here using the dig utility. The script can also list
+# and set static sources in the chronyd configuration file.
 
 chronyc=/usr/bin/chronyc
+chrony_conf=/etc/chrony.conf
+chrony_service=chronyd.service
 helper_dir=/var/run/chrony-helper
 added_servers_file=$helper_dir/added_servers
 
@@ -142,6 +145,57 @@ prepare_helper_dir() {
     fi
 }
 
+is_source_line() {
+    local pattern="^[ \t]*(server|pool|peer|refclock)[ \t]+[^ \t]+"
+    [[ "$1" =~ $pattern ]]
+}
+
+list_static_sources() {
+    while read line; do
+        is_source_line "$line" && echo "$line"
+    done < $chrony_conf
+}
+
+set_static_sources() {
+    local new_config tmp_conf
+
+    new_config=$(
+        sources=$(
+            while read line; do
+                is_source_line "$line" && echo "$line"
+            done)
+
+        while read line; do
+            if ! is_source_line "$line"; then
+                echo "$line"
+                continue
+            fi
+
+            tmp_sources=$(
+                local removed=0
+
+                echo "$sources" | while read line2; do
+                    [ "$removed" -ne 0 -o "$line" != "$line2" ] && \
+                        echo "$line2" || removed=1
+                done)
+
+            [ "$sources" == "$tmp_sources" ] && continue
+            sources=$tmp_sources
+            echo "$line"
+        done < $chrony_conf
+
+        echo "$sources"
+    )
+
+    tmp_conf=${chrony_conf}.tmp
+
+    cp -a $chrony_conf $tmp_conf &&
+        echo "$new_config" > $tmp_conf &&
+        mv $tmp_conf $chrony_conf || return 1
+
+    systemctl try-restart $chrony_service
+}
+
 print_help() {
     echo "Usage: $0 COMMAND"
     echo
@@ -151,6 +205,8 @@ print_help() {
     echo "	enable-dnssrv NAME"
     echo "	disable-dnssrv NAME"
     echo "	list-dnssrv"
+    echo "	list-static-sources"
+    echo "	set-static-sources < sources.list"
     echo "	is-running"
     echo "	command CHRONYC-COMMAND"
 }
@@ -171,6 +227,12 @@ case "$1" in
         ;;
     list-dnssrv)
         list_dnssrv_timers
+        ;;
+    list-static-sources)
+        list_static_sources
+        ;;
+    set-static-sources)
+        set_static_sources
         ;;
     is-running)
         is_running
