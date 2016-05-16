@@ -1,16 +1,17 @@
 %global _hardened_build 1
-%global clknetsim_ver ae9dfe
+%global prerelease -pre1
+%global clknetsim_ver 05a8c2
 %bcond_without debug
 
 Name:           chrony
-Version:        2.3
+Version:        2.4
 Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
 License:        GPLv2
-URL:            http://chrony.tuxfamily.org
-Source0:        http://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
+URL:            https://chrony.tuxfamily.org
+Source0:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
 Source1:        chrony.dhclient
 Source2:        chrony.helper
 Source3:        chrony-dnssrv@.service
@@ -26,7 +27,7 @@ BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64
 BuildRequires:  libseccomp-devel
 %endif
-BuildRequires:  bison texinfo systemd-units
+BuildRequires:  bison systemd-units
 
 Requires(pre):  shadow-utils
 Requires(post): systemd info
@@ -91,10 +92,10 @@ mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
         --with-user=chrony \
         --with-hwclockfile=%{_sysconfdir}/adjtime \
         --with-sendmail=%{_sbindir}/sendmail
-make %{?_smp_mflags} all docs
+make %{?_smp_mflags}
 
 %install
-make install install-docs DESTDIR=$RPM_BUILD_ROOT
+make install DESTDIR=$RPM_BUILD_ROOT
 
 rm -rf $RPM_BUILD_ROOT%{_docdir}
 
@@ -130,8 +131,6 @@ touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 echo 'chronyd.service' > \
         $RPM_BUILD_ROOT%{_prefix}/lib/systemd/ntp-units.d/50-chronyd.list
 
-gzip -9 -f -k -n chrony.txt
-
 %check
 # set random seed to get deterministic results
 export CLKNETSIM_RANDOM_SEED=24501
@@ -146,16 +145,9 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 
 %post
 %systemd_post chronyd.service chrony-wait.service
-/sbin/install-info %{_infodir}/chrony.info.gz %{_infodir}/dir &> /dev/null
-:
 
 %preun
 %systemd_preun chronyd.service chrony-wait.service
-if [ "$1" -eq 0 ]; then
-        /sbin/install-info --delete %{_infodir}/chrony.info.gz \
-                %{_infodir}/dir &> /dev/null
-fi
-:
 
 %postun
 %systemd_postun_with_restart chronyd.service
@@ -163,7 +155,7 @@ fi
 %files
 %{!?_licensedir:%global license %%doc}
 %license COPYING
-%doc FAQ NEWS README chrony.txt.gz
+%doc FAQ NEWS README
 %config(noreplace) %{_sysconfdir}/chrony.conf
 %config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
 %config(noreplace) %{_sysconfdir}/logrotate.d/chrony
@@ -172,7 +164,6 @@ fi
 %{_bindir}/chronyc
 %{_sbindir}/chronyd
 %{_libexecdir}/chrony-helper
-%{_infodir}/chrony.info*
 %{_prefix}/lib/systemd/ntp-units.d/*.list
 %{_unitdir}/chrony*.service
 %{_unitdir}/chrony*.timer
