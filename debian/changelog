@@ -1,3 +1,16 @@
+chrony (1.30-2+deb8u2) jessie; urgency=medium
+
+  * Fix CVE-2016-1567: Restrict authentication of server/peer to specified
+    key. (Closes: #812923)
+
+  * debian/postrm:
+    - Remove /var/lib/chrony on purge only. (Closes: #568492)
+
+  * debian/logrotate:
+    - Rework postrotate script. (Closes: #763542)
+
+ -- Vincent Blut <vincent.debian@free.fr>  Sat, 21 May 2016 02:27:34 +0200
+
 chrony (1.30-2+deb8u1) jessie; urgency=medium
 
   * Build depend on libcap-dev. Without it, chronyd can’t drop root
