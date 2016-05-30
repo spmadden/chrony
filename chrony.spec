@@ -30,8 +30,8 @@ BuildRequires:  libseccomp-devel
 BuildRequires:  bison systemd-units
 
 Requires(pre):  shadow-utils
-Requires(post): systemd info
-Requires(preun): systemd info
+Requires(post): systemd
+Requires(preun): systemd
 Requires(postun): systemd
 
 # install timedated implementation that can control chronyd service
