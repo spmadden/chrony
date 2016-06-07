@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        2.4
-Release:        0.1.pre1%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -173,6 +173,10 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Jun 07 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4-1
+- update to 2.4
+- don't require info
+
 * Mon May 16 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4-0.1.pre1
 - update to 2.4-pre1
 - extend chrony-helper to allow management of static sources (#1331655)
