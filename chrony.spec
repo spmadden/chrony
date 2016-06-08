@@ -1,5 +1,5 @@
 %global _hardened_build 1
-%global clknetsim_ver 05a8c2
+%global clknetsim_ver a5949f
 %bcond_without debug
 
 Name:           chrony
