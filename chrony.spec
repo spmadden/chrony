@@ -1,16 +1,16 @@
 %global _hardened_build 1
-%global clknetsim_ver c0e2b4
+%global clknetsim_ver 05a8c2
 %bcond_without debug
 
 Name:           chrony
-Version:        2.1.1
-Release:        2%{?dist}
+Version:        2.4
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
 License:        GPLv2
-URL:            http://chrony.tuxfamily.org
-Source0:        http://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
+URL:            https://chrony.tuxfamily.org
+Source0:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
 Source1:        chrony.dhclient
 Source2:        chrony.helper
 Source3:        chrony-dnssrv@.service
@@ -21,19 +21,25 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add NTP servers from DHCP when starting service
 Patch1:         chrony-service-helper.patch
-Patch2:         chrony-keyid.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
-BuildRequires:  bison texinfo systemd-units
+%ifarch %{ix86} x86_64 %{arm} aarch64
+BuildRequires:  libseccomp-devel
+%endif
+BuildRequires:  bison systemd-units
 
 Requires(pre):  shadow-utils
-Requires(post): systemd info
-Requires(preun): systemd info
+Requires(post): systemd
+Requires(preun): systemd
 Requires(postun): systemd
 
-%if 0%{?fedora} >= 22 || 0%{?rhel} >= 8
 # install timedated implementation that can control chronyd service
+%if 0%{?fedora} >= 24 || 0%{?rhel} >= 8
+Recommends: timedatex
+%else
+%if 0%{?fedora} >= 22
 Requires: timedatex
+%endif
 %endif
 
 %description
@@ -52,16 +58,16 @@ clocks, system real-time clock or manual input as time references.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .service-helper
-%patch2 -p1 -b .keyid
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
-        5cca89b571b0780481fc6f3c518e63bf  examples/chrony-wait.service
-        3a5a49a9fdc344cd31893571215c2c74  examples/chrony.conf.example2
-        2e9fe409a17de5d53a65f9869c4119f5  examples/chrony.logrotate
-        d7d323d0ea7ccc258710371ea79563d1  examples/chrony.nm-dispatcher
+        285022e437ff3be7b79607929f492aac  examples/chrony-wait.service
+        5d29f7cefeffe28aafdf017fa8fb51dc  examples/chrony.conf.example2
+        ba6bb05c50e03f6b5ab54a2b7914800d  examples/chrony.keys.example
+        6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
+        298b7f611078aa0176aad58e936c7b0d  examples/chrony.nm-dispatcher
         d65acc66bd53844a6fe72b62dfae42bd  examples/chronyd.service
 EOF
 
@@ -69,9 +75,7 @@ EOF
 sed -e 's|^\(pool \)\(pool.ntp.org\)|\12.%{vendorzone}\2|' \
         < examples/chrony.conf.example2 > chrony.conf
 
-echo '# Keys used by chronyd for command and NTP authentication' > chrony.keys
-
-touch -r examples/chrony.conf.example2 chrony.conf chrony.keys
+touch -r examples/chrony.conf.example2 chrony.conf
 
 # regenerate the file from getdate.y
 rm -f getdate.c
@@ -81,13 +85,16 @@ mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
 %build
 %configure \
 %{?with_debug: --enable-debug} \
+        --enable-scfilter \
         --docdir=%{_docdir} \
+        --with-ntp-era=$(date -d '1970-01-01 00:00:00+00:00' +'%s') \
         --with-user=chrony \
+        --with-hwclockfile=%{_sysconfdir}/adjtime \
         --with-sendmail=%{_sbindir}/sendmail
-make %{?_smp_mflags} all docs
+make %{?_smp_mflags}
 
 %install
-make install install-docs DESTDIR=$RPM_BUILD_ROOT
+make install DESTDIR=$RPM_BUILD_ROOT
 
 rm -rf $RPM_BUILD_ROOT%{_docdir}
 
@@ -99,8 +106,9 @@ mkdir -p $RPM_BUILD_ROOT%{_libexecdir}
 mkdir -p $RPM_BUILD_ROOT{%{_unitdir},%{_prefix}/lib/systemd/ntp-units.d}
 
 install -m 644 -p chrony.conf $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
-install -m 640 -p chrony.keys $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
 
+install -m 640 -p examples/chrony.keys.example \
+        $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
 install -m 755 -p examples/chrony.nm-dispatcher \
         $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
 install -m 755 -p %{SOURCE1} \
@@ -122,8 +130,6 @@ touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 echo 'chronyd.service' > \
         $RPM_BUILD_ROOT%{_prefix}/lib/systemd/ntp-units.d/50-chronyd.list
 
-gzip -9 -f -k -n chrony.txt
-
 %check
 # set random seed to get deterministic results
 export CLKNETSIM_RANDOM_SEED=24501
@@ -138,16 +144,9 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 
 %post
 %systemd_post chronyd.service chrony-wait.service
-/sbin/install-info %{_infodir}/chrony.info.gz %{_infodir}/dir &> /dev/null
-:
 
 %preun
 %systemd_preun chronyd.service chrony-wait.service
-if [ "$1" -eq 0 ]; then
-        /sbin/install-info --delete %{_infodir}/chrony.info.gz \
-                %{_infodir}/dir &> /dev/null
-fi
-:
 
 %postun
 %systemd_postun_with_restart chronyd.service
@@ -155,7 +154,7 @@ fi
 %files
 %{!?_licensedir:%global license %%doc}
 %license COPYING
-%doc FAQ NEWS README chrony.txt.gz
+%doc FAQ NEWS README
 %config(noreplace) %{_sysconfdir}/chrony.conf
 %config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
 %config(noreplace) %{_sysconfdir}/logrotate.d/chrony
@@ -164,7 +163,6 @@ fi
 %{_bindir}/chronyc
 %{_sbindir}/chronyd
 %{_libexecdir}/chrony-helper
-%{_infodir}/chrony.info*
 %{_prefix}/lib/systemd/ntp-units.d/*.list
 %{_unitdir}/chrony*.service
 %{_unitdir}/chrony*.timer
@@ -175,6 +173,12 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Jun 07 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4-1
+- update to 2.4
+- extend chrony-helper to allow management of static sources (#1331655)
+- set NTP era split explicitly
+- enable seccomp support
+
 * Thu Jan 21 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.1.1-2
 - restrict authentication of NTP server/peer to specified key (CVE-2016-1567)
 
