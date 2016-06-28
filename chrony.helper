@@ -152,7 +152,7 @@ is_source_line() {
 
 list_static_sources() {
     while read line; do
-        is_source_line "$line" && echo "$line"
+        is_source_line "$line" && echo "$line" || :
     done < $chrony_conf
 }
 
