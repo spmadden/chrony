@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        2.4
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -173,6 +173,9 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Jun 28 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4-2
+- fix chrony-helper to exit with correct status (#1350531)
+
 * Tue Jun 07 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4-1
 - update to 2.4
 - don't require info
