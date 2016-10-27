@@ -21,6 +21,8 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add NTP servers from DHCP when starting service
 Patch1:         chrony-service-helper.patch
+# avoid AVC denials in chrony-wait service (#1350815)
+Patch2:         chrony-wait-service.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64
@@ -58,12 +60,13 @@ clocks, system real-time clock or manual input as time references.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .service-helper
+%patch2 -p1 -b .wait-service
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
-        285022e437ff3be7b79607929f492aac  examples/chrony-wait.service
+        befa1539d00fd6f2ac52a08f098c9b77  examples/chrony-wait.service
         5d29f7cefeffe28aafdf017fa8fb51dc  examples/chrony.conf.example2
         ba6bb05c50e03f6b5ab54a2b7914800d  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
