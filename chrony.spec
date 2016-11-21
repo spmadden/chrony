@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        2.4.1
-Release:        4%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -176,6 +176,9 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Nov 21 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4.1-1
+- update to 2.4.1
+
 * Thu Oct 27 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4-4
 - avoid AVC denials in chrony-wait service (#1350815)
 
