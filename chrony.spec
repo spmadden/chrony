@@ -1,9 +1,9 @@
 %global _hardened_build 1
-%global clknetsim_ver 05a8c2
+%global clknetsim_ver a5949f
 %bcond_without debug
 
 Name:           chrony
-Version:        2.4
+Version:        2.4.1
 Release:        1%{?dist}
 Summary:        An NTP client/server
 
@@ -21,6 +21,8 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add NTP servers from DHCP when starting service
 Patch1:         chrony-service-helper.patch
+# avoid AVC denials in chrony-wait service (#1350815)
+Patch2:         chrony-wait-service.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64
@@ -58,12 +60,13 @@ clocks, system real-time clock or manual input as time references.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .service-helper
+%patch2 -p1 -b .wait-service
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
-        285022e437ff3be7b79607929f492aac  examples/chrony-wait.service
+        befa1539d00fd6f2ac52a08f098c9b77  examples/chrony-wait.service
         5d29f7cefeffe28aafdf017fa8fb51dc  examples/chrony.conf.example2
         ba6bb05c50e03f6b5ab54a2b7914800d  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
@@ -173,6 +176,18 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Nov 21 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4.1-1
+- update to 2.4.1
+
+* Thu Oct 27 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4-4
+- avoid AVC denials in chrony-wait service (#1350815)
+
+* Tue Sep 13 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4-3
+- fix chrony-helper to escape names of systemd units (#1374767)
+
+* Tue Jun 28 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4-2
+- fix chrony-helper to exit with correct status (#1350531)
+
 * Tue Jun 07 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4-1
 - update to 2.4
 - extend chrony-helper to allow management of static sources (#1331655)
