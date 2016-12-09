@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        3.0
-Release:        1%{?dist}
+Release:        0.1.pre1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -177,6 +177,9 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Dec 09 2016 Miroslav Lichvar <mlichvar@redhat.com> 3.0-0.1.pre1
+- update to 3.0-pre1
+
 * Mon Nov 21 2016 Miroslav Lichvar <mlichvar@redhat.com> 2.4.1-1
 - update to 2.4.1
 
