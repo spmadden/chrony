@@ -89,6 +89,7 @@ mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
 %build
 %configure \
 %{?with_debug: --enable-debug} \
+        --enable-ntp-signd \
         --enable-scfilter \
         --docdir=%{_docdir} \
         --with-ntp-era=$(date -d '1970-01-01 00:00:00+00:00' +'%s') \
