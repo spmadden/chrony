@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        3.0
-Release:        0.1.pre1%{?dist}
+Release:        0.2.pre2%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -175,6 +175,10 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Dec 15 2016 Miroslav Lichvar <mlichvar@redhat.com> 3.0-0.2.pre2
+- update to 3.0-pre2
+- enable support for MS-SNTP authentication in Samba
+
 * Fri Dec 09 2016 Miroslav Lichvar <mlichvar@redhat.com> 3.0-0.1.pre1
 - update to 3.0-pre1
 
