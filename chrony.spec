@@ -1,6 +1,6 @@
 %global _hardened_build 1
-%global prerelease -pre1
-%global clknetsim_ver fc9be6
+%global prerelease -pre2
+%global clknetsim_ver 6bb651
 %bcond_without debug
 
 Name:           chrony
@@ -22,8 +22,6 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add NTP servers from DHCP when starting service
 Patch1:         chrony-service-helper.patch
-# avoid AVC denials in chrony-wait service (#1350815)
-Patch2:         chrony-wait-service.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64
@@ -61,7 +59,6 @@ clocks, system real-time clock or manual input as time references.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .service-helper
-%patch2 -p1 -b .wait-service
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -137,7 +134,7 @@ echo 'chronyd.service' > \
 
 %check
 # set random seed to get deterministic results
-export CLKNETSIM_RANDOM_SEED=24501
+export CLKNETSIM_RANDOM_SEED=24502
 make %{?_smp_mflags} -C test/simulation/clknetsim
 make check
 
