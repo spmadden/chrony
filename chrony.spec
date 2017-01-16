@@ -1,5 +1,4 @@
 %global _hardened_build 1
-%global prerelease -pre3
 %global clknetsim_ver 6bb651
 %bcond_without debug
 
