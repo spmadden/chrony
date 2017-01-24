@@ -1,9 +1,10 @@
 %global _hardened_build 1
-%global clknetsim_ver 6bb651
+%global prerelease -pre1
+%global clknetsim_ver ce89a1
 %bcond_without debug
 
 Name:           chrony
-Version:        3.0
+Version:        3.1
 Release:        1%{?dist}
 Summary:        An NTP client/server
 
@@ -68,7 +69,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         ba6bb05c50e03f6b5ab54a2b7914800d  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         298b7f611078aa0176aad58e936c7b0d  examples/chrony.nm-dispatcher
-        d65acc66bd53844a6fe72b62dfae42bd  examples/chronyd.service
+        b347cbf0b4ba3ba9995f2f8930667e8f  examples/chronyd.service
 EOF
 
 # use our vendor zone (2.*pool.ntp.org names include IPv6 addresses)
