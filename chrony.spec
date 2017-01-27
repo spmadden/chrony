@@ -127,6 +127,11 @@ install -m 644 -p %{SOURCE4} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.timer
 
 install -m 755 -p %{SOURCE2} $RPM_BUILD_ROOT%{_libexecdir}/chrony-helper
 
+cat > $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/chronyd <<EOF
+# Command-line options for chronyd
+OPTIONS=""
+EOF
+
 touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 
 echo 'chronyd.service' > \
@@ -160,6 +165,7 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %config(noreplace) %{_sysconfdir}/chrony.conf
 %config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
 %config(noreplace) %{_sysconfdir}/logrotate.d/chrony
+%config(noreplace) %{_sysconfdir}/sysconfig/chronyd
 %{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
 %{_sysconfdir}/dhcp/dhclient.d/chrony.sh
 %{_bindir}/chronyc
