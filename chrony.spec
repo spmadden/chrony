@@ -24,7 +24,7 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 Patch1:         chrony-service-helper.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
-%ifarch %{ix86} x86_64 %{arm} aarch64
+%ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
 BuildRequires:  libseccomp-devel
 %endif
 BuildRequires:  bison systemd-units
