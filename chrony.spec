@@ -1,5 +1,4 @@
 %global _hardened_build 1
-%global prerelease -pre1
 %global clknetsim_ver ce89a1
 %bcond_without debug
 
@@ -64,12 +63,12 @@ clocks, system real-time clock or manual input as time references.
 
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
-        befa1539d00fd6f2ac52a08f098c9b77  examples/chrony-wait.service
-        5d29f7cefeffe28aafdf017fa8fb51dc  examples/chrony.conf.example2
+        47ad7eccc410b981d2f2101cf5682616  examples/chrony-wait.service
+        58978d335ec3752ac2c38fa82b48f0a5  examples/chrony.conf.example2
         ba6bb05c50e03f6b5ab54a2b7914800d  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         298b7f611078aa0176aad58e936c7b0d  examples/chrony.nm-dispatcher
-        b347cbf0b4ba3ba9995f2f8930667e8f  examples/chronyd.service
+        a85246982a89910b1e2d3356b7d131d7  examples/chronyd.service
 EOF
 
 # use our vendor zone (2.*pool.ntp.org names include IPv6 addresses)

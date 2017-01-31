@@ -1,11 +1,11 @@
-diff -up chrony-1.31/examples/chronyd.service.service-helper chrony-1.31/examples/chronyd.service
---- chrony-1.31/examples/chronyd.service.service-helper	2014-09-10 17:00:54.000000000 +0200
-+++ chrony-1.31/examples/chronyd.service	2014-07-03 18:09:45.000000000 +0200
-@@ -8,6 +8,7 @@ Type=forking
+diff -up chrony-3.1/examples/chronyd.service.service-helper chrony-3.1/examples/chronyd.service
+--- chrony-3.1/examples/chronyd.service.service-helper	2017-01-31 12:12:01.863772826 +0100
++++ chrony-3.1/examples/chronyd.service	2017-01-31 12:12:30.371860064 +0100
+@@ -10,6 +10,7 @@ Type=forking
  PIDFile=/var/run/chronyd.pid
  EnvironmentFile=-/etc/sysconfig/chronyd
  ExecStart=/usr/sbin/chronyd $OPTIONS
 +ExecStartPost=/usr/libexec/chrony-helper update-daemon
- 
- [Install]
- WantedBy=multi-user.target
+ PrivateTmp=yes
+ ProtectHome=yes
+ ProtectSystem=full
