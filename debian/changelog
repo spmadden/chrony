@@ -1,3 +1,21 @@
+chrony (3.1-1) experimental; urgency=medium
+
+  * Import upstream version 3.1:
+    - Please see /usr/share/doc/chrony/changelog.gz for the release notes.
+
+  * debian/chrony.conf:
+    - Remove the “hwclockfile” directive. Unneeded now that the configure
+    script allows us to set the default path to the adjtime file via the
+    “--with-hwclockfile” option.
+
+  * debian/copyright:
+    - Update copyright years.
+
+  * debian/rules:
+    - Specify default path to hwclock adjtime file.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Thu, 02 Feb 2017 19:24:30 +0100
+
 chrony (3.0-2) unstable; urgency=medium
 
   * debian/chrony.conf:
@@ -52,6 +70,42 @@ chrony (3.0-1) unstable; urgency=medium
   * Remove the init-helper script as it no longer needed.
 
  -- Vincent Blut <vincent.debian@free.fr>  Tue, 17 Jan 2017 22:05:31 +0100
+
+chrony (3.0~pre3-1) experimental; urgency=low
+
+  * Import upstream version 3.0-pre3:
+    - Please see /usr/share/doc/chrony/changelog.gz for the release notes.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Fri, 06 Jan 2017 14:20:13 +0100
+
+chrony (3.0~pre2-2) experimental; urgency=low
+
+  * Merge branch “master”.
+
+  * Enable seccomp facility on powerpcspe.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Tue, 03 Jan 2017 18:17:13 +0100
+
+chrony (3.0~pre2-1) experimental; urgency=low
+
+  * Import upstream version 3.0-pre2:
+    - Please see /usr/share/doc/chrony/changelog.gz for the release notes.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Thu, 15 Dec 2016 15:23:44 +0100
+
+chrony (3.0~pre1-1) experimental; urgency=low
+
+  * Import upstream version 3.0-pre1:
+    - Please see /usr/share/doc/chrony/changelog.gz for the release notes.
+
+  * debian/copyright:
+    - Mention new files.
+
+  * debian/rules:
+    - Enable support for MS-SNTP authentication in Samba.
+    - Rename --chronysockdir to --chronyrundir.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Sat, 10 Dec 2016 16:30:19 +0100
 
 chrony (2.4.1-3) unstable; urgency=medium
 
