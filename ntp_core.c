@@ -2016,6 +2016,9 @@ NCR_ProcessTxUnknown(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_a
   if (log_index < 0)
     return;
 
+  if (SMT_IsEnabled() && NTP_LVM_TO_MODE(message->lvm) == MODE_SERVER)
+    UTI_AddDoubleToTimespec(&tx_ts->ts, SMT_GetOffset(&tx_ts->ts), &tx_ts->ts);
+
   CLG_GetNtpTimestamps(log_index, &local_ntp_rx, &local_ntp_tx);
 
   if (UTI_IsZeroNtp64(local_ntp_tx))
