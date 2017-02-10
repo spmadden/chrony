@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -180,6 +180,9 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Feb 10 2017 Fedora Release Engineering <releng@fedoraproject.org> - 3.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
+
 * Tue Jan 31 2017 Miroslav Lichvar <mlichvar@redhat.com> 3.1-1
 - update to 3.1
 - enable seccomp support on more archs
