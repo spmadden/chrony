@@ -1,0 +1,26 @@
+commit 768bce799bfe009e7dbaad5742738f7d05280d6d
+Author: Miroslav Lichvar <mlichvar@redhat.com>
+Date:   Mon Mar 13 14:26:12 2017 +0100
+
+    sys_linux: allow getpid in seccomp filter
+    
+    It seems to be used by syslog() in latest glibc.
+
+diff --git a/sys_linux.c b/sys_linux.c
+index 3dd411f..c06112a 100644
+--- a/sys_linux.c
++++ b/sys_linux.c
+@@ -467,9 +467,10 @@ SYS_Linux_EnableSystemCallFilter(int level)
+     SCMP_SYS(adjtimex), SCMP_SYS(clock_gettime), SCMP_SYS(gettimeofday),
+     SCMP_SYS(settimeofday), SCMP_SYS(time),
+     /* Process */
+-    SCMP_SYS(clone), SCMP_SYS(exit), SCMP_SYS(exit_group), SCMP_SYS(getrlimit),
+-    SCMP_SYS(rt_sigaction), SCMP_SYS(rt_sigreturn), SCMP_SYS(rt_sigprocmask),
+-    SCMP_SYS(set_tid_address), SCMP_SYS(sigreturn), SCMP_SYS(wait4),
++    SCMP_SYS(clone), SCMP_SYS(exit), SCMP_SYS(exit_group), SCMP_SYS(getpid),
++    SCMP_SYS(getrlimit), SCMP_SYS(rt_sigaction), SCMP_SYS(rt_sigreturn),
++    SCMP_SYS(rt_sigprocmask), SCMP_SYS(set_tid_address), SCMP_SYS(sigreturn),
++    SCMP_SYS(wait4),
+     /* Memory */
+     SCMP_SYS(brk), SCMP_SYS(madvise), SCMP_SYS(mmap), SCMP_SYS(mmap2),
+     SCMP_SYS(mprotect), SCMP_SYS(mremap), SCMP_SYS(munmap), SCMP_SYS(shmdt),
