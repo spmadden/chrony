@@ -24,3 +24,24 @@ index 3dd411f..c06112a 100644
      /* Memory */
      SCMP_SYS(brk), SCMP_SYS(madvise), SCMP_SYS(mmap), SCMP_SYS(mmap2),
      SCMP_SYS(mprotect), SCMP_SYS(mremap), SCMP_SYS(munmap), SCMP_SYS(shmdt),
+commit 653d70ec4e567b33b917f6784a68dfb254aa8984
+Author: Miroslav Lichvar <mlichvar@redhat.com>
+Date:   Wed Apr 19 14:38:51 2017 +0200
+
+    sys_linux: allow sysinfo in seccomp filter
+    
+    It may be used by glob() in latest glibc.
+
+diff --git a/sys_linux.c b/sys_linux.c
+index 649afb0..2cd178a 100644
+--- a/sys_linux.c
++++ b/sys_linux.c
+@@ -490,7 +490,7 @@ SYS_Linux_EnableSystemCallFilter(int level)
+     SCMP_SYS(poll), SCMP_SYS(read), SCMP_SYS(futex), SCMP_SYS(select),
+     SCMP_SYS(set_robust_list), SCMP_SYS(write),
+     /* Miscellaneous */
+-    SCMP_SYS(uname),
++    SCMP_SYS(sysinfo), SCMP_SYS(uname),
+   };
+ 
+   const int socket_domains[] = {
