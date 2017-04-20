@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.1
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -185,6 +185,11 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Apr 20 2017 Miroslav Lichvar <mlichvar@redhat.com> 3.1-4
+- use ID from /etc/os-release to set pool.ntp.org vendor zone (#1443599)
+- fix seccomp filter for new glibc once again
+- don't drop PHC samples with zero delay
+
 * Mon Mar 13 2017 Miroslav Lichvar <mlichvar@redhat.com> 3.1-3
 - fix seccomp filter for new glibc
 
