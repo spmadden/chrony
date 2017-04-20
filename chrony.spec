@@ -52,8 +52,7 @@ in permanently connected environments. It can use also hardware reference
 clocks, system real-time clock or manual input as time references.
 
 %if 0%{!?vendorzone:1}
-%{?fedora: %global vendorzone fedora.}
-%{?rhel: %global vendorzone rhel.}
+%global vendorzone %(source /etc/os-release && echo ${ID}.)
 %endif
 
 %prep
