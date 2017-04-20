@@ -23,6 +23,8 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 Patch1:         chrony-service-helper.patch
 # fix seccomp filter for new glibc
 Patch2:         chrony-seccomp.patch
+# don't drop PHC samples with zero delay
+Patch3:         chrony-phcdelay.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
@@ -60,6 +62,7 @@ clocks, system real-time clock or manual input as time references.
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .service-helper
 %patch2 -p1 -b .seccomp
+%patch3 -p1 -b .phcdelay
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
