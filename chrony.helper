@@ -16,6 +16,8 @@ dhclient_servers_files=/var/lib/dhclient/chrony.servers.*
 dnssrv_servers_files=$helper_dir/dnssrv@*
 dnssrv_timer_prefix=chrony-dnssrv@
 
+. $network_sysconfig_file &> /dev/null
+
 chrony_command() {
     $chronyc -a -n -m "$1"
 }
@@ -24,9 +26,13 @@ is_running() {
     chrony_command "tracking" &> /dev/null
 }
 
+get_servers_files() {
+    [ "$PEERNTP" != "no" ] && echo "$dhclient_servers_files"
+    echo "$dnssrv_servers_files"
+}
+
 is_update_needed() {
-    for file in $dhclient_servers_files $dnssrv_servers_files \
-            $added_servers_file; do
+    for file in $(get_servers_files) $added_servers_file; do
         [ -e "$file" ] && return 0
     done
     return 1
@@ -40,8 +46,7 @@ update_daemon() {
         return 0
     fi
 
-    all_servers_with_args=$(
-        cat $dhclient_servers_files $dnssrv_servers_files 2> /dev/null)
+    all_servers_with_args=$(cat $(get_servers_files) 2> /dev/null)
 
     all_servers=$(
         echo "$all_servers_with_args" |
@@ -69,25 +74,21 @@ update_daemon() {
 }
 
 get_dnssrv_servers() {
-    local name=$1
+    local name=$1 output
 
     if ! command -v dig &> /dev/null; then
         echo "Missing dig (DNS lookup utility)" >&2
         return 1
     fi
 
-    (
-        . $network_sysconfig_file &> /dev/null
+    output=$(dig "$name" srv +short +ndots=2 +search 2> /dev/null)
+    [ $? -ne 0 ] && return 0
 
-        output=$(dig "$name" srv +short +ndots=2 +search 2> /dev/null)
-        [ $? -ne 0 ] && return 0
-
-        echo "$output" | while read prio weight port target; do
-            server=${target%.}
-            [ -z "$server" ] && continue
-            echo "$server port $port ${NTPSERVERARGS:-iburst}"
-        done
-    )
+    echo "$output" | while read prio weight port target; do
+        server=${target%.}
+        [ -z "$server" ] && continue
+        echo "$server port $port ${NTPSERVERARGS:-iburst}"
+    done
 }
 
 check_dnssrv_name() {
