@@ -22,6 +22,7 @@ PATH=/bin:/usr/bin:/sbin:/usr/sbin
 DAEMON=/usr/sbin/chronyd
 NAME="chronyd"
 DESC="time daemon"
+PIDFILE=/run/chronyd.pid
 
 [ -x "$DAEMON" ] || exit 0
 
@@ -35,46 +36,34 @@ fi
 
 case "$1" in
     start)
-	start-stop-daemon --start --verbose --exec $DAEMON -- $DAEMON_OPTS
-	case "$?" in
-		0) # daemon successfully started
-			;;
-	        1) # daemon already running
-		        ;;
-		*) # daemon could not be started
-			echo "$DAEMON failed to start."
-			exit 1
-			;;
-	esac
-	;;
+        if $0 status > /dev/null ; then
+            log_success_msg "$NAME is already running"
+        else
+            log_daemon_msg "Starting $DESC" "$NAME"
+            start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- $DAEMON_OPTS
+            log_end_msg $?
+        fi
+        ;;
+
     stop)
-	start-stop-daemon --stop --verbose --oknodo --exec $DAEMON
-	rm -f /var/run/chrony-ppp-up
-	;;
+        log_daemon_msg "Stopping $DESC" "$NAME"
+        start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE --remove-pidfile --exec $DAEMON
+        log_end_msg $?
+        ;;
+
     restart|force-reload)
-	echo -n "Restarting $DESC: "
-	start-stop-daemon --stop --quiet --exec $DAEMON
-	sleep 1
-	start-stop-daemon --start --verbose --exec $DAEMON -- $DAEMON_OPTS
-	case "$?" in
-		0) # daemon successfully started
-			;;
-	        1) # still running
-		        ;;
-		*) # daemon could not be started
-			echo "$DAEMON failed to restart."
-			rm -f /var/run/chrony-ppp-up
-			exit 1
-			;;
-	esac
-	;;
+        $0 stop
+        $0 start
+        ;;
+
     status)
-	status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
-	;;
+        status_of_proc -p $PIDFILE "$DAEMON" "$NAME" && exit 0 || exit $?
+        ;;
+
     *)
-	echo "Usage: /etc/init.d/chrony {start|stop|restart|force-reload|status}"
-	exit 1
-	;;
+        log_action_msg "Usage: /etc/init.d/chrony {start|stop|restart|force-reload|status}"
+        exit 1
+        ;;
 esac
 
 exit 0
