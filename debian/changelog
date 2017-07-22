@@ -1,3 +1,18 @@
+chrony (3.0-4+deb9u1) stretch; urgency=medium
+
+  * debian/chrony.if-up:
+    - Do not pass the “burst” command to chronyc as the script could return an
+    error in certain situations. As a consequence, that would prevent ifupdown
+    from writing the current state of the interfaces in /run/network/ifstate.
+    Thanks to John Eikenberry <jae@zhar.net> for reporting that issue.
+    (Closes: #868491)
+
+  * debian/chrony.ppp.ip-up:
+    - Take the same action as for the “chrony.if-up” script as a precautionary
+    measure.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Sat, 22 Jul 2017 17:24:44 +0200
+
 chrony (3.0-4) unstable; urgency=medium
 
   * debian/patches/*:
