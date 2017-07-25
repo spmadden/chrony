@@ -1,9 +1,10 @@
 %global _hardened_build 1
-%global clknetsim_ver ce89a1
+%global prerelease -pre1
+%global clknetsim_ver 71dbbc
 %bcond_without debug
 
 Name:           chrony
-Version:        3.1
+Version:        3.2
 Release:        5%{?dist}
 Summary:        An NTP client/server
 
@@ -21,10 +22,6 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add NTP servers from DHCP when starting service
 Patch1:         chrony-service-helper.patch
-# fix seccomp filter for new glibc
-Patch2:         chrony-seccomp.patch
-# don't drop PHC samples with zero delay
-Patch3:         chrony-phcdelay.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
@@ -61,8 +58,6 @@ clocks, system real-time clock or manual input as time references.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .service-helper
-%patch2 -p1 -b .seccomp
-%patch3 -p1 -b .phcdelay
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -145,7 +140,7 @@ echo 'chronyd.service' > \
 # set random seed to get deterministic results
 export CLKNETSIM_RANDOM_SEED=24502
 make %{?_smp_mflags} -C test/simulation/clknetsim
-make check
+make quickcheck
 
 %pre
 getent group chrony > /dev/null || /usr/sbin/groupadd -r chrony
