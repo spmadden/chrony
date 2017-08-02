@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        3.2
-Release:        0.2.pre1%{?dist}
+Release:        0.3.pre1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -180,6 +180,9 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Aug 02 2017 Fedora Release Engineering <releng@fedoraproject.org> - 3.2-0.3.pre1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Binutils_Mass_Rebuild
+
 * Wed Jul 26 2017 Fedora Release Engineering <releng@fedoraproject.org> - 3.2-0.2.pre1
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Mass_Rebuild
 
