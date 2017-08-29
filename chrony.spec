@@ -1,5 +1,5 @@
 %global _hardened_build 1
-%global prerelease -pre1
+%global prerelease -pre2
 %global clknetsim_ver 71dbbc
 %bcond_without debug
 
@@ -67,7 +67,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         58978d335ec3752ac2c38fa82b48f0a5  examples/chrony.conf.example2
         ba6bb05c50e03f6b5ab54a2b7914800d  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
-        298b7f611078aa0176aad58e936c7b0d  examples/chrony.nm-dispatcher
+        27cbc940c94575de320dbd251cbb4514  examples/chrony.nm-dispatcher
         a85246982a89910b1e2d3356b7d131d7  examples/chronyd.service
 EOF
 
