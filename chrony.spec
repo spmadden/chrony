@@ -1,5 +1,4 @@
 %global _hardened_build 1
-%global prerelease -pre2
 %global clknetsim_ver 71dbbc
 %bcond_without debug
 
@@ -64,7 +63,7 @@ clocks, system real-time clock or manual input as time references.
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
         47ad7eccc410b981d2f2101cf5682616  examples/chrony-wait.service
-        58978d335ec3752ac2c38fa82b48f0a5  examples/chrony.conf.example2
+        e473a9fab7fe200cacce3dca8b66290b  examples/chrony.conf.example2
         ba6bb05c50e03f6b5ab54a2b7914800d  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         27cbc940c94575de320dbd251cbb4514  examples/chrony.nm-dispatcher
