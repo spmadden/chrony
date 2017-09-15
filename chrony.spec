@@ -71,7 +71,9 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
 EOF
 
 # use our vendor zone (2.*pool.ntp.org names include IPv6 addresses)
+# and get TAI-UTC offset and leap seconds from tzdata by default
 sed -e 's|^\(pool \)\(pool.ntp.org\)|\12.%{vendorzone}\2|' \
+    -e 's|#\(leapsectz\)|\1|' \
         < examples/chrony.conf.example2 > chrony.conf
 
 touch -r examples/chrony.conf.example2 chrony.conf
