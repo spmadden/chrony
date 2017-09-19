@@ -70,6 +70,9 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         a85246982a89910b1e2d3356b7d131d7  examples/chronyd.service
 EOF
 
+# don't allow packaging without vendor zone
+test -n "%{vendorzone}"
+
 # use our vendor zone (2.*pool.ntp.org names include IPv6 addresses)
 # and get TAI-UTC offset and leap seconds from tzdata by default
 sed -e 's|^\(pool \)\(pool.ntp.org\)|\12.%{vendorzone}\2|' \
