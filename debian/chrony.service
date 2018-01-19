@@ -2,13 +2,15 @@
 Description=chrony, an NTP client/server
 Documentation=man:chronyd(8) man:chronyc(1) man:chrony.conf(5)
 Conflicts=systemd-timesyncd.service openntpd.service
-After=network.target
+Wants=network-online.target
+After=network-online.target
 ConditionCapability=CAP_SYS_TIME
 
 [Service]
 Type=forking
 PIDFile=/run/chronyd.pid
-ExecStart=/usr/sbin/chronyd
+EnvironmentFile=-/etc/default/chrony
+ExecStart=/usr/sbin/chronyd $DAEMON_OPTS
 PrivateTmp=yes
 ProtectHome=yes
 ProtectSystem=full
