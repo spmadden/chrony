@@ -1,3 +1,10 @@
+chrony (3.2-1ubuntu2) bionic; urgency=medium
+
+  * debian/usr.sbin.chronyd: incorporate in progress changes from Debian,
+    thanks to Vincent Blut
+
+ -- Jamie Strandboge <jamie@ubuntu.com>  Mon, 22 Jan 2018 22:53:57 +0000
+
 chrony (3.2-1ubuntu1) bionic; urgency=medium
 
   * add AppArmor profile for /usr/sbin/chronyd:
