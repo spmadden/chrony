@@ -36,6 +36,9 @@ Requires(postun): systemd
 # install timedated implementation that can control chronyd service
 Recommends:     timedatex
 
+# suggest drivers for hardware reference clocks
+Suggests:       ntp-refclock
+
 %description
 A client/server for the Network Time Protocol, this program keeps your
 computer's clock accurate. It was specially designed to support
