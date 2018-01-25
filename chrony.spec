@@ -42,11 +42,11 @@ Recommends:     timedatex
 Suggests:       ntp-refclock
 
 %description
-A client/server for the Network Time Protocol, this program keeps your
-computer's clock accurate. It was specially designed to support
-systems with intermittent internet connections, but it also works well
-in permanently connected environments. It can use also hardware reference
-clocks, system real-time clock or manual input as time references.
+chrony is a versatile implementation of the Network Time Protocol (NTP).
+It can synchronise the system clock with NTP servers, reference clocks
+(e.g. GPS receiver), and manual input using wristwatch and keyboard. It
+can also operate as an NTPv4 (RFC 5905) server and peer to provide a time
+service to other computers in the network.
 
 %if 0%{!?vendorzone:1}
 %global vendorzone %(source /etc/os-release && echo ${ID}.)
