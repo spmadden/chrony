@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.2
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -182,6 +182,9 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Jan 30 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.2-3
+- use systemd macro for scriptlet dependencies
+
 * Thu Jan 25 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.2-2
 - fix chronyc getting stuck in infinite loop after clock step
 - don't allow packaging without vendor zone
