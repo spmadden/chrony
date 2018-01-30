@@ -28,12 +28,10 @@ BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
 BuildRequires:  libseccomp-devel
 %endif
-BuildRequires:  bison systemd-units
+BuildRequires:  bison systemd
 
 Requires(pre):  shadow-utils
-Requires(post): systemd
-Requires(preun): systemd
-Requires(postun): systemd
+%{?systemd_requires}
 
 # install timedated implementation that can control chronyd service
 Recommends:     timedatex
