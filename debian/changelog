@@ -1,6 +1,7 @@
 chrony (3.2-2ubuntu1) bionic; urgency=medium
 
   * d/control: use to nss instead of tomcrypt (in main) (LP: #1744072)
+  * d/chrony.conf: use ubuntu ntp pool and server (LP: #1744664)
 
  -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Fri, 19 Jan 2018 09:45:38 +0100
 
