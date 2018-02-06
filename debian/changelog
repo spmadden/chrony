@@ -1,4 +1,4 @@
-chrony (3.2-2ubuntu1) bionic; urgency=medium
+chrony (3.2-2ubuntu2) bionic; urgency=medium
 
   * d/control: use to nss instead of tomcrypt (in main) (LP: #1744072)
   * d/chrony.conf: use ubuntu ntp pool and server (LP: #1744664)
