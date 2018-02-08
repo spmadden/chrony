@@ -1,3 +1,13 @@
+chrony (3.2-2ubuntu3) bionic; urgency=medium
+
+  * Revert the changes of (LP 1746458) as in the follow on discussion
+    it became clear that we want it to start early (for example for an
+    early offset from drift file). iIf needed chrony will later on pick
+    up that servers are online via retries (augmented by hooks on network
+    events).
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Thu, 08 Feb 2018 10:52:30 +0100
+
 chrony (3.2-2ubuntu2) bionic; urgency=medium
 
   * d/control: use to nss instead of tomcrypt (in main) (LP: #1744072)
