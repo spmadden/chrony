@@ -1,3 +1,19 @@
+chrony (3.2-4ubuntu1) bionic; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - d/control: switch to nss instead of tomcrypt (nss is in main)
+    - d/chrony.conf: use ubuntu ntp pool and server (LP 1744664)
+  * Dropped changes (in Debian)
+    - d/chrony.default, d/chrony.service: support /etc/default/chrony
+      DAEMON_OPTS in systemd environment (LP: 1746081)
+    - d/chrony.service: properly start after networking (LP: 1746458)
+    - d/usr.sbin.chronyd: allow to create /run/chrony on demand (LP: 1746444)
+  * Added Changes:
+    - debian/usr.sbin.chronyd: ensure RTC/GPS usage isn't blocked by apparmor
+      (LP: #1751241, Closes: #891201)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Mon, 26 Feb 2018 14:44:54 +0100
+
 chrony (3.2-4) unstable; urgency=medium
 
   * debian/changelog:
@@ -63,6 +79,27 @@ chrony (3.2-3) unstable; urgency=medium
     (LP: #1746444, Closes: #889011)
 
  -- Vincent Blut <vincent.debian@free.fr>  Wed, 07 Feb 2018 21:27:09 +0100
+
+chrony (3.2-2ubuntu3) bionic; urgency=medium
+
+  * Revert the changes of (LP 1746458) as in the follow on discussion
+    it became clear that we want it to start early (for example for an
+    early offset from drift file). iIf needed chrony will later on pick
+    up that servers are online via retries (augmented by hooks on network
+    events).
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Thu, 08 Feb 2018 10:52:30 +0100
+
+chrony (3.2-2ubuntu2) bionic; urgency=medium
+
+  * d/control: use to nss instead of tomcrypt (in main) (LP: #1744072)
+  * d/chrony.conf: use ubuntu ntp pool and server (LP: #1744664)
+  * d/chrony.default, d/chrony.service: support /etc/default/chrony
+    DAEMON_OPTS in systemd environment (LP: #1746081)
+  * d/chrony.service: properly start after networking (LP: #1746458)
+  * d/usr.sbin.chronyd: allow to create /run/chrony on demand (LP: #1746444)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Fri, 19 Jan 2018 09:45:38 +0100
 
 chrony (3.2-2) unstable; urgency=medium
 
