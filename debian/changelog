@@ -27,6 +27,9 @@ chrony (3.2-4ubuntu2) bionic; urgency=medium
     - debian/install: make chronyd-starter.sh available on install.
     - debian/docs, debian/README.container: provide documentation about the
       handling of this case.
+  * debian/chrony.conf: update default chrony.conf to not violate the policy
+    of pool.ntp.org (to use no more than four of their servers) and to provide
+    more ipv6 capable sources by default (LP: #1754358)
 
  -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Fri, 16 Mar 2018 12:25:44 +0100
 
