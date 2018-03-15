@@ -24,6 +24,7 @@ Architecture: linux-any
 Depends: adduser,
          iproute2 [linux-any],
          lsb-base,
+         libcap2-bin,
          ucf,
          ${misc:Depends},
          ${shlibs:Depends}
