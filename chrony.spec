@@ -1,9 +1,10 @@
 %global _hardened_build 1
-%global clknetsim_ver 71dbbc
+%global prerelease -pre1
+%global clknetsim_ver 5b4d14
 %bcond_without debug
 
 Name:           chrony
-Version:        3.2
+Version:        3.3
 Release:        4%{?dist}
 Summary:        An NTP client/server
 
@@ -21,8 +22,6 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add NTP servers from DHCP when starting service
 Patch1:         chrony-service-helper.patch
-# fix chronyc getting stuck in infinite loop after clock step
-Patch2:         chrony-select-timeout.patch
 
 BuildRequires:  libcap-devel libedit-devel nss-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
@@ -54,7 +53,6 @@ service to other computers in the network.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .service-helper
-%patch2 -p1 -b .select-timeout
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -64,7 +62,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         e473a9fab7fe200cacce3dca8b66290b  examples/chrony.conf.example2
         ba6bb05c50e03f6b5ab54a2b7914800d  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
-        27cbc940c94575de320dbd251cbb4514  examples/chrony.nm-dispatcher
+        63e0781f84e89ba6029d93ef0722c4ce  examples/chrony.nm-dispatcher
         a85246982a89910b1e2d3356b7d131d7  examples/chronyd.service
 EOF
 
