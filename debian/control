@@ -28,6 +28,7 @@ Pre-Depends: ${misc:Pre-Depends}
 Depends: adduser (>= 3.130),
          iproute2 [linux-any],
          tzdata,
+         libcap2-bin (>= 1:2.32-1),
          ucf,
          ${misc:Depends},
          ${shlibs:Depends}
