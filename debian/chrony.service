@@ -5,7 +5,6 @@ Conflicts=openntpd.service ntp.service ntpsec.service
 Wants=time-sync.target
 Before=time-sync.target
 After=network.target
-ConditionCapability=CAP_SYS_TIME
 
 [Service]
 Type=forking
