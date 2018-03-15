@@ -27,7 +27,7 @@ BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
 BuildRequires:  libseccomp-devel
 %endif
-BuildRequires:  bison systemd
+BuildRequires:  gcc bison systemd
 
 Requires(pre):  shadow-utils
 %{?systemd_requires}
