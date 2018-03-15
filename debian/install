@@ -2,3 +2,4 @@ debian/chrony-dnssrv@.* lib/systemd/system
 debian/chrony-helper usr/lib/chrony
 debian/chrony.conf usr/share/chrony
 debian/usr.sbin.chronyd etc/apparmor.d
+debian/chronyd-starter.sh usr/lib/systemd/scripts/
