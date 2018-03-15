@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        3.3
-Release:        4%{?dist}
+Release:        0.1.pre1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -180,6 +180,11 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Mar 15 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.3-0.1.pre1
+- update to 3.3-pre1
+- switch to nettle for crypto hashing
+- add gcc to build requirements
+
 * Wed Feb 07 2018 Fedora Release Engineering <releng@fedoraproject.org> - 3.2-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_28_Mass_Rebuild
 
