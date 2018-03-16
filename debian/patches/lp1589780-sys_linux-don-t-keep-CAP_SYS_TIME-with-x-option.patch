@@ -1,0 +1,84 @@
+From e8096330be1eb4db25b14152b14550c6c0bbaa63 Mon Sep 17 00:00:00 2001
+From: Miroslav Lichvar <mlichvar@redhat.com>
+Date: Mon, 5 Feb 2018 14:00:05 +0100
+Subject: [PATCH] sys_linux: don't keep CAP_SYS_TIME with -x option
+
+When dropping the root privileges, don't try to keep the CAP_SYS_TIME
+capability if the -x option was enabled. This allows chronyd to be
+started without the capability (e.g. in containers) and also drop the
+root privileges.
+
+
+Forwarded: no (backport)
+Author: Christian Ehrhardt <christian.ehrhardt@canonical.com>
+Original-Author: Miroslav Lichvar <mlichvar@redhat.com>
+Origin: upstream, https://git.tuxfamily.org/chrony/chrony.git/commit/?id=e8096330be1eb4db25b14152b14550c6c0bbaa63
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/1589780
+Last-Update: 2018-03-06
+---
+ sys.c       |  2 +-
+ sys_linux.c | 13 ++++++++-----
+ sys_linux.h |  2 +-
+ 3 files changed, 10 insertions(+), 7 deletions(-)
+
+diff --git a/sys.c b/sys.c
+index 5b56aae..4d68b37 100644
+--- a/sys.c
++++ b/sys.c
+@@ -97,7 +97,7 @@ SYS_Finalise(void)
+ void SYS_DropRoot(uid_t uid, gid_t gid)
+ {
+ #if defined(LINUX) && defined (FEAT_PRIVDROP)
+-  SYS_Linux_DropRoot(uid, gid);
++  SYS_Linux_DropRoot(uid, gid, !null_driver);
+ #elif defined(SOLARIS) && defined(FEAT_PRIVDROP)
+   SYS_Solaris_DropRoot(uid, gid);
+ #elif (defined(NETBSD) || defined(FREEBSD)) && defined(FEAT_PRIVDROP)
+diff --git a/sys_linux.c b/sys_linux.c
+index 190b54f..f445727 100644
+--- a/sys_linux.c
++++ b/sys_linux.c
+@@ -415,9 +415,9 @@ SYS_Linux_Finalise(void)
+ 
+ #ifdef FEAT_PRIVDROP
+ void
+-SYS_Linux_DropRoot(uid_t uid, gid_t gid)
++SYS_Linux_DropRoot(uid_t uid, gid_t gid, int clock_control)
+ {
+-  const char *cap_text;
++  char cap_text[256];
+   cap_t cap;
+ 
+   if (prctl(PR_SET_KEEPCAPS, 1)) {
+@@ -426,9 +426,12 @@ SYS_Linux_DropRoot(uid_t uid, gid_t gid)
+   
+   UTI_DropRoot(uid, gid);
+ 
+-  /* Keep CAP_NET_BIND_SERVICE only if NTP port can be opened */
+-  cap_text = CNF_GetNTPPort() ?
+-             "cap_net_bind_service,cap_sys_time=ep" : "cap_sys_time=ep";
++  /* Keep CAP_NET_BIND_SERVICE only if a server NTP port can be opened
++     and keep CAP_SYS_TIME only if the clock control is enabled */
++  if (snprintf(cap_text, sizeof (cap_text), "%s %s",
++               CNF_GetNTPPort() ? "cap_net_bind_service=ep" : "",
++               clock_control ? "cap_sys_time=ep" : "") >= sizeof (cap_text))
++    assert(0);
+ 
+   if ((cap = cap_from_text(cap_text)) == NULL) {
+     LOG_FATAL("cap_from_text() failed");
+diff --git a/sys_linux.h b/sys_linux.h
+index dc1cee6..799ae9a 100644
+--- a/sys_linux.h
++++ b/sys_linux.h
+@@ -31,7 +31,7 @@ extern void SYS_Linux_Initialise(void);
+ 
+ extern void SYS_Linux_Finalise(void);
+ 
+-extern void SYS_Linux_DropRoot(uid_t uid, gid_t gid);
++extern void SYS_Linux_DropRoot(uid_t uid, gid_t gid, int clock_control);
+ 
+ extern void SYS_Linux_EnableSystemCallFilter(int level);
+ 
+-- 
+2.7.4
+
