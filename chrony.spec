@@ -181,6 +181,9 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Apr 04 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.3-1
+- update to 3.3
+
 * Fri Sep 15 2017 Miroslav Lichvar <mlichvar@redhat.com> 3.2-1
 - update to 3.2
 - get TAI-UTC offset and leap seconds from tzdata by default
