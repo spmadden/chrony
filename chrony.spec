@@ -68,10 +68,13 @@ EOF
 # don't allow packaging without vendor zone
 test -n "%{vendorzone}"
 
-# use our vendor zone (2.*pool.ntp.org names include IPv6 addresses)
-# and get TAI-UTC offset and leap seconds from tzdata by default
+# use example chrony.conf as the default config with some modifications:
+# - use our vendor zone (2.*pool.ntp.org names include IPv6 addresses)
+# - enable leapsectz to get TAI-UTC offset and leap seconds from tzdata
+# - enable keyfile
 sed -e 's|^\(pool \)\(pool.ntp.org\)|\12.%{vendorzone}\2|' \
     -e 's|#\(leapsectz\)|\1|' \
+    -e 's|#\(keyfile\)|\1|' \
         < examples/chrony.conf.example2 > chrony.conf
 
 touch -r examples/chrony.conf.example2 chrony.conf
