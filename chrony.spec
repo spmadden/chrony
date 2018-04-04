@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.3
-Release:        0.1.pre1%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -182,6 +182,10 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Apr 04 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.3-1
+- update to 3.3
+- enable keyfile by default again
+
 * Thu Mar 15 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.3-0.1.pre1
 - update to 3.3-pre1
 - switch to nettle for crypto hashing
