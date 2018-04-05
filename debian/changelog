@@ -1,3 +1,9 @@
+chrony (3.2-4ubuntu3) bionic; urgency=medium
+
+  * debian/usr.sbin.chronyd: add cap net_admin for hwtimestamp (LP: #1761327)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Thu, 05 Apr 2018 09:38:10 +0200
+
 chrony (3.2-4ubuntu2) bionic; urgency=medium
 
   * Set -x as default if unable to set time (e.g. in containers) (LP: #1589780)
