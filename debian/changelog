@@ -1,3 +1,9 @@
+chrony (3.2-4ubuntu4) bionic; urgency=medium
+
+  * d/postrm: re-establish systemd-timesyncd on removal (LP: #1764357)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Mon, 16 Apr 2018 17:04:06 +0200
+
 chrony (3.2-4ubuntu3) bionic; urgency=medium
 
   * debian/usr.sbin.chronyd: add cap net_admin for hwtimestamp (LP: #1761327)
