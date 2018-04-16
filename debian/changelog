@@ -1,3 +1,16 @@
+chrony (3.2-4ubuntu4) bionic; urgency=medium
+
+  * d/postrm: re-establish systemd-timesyncd on removal (LP: #1764357)
+  * Notify chrony to update sources in response to systemd-networkd
+    events (LP: #1718227)
+    - d/links: link dispatcher script to networkd-dispatcher events routable
+      and off
+    - d/control: set Recommends to networkd-dispatcher
+    - d/p/lp-1718227-ignore-non-up-down-events-in-nm-dispatcher.patch
+    - d/p/lp-1718227-nm-dispatcher-for-networkd.patch
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Mon, 16 Apr 2018 17:04:06 +0200
+
 chrony (3.2-4ubuntu3) bionic; urgency=medium
 
   * debian/usr.sbin.chronyd: add cap net_admin for hwtimestamp (LP: #1761327)

@@ -29,6 +29,7 @@ Depends: ${misc:Depends},
  lsb-base,
  libcap2-bin,
  adduser
+Recommends: networkd-dispatcher (>= 1.7-0ubuntu3)
 Suggests: dnsutils
 Conflicts: time-daemon, ntp
 Provides: time-daemon
