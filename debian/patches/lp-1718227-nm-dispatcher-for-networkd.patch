@@ -1,0 +1,67 @@
+From 8cbc68f28f96d48a7ee128fa91731ca02a598913 Mon Sep 17 00:00:00 2001
+From: Christian Ehrhardt <christian.ehrhardt@canonical.com>
+Date: Wed, 18 Apr 2018 15:44:21 +0200
+Subject: [PATCH 2/2] examples: make nm-dispatcher script usable for
+ networkd-dispatcher
+
+Historically there were plenty of callback based implementations around
+ifupdown via /etc/network/if-up and similar. NetworkManager added the
+dispatcher [1] feature for such a kind of functionality.
+
+But so far a systemd-networkd (only) systemd had no means to handle those
+cases. This is solved by networkd-dispatcher which is currently available
+at least in ArchLinux and Ubuntu.
+It takes away the responsibility to listen on netlink events in each
+application and provides a more classic script-drop-in interface to respond
+to networkd events [3].
+
+This commit makes the NM example compatible to be used by NetworkManager
+dispatcher as well as by networkd-dispatcher. That way we avoid too much
+code duplication and can from now on handle special cases in the
+beginning so that the tail can stay commonly used.
+
+After discussion on IRC the current check differs by checking the
+argument count (only in NetworkManager), if ever needed we could extend
+that to check for known custom environment vars (NetworkManager =>
+CONNECTION_UUID; networkd-dispatcher => OperationalState).
+
+[1]: https://developer.gnome.org/NetworkManager/stable/NetworkManager.html
+[2]: https://github.com/craftyguy/networkd-dispatcher
+[3]: https://github.com/systemd/systemd/blob/master/src/systemd/sd-network.h#L86
+
+Signed-off-by: Christian Ehrhardt <christian.ehrhardt@canonical.com>
+
+Forwarded: no (backport)
+Author: Christian Ehrhardt <christian.ehrhardt@canonical.com>
+Origin: upstream, https://git.tuxfamily.org/chrony/chrony.git/commit/?id=8cbc68f28f96d48a7ee128fa91731ca02a598913
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/1718227
+Last-Update: 2018-04-18
+---
+ examples/chrony.nm-dispatcher | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/examples/chrony.nm-dispatcher b/examples/chrony.nm-dispatcher
+index a609a66..8bd7df0 100644
+--- a/examples/chrony.nm-dispatcher
++++ b/examples/chrony.nm-dispatcher
+@@ -1,10 +1,14 @@
+ #!/bin/sh
+-# This is a NetworkManager dispatcher script for chronyd to set its NTP sources
+-# online or offline when a network interface is configured or removed
++# This is a NetworkManager dispatcher / networkd-dispatcher script for
++# chronyd to set its NTP sources online or offline when a network interface
++# is configured or removed
+ 
+ export LC_ALL=C
+ 
+-[ "$2" != "up" ] && [ "$2" != "down" ] && exit 0
++# For NetworkManager consider only up/down events
++[ $# -ge 2 ] && [ "$2" != "up" ] && [ "$2" != "down" ] && exit 0
++
++# Note: for networkd-dispatcher routable.d ~= on and off.d ~= off
+ 
+ # Check if there is a default route
+ 
+-- 
+2.7.4
+

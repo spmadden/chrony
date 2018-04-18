@@ -1,0 +1,32 @@
+From b563048ee28d121142a663ac6a598e4c71e2c21d Mon Sep 17 00:00:00 2001
+From: Miroslav Lichvar <mlichvar@redhat.com>
+Date: Tue, 13 Feb 2018 11:44:24 +0100
+Subject: [PATCH 1/2] examples: ignore non-up/down events in nm-dispatcher
+ script
+
+Forwarded: no (backport)
+Author: Christian Ehrhardt <christian.ehrhardt@canonical.com>
+Original-Author: Miroslav Lichvar <mlichvar@redhat.com>
+Origin: upstream, https://git.tuxfamily.org/chrony/chrony.git/commit/?id=b563048ee28d121142a663ac6a598e4c71e2c21d
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/1718227
+Last-Update: 2018-04-18
+---
+ examples/chrony.nm-dispatcher | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/examples/chrony.nm-dispatcher b/examples/chrony.nm-dispatcher
+index 51d7fa2..a609a66 100644
+--- a/examples/chrony.nm-dispatcher
++++ b/examples/chrony.nm-dispatcher
+@@ -4,6 +4,8 @@
+ 
+ export LC_ALL=C
+ 
++[ "$2" != "up" ] && [ "$2" != "down" ] && exit 0
++
+ # Check if there is a default route
+ 
+ if /sbin/ip route list 2> /dev/null | grep -q '^default'; then
+-- 
+2.7.4
+
