@@ -1,3 +1,55 @@
+chrony (3.3-2ubuntu1) cosmic; urgency=medium
+
+  * Merge with Debian unstable (LP: #1771061). Remaining changes:
+    - d/chrony.conf: use ubuntu ntp pool and server (LP 1744664)
+    - Set -x as default if unable to set time (e.g. in containers) (LP: 1589780)
+      Chrony is a single service which acts as both NTP client (i.e. syncing the
+      local clock) and NTP server (i.e. providing NTP services to the network),
+      and that is both desired and expected in the vast majority of cases.
+      But in containers syncing the local clock is usually impossible, but this
+      shall not break the providing of NTP services to the network.
+      To some extent this makes chrony's default config more similar to 'ntpd',
+      which complained in syslog but still provided NTP server service in those
+      cases.
+      - debian/chrony.service: allow the service to run without CAP_SYS_TIME
+      - debian/control: add new dependency libcap2-bin for capsh (usually
+        installed anyway, but make them explicit to be sure).
+      - debian/chrony.default: new option SYNC_IN_CONTAINER to not fall back
+        (Default off).
+      - debian/chronyd-starter.sh: wrapper to handle special cases in containers
+        and if CAP_SYS_TIME is missing. Effectively allows to run NTP server in
+        containers on a default installation and avoid failing to sync time (or
+        if allowed to sync, avoid multiple containers to fight over it by
+        accident).
+      - debian/install: make chronyd-starter.sh available on install.
+      - debian/docs, debian/README.container: provide documentation about the
+        handling of this case.
+    - d/postrm: re-establish systemd-timesyncd on removal (LP: 1764357)
+    - Notify chrony to update sources in response to systemd-networkd
+      events (LP: 1718227)
+      - d/links: link dispatcher script to networkd-dispatcher events routable
+        and off
+      - d/control: set Recommends to networkd-dispatcher
+      - d/p/lp-1718227-nm-dispatcher-for-networkd.patch
+  * Dropped changes
+    - debian/usr.sbin.chronyd: ensure RTC/GPS usage isn't blocked by apparmor
+      (LP: 1751241) (in Debian now)
+    - debian/usr.sbin.chronyd: add cap net_admin for hwtimestamp (LP: 1761327)
+      (in Debian now)
+    - d/p/lp1589780-sys_linux-don-t-keep-CAP_SYS_TIME-with-x-option.patch:
+      When dropping the root privileges, don't try to keep the CAP_SYS_TIME
+      capability if the -x option was enabled. This allows chronyd to be
+      started without the capability (e.g. in containers) and also drop the
+      root privileges (This is upstream now).
+    - d/p/lp-1718227-ignore-non-up-down-events-in-nm-dispatcher.patch (This is
+      upstream now).
+    - d/control: switch to nss instead of tomcrypt (Debian switched to nettle
+      which is in main, so we can drop this)
+  * Added changes
+    - debian/README.container: fix typos
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Mon, 14 May 2018 09:06:01 +0200
+
 chrony (3.3-2) unstable; urgency=medium
 
   * debian/chrony.service:
@@ -52,6 +104,76 @@ chrony (3.2-5) unstable; urgency=medium
     (Closes: #891201, LP: #1751241)
 
  -- Vincent Blut <vincent.debian@free.fr>  Wed, 28 Feb 2018 17:31:08 +0100
+
+chrony (3.2-4ubuntu4) bionic; urgency=medium
+
+  * d/postrm: re-establish systemd-timesyncd on removal (LP: #1764357)
+  * Notify chrony to update sources in response to systemd-networkd
+    events (LP: #1718227)
+    - d/links: link dispatcher script to networkd-dispatcher events routable
+      and off
+    - d/control: set Recommends to networkd-dispatcher
+    - d/p/lp-1718227-ignore-non-up-down-events-in-nm-dispatcher.patch
+    - d/p/lp-1718227-nm-dispatcher-for-networkd.patch
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Mon, 16 Apr 2018 17:04:06 +0200
+
+chrony (3.2-4ubuntu3) bionic; urgency=medium
+
+  * debian/usr.sbin.chronyd: add cap net_admin for hwtimestamp (LP: #1761327)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Thu, 05 Apr 2018 09:38:10 +0200
+
+chrony (3.2-4ubuntu2) bionic; urgency=medium
+
+  * Set -x as default if unable to set time (e.g. in containers) (LP: #1589780)
+    Chrony is a single service which acts as both NTP client (i.e. syncing the
+    local clock) and NTP server (i.e. providing NTP services to the network),
+    and that is both desired and expected in the vast majority of cases.
+    But in containers syncing the local clock is usually impossible, but this
+    shall not break the providing of NTP services to the network.
+    To some extent this makes chrony's default config more similar to 'ntpd',
+    which complained in syslog but still provided NTP server service in those
+    cases.
+    - d/p/lp1589780-sys_linux-don-t-keep-CAP_SYS_TIME-with-x-option.patch:
+      When dropping the root privileges, don't try to keep the CAP_SYS_TIME
+      capability if the -x option was enabled. This allows chronyd to be
+      started without the capability (e.g. in containers) and also drop the
+      root privileges.
+    - debian/chrony.service: allow the service to run without CAP_SYS_TIME
+    - debian/control: add new dependency libcap2-bin for capsh (usually
+      installed anyway, but make them explicit to be sure).
+    - debian/chrony.default: new option SYNC_IN_CONTAINER to not fall back
+      (Default off).
+    - debian/chronyd-starter.sh: wrapper to handle special cases in containers
+      and if CAP_SYS_TIME is missing. Effectively allows to run NTP server in
+      containers on a default installation and avoid failing to sync time (or
+      if allowed to sync, avoid multiple containers to fight over it by
+      accident).
+    - debian/install: make chronyd-starter.sh available on install.
+    - debian/docs, debian/README.container: provide documentation about the
+      handling of this case.
+  * debian/chrony.conf: update default chrony.conf to not violate the policy
+    of pool.ntp.org (to use no more than four of their servers) and to provide
+    more ipv6 capable sources by default (LP: #1754358)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Fri, 16 Mar 2018 12:25:44 +0100
+
+chrony (3.2-4ubuntu1) bionic; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - d/control: switch to nss instead of tomcrypt (nss is in main)
+    - d/chrony.conf: use ubuntu ntp pool and server (LP 1744664)
+  * Dropped changes (in Debian)
+    - d/chrony.default, d/chrony.service: support /etc/default/chrony
+      DAEMON_OPTS in systemd environment (LP: 1746081)
+    - d/chrony.service: properly start after networking (LP: 1746458)
+    - d/usr.sbin.chronyd: allow to create /run/chrony on demand (LP: 1746444)
+  * Added Changes:
+    - debian/usr.sbin.chronyd: ensure RTC/GPS usage isn't blocked by apparmor
+      (LP: #1751241, Closes: #891201)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Mon, 26 Feb 2018 14:44:54 +0100
 
 chrony (3.2-4) unstable; urgency=medium
 
@@ -118,6 +240,27 @@ chrony (3.2-3) unstable; urgency=medium
     (LP: #1746444, Closes: #889011)
 
  -- Vincent Blut <vincent.debian@free.fr>  Wed, 07 Feb 2018 21:27:09 +0100
+
+chrony (3.2-2ubuntu3) bionic; urgency=medium
+
+  * Revert the changes of (LP 1746458) as in the follow on discussion
+    it became clear that we want it to start early (for example for an
+    early offset from drift file). iIf needed chrony will later on pick
+    up that servers are online via retries (augmented by hooks on network
+    events).
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Thu, 08 Feb 2018 10:52:30 +0100
+
+chrony (3.2-2ubuntu2) bionic; urgency=medium
+
+  * d/control: use to nss instead of tomcrypt (in main) (LP: #1744072)
+  * d/chrony.conf: use ubuntu ntp pool and server (LP: #1744664)
+  * d/chrony.default, d/chrony.service: support /etc/default/chrony
+    DAEMON_OPTS in systemd environment (LP: #1746081)
+  * d/chrony.service: properly start after networking (LP: #1746458)
+  * d/usr.sbin.chronyd: allow to create /run/chrony on demand (LP: #1746444)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Fri, 19 Jan 2018 09:45:38 +0100
 
 chrony (3.2-2) unstable; urgency=medium
 

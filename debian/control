@@ -1,7 +1,8 @@
 Source: chrony
 Section: net
 Priority: optional
-Maintainer: Vincent Blut <vincent.debian@free.fr>
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Vincent Blut <vincent.debian@free.fr>
 Uploaders: Joachim Wiedorn <joodebian@joonet.de>
 Standards-Version: 4.1.4
 Build-Depends: debhelper (>= 11),
@@ -26,7 +27,9 @@ Depends: ${misc:Depends},
  ucf,
  iproute2 [linux-any],
  lsb-base,
+ libcap2-bin,
  adduser
+Recommends: networkd-dispatcher (>= 1.7-0ubuntu3)
 Suggests: dnsutils
 Conflicts: time-daemon, ntp
 Provides: time-daemon
