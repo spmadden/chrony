@@ -1,3 +1,53 @@
+chrony (3.3-2ubuntu1) cosmic; urgency=medium
+
+  * Merge with Debian unstable (LP: #1771061). Remaining changes:
+    - d/chrony.conf: use ubuntu ntp pool and server (LP 1744664)
+    - Set -x as default if unable to set time (e.g. in containers) (LP: 1589780)
+      Chrony is a single service which acts as both NTP client (i.e. syncing the
+      local clock) and NTP server (i.e. providing NTP services to the network),
+      and that is both desired and expected in the vast majority of cases.
+      But in containers syncing the local clock is usually impossible, but this
+      shall not break the providing of NTP services to the network.
+      To some extent this makes chrony's default config more similar to 'ntpd',
+      which complained in syslog but still provided NTP server service in those
+      cases.
+      - debian/chrony.service: allow the service to run without CAP_SYS_TIME
+      - debian/control: add new dependency libcap2-bin for capsh (usually
+        installed anyway, but make them explicit to be sure).
+      - debian/chrony.default: new option SYNC_IN_CONTAINER to not fall back
+        (Default off).
+      - debian/chronyd-starter.sh: wrapper to handle special cases in containers
+        and if CAP_SYS_TIME is missing. Effectively allows to run NTP server in
+        containers on a default installation and avoid failing to sync time (or
+        if allowed to sync, avoid multiple containers to fight over it by
+        accident).
+      - debian/install: make chronyd-starter.sh available on install.
+      - debian/docs, debian/README.container: provide documentation about the
+        handling of this case.
+    - d/postrm: re-establish systemd-timesyncd on removal (LP: 1764357)
+    - Notify chrony to update sources in response to systemd-networkd
+      events (LP: 1718227)
+      - d/links: link dispatcher script to networkd-dispatcher events routable
+        and off
+      - d/control: set Recommends to networkd-dispatcher
+      - d/p/lp-1718227-nm-dispatcher-for-networkd.patch
+  * Dropped changes
+    - debian/usr.sbin.chronyd: ensure RTC/GPS usage isn't blocked by apparmor
+      (LP: 1751241) (in Debian now)
+    - debian/usr.sbin.chronyd: add cap net_admin for hwtimestamp (LP: 1761327)
+      (in Debian now)
+    - d/p/lp1589780-sys_linux-don-t-keep-CAP_SYS_TIME-with-x-option.patch:
+      When dropping the root privileges, don't try to keep the CAP_SYS_TIME
+      capability if the -x option was enabled. This allows chronyd to be
+      started without the capability (e.g. in containers) and also drop the
+      root privileges (This is upstream now).
+    - d/p/lp-1718227-ignore-non-up-down-events-in-nm-dispatcher.patch (This is
+      upstream now).
+    - d/control: switch to nss instead of tomcrypt (Debian switched to nettle
+      which is in main, so we can drop this)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Mon, 14 May 2018 09:06:01 +0200
+
 chrony (3.3-2) unstable; urgency=medium
 
   * debian/chrony.service:
