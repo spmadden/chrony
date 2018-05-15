@@ -45,6 +45,8 @@ chrony (3.3-2ubuntu1) cosmic; urgency=medium
       upstream now).
     - d/control: switch to nss instead of tomcrypt (Debian switched to nettle
       which is in main, so we can drop this)
+  * Added changes
+    - debian/README.container: fix typos
 
  -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Mon, 14 May 2018 09:06:01 +0200
 
