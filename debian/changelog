@@ -1,3 +1,11 @@
+chrony (3.2-4ubuntu4.1) bionic; urgency=medium
+
+  * debian/usr.sbin.chronyd:
+    - Support all paths suggested in the man page.
+    (LP: #1771028, Closes: #898614)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Wed, 23 May 2018 16:22:13 +0200
+
 chrony (3.2-4ubuntu4) bionic; urgency=medium
 
   * d/postrm: re-establish systemd-timesyncd on removal (LP: #1764357)
