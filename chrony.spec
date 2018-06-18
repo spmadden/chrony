@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.3
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -188,6 +188,10 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Jun 18 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.3-2
+- move pidfile to /var/run/chrony to allow chronyd to remove it on exit
+- avoid blocking in getrandom system call
+
 * Wed Apr 04 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.3-1
 - update to 3.3
 - enable keyfile by default again
