@@ -19,8 +19,10 @@ Source4:        chrony-dnssrv@.timer
 Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
 
+# move pidfile to /var/run/chrony to allow chronyd to remove it on exit
+Patch1:         chrony-pidfile.patch
 # add NTP servers from DHCP when starting service
-Patch1:         chrony-service-helper.patch
+Patch2:         chrony-service-helper.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
@@ -51,7 +53,8 @@ service to other computers in the network.
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
-%patch1 -p1 -b .service-helper
+%patch1 -p1 -b .pidfile
+%patch2 -p1 -b .service-helper
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -62,7 +65,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         ba6bb05c50e03f6b5ab54a2b7914800d  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         63e0781f84e89ba6029d93ef0722c4ce  examples/chrony.nm-dispatcher
-        a85246982a89910b1e2d3356b7d131d7  examples/chronyd.service
+        921b354e94f5e3db124cb50d11cd560f  examples/chronyd.service
 EOF
 
 # don't allow packaging without vendor zone
