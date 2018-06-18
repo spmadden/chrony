@@ -23,6 +23,8 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 Patch1:         chrony-pidfile.patch
 # add NTP servers from DHCP when starting service
 Patch2:         chrony-service-helper.patch
+# avoid blocking in getrandom system call
+Patch3:         chrony-getrandom.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
@@ -55,6 +57,7 @@ service to other computers in the network.
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .pidfile
 %patch2 -p1 -b .service-helper
+%patch3 -p1 -b .getrandom
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
