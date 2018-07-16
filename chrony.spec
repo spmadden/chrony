@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.3
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -188,6 +188,9 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Jul 16 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.3-4
+- add gcc-c++ to build requirements
+
 * Thu Jul 12 2018 Fedora Release Engineering <releng@fedoraproject.org> - 3.3-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
 
