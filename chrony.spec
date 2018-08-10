@@ -165,6 +165,8 @@ then
         sed -i '/PIDFile=/s|/run/|/run/chrony/|' \
                 %{_sysconfdir}/systemd/system/chronyd.service
 fi
+# workaround for late reload of unit file (#1614751)
+%{_bindir}/systemctl daemon-reload
 %systemd_post chronyd.service chrony-wait.service
 
 %preun
