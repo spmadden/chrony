@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.3
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -198,6 +198,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Aug 13 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.3-5
+- fix PIDFile in local chronyd.service on upgrades from chrony < 3.3-2
+- add workaround for late reload of unit file (#1614751)
+
 * Mon Jul 16 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.3-4
 - add gcc-c++ to build requirements
 
