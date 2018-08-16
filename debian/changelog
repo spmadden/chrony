@@ -1,3 +1,11 @@
+chrony (3.3-2ubuntu2) cosmic; urgency=medium
+
+  * - d/p/lp-1787366-fall-back-to-urandom.patch: avoid hangs when starting
+      the service on newer kernels by falling back to urandom.
+      (LP: #1787366, Closes: #906276)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Thu, 16 Aug 2018 11:48:38 +0200
+
 chrony (3.3-2ubuntu1) cosmic; urgency=medium
 
   * Merge with Debian unstable (LP: #1771061). Remaining changes:
