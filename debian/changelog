@@ -1,3 +1,11 @@
+chrony (3.2-4ubuntu4.2) bionic; urgency=medium
+
+  * d/p/lp-1787366-fall-back-to-urandom.patch: avoid hangs when starting
+    the service on newer kernels by falling back to urandom.
+    (LP: #1787366, Closes: #906276)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Mon, 20 Aug 2018 11:36:18 +0200
+
 chrony (3.2-4ubuntu4.1) bionic; urgency=medium
 
   * debian/usr.sbin.chronyd:
