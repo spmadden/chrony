@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        3.4
-Release:        5%{?dist}
+Release:        0.1.pre1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -193,6 +193,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Fri Aug 31 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.4-0.1.pre1
+- update to 3.4-pre1
+
 * Mon Aug 13 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.3-5
 - fix PIDFile in local chronyd.service on upgrades from chrony < 3.3-2
 - add workaround for late reload of unit file (#1614751)
