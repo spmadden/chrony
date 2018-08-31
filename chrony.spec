@@ -22,6 +22,8 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add NTP servers from DHCP when starting service
 Patch2:         chrony-service-helper.patch
+# fix test suite to pass quick check
+Patch3:         chrony-test.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
@@ -53,6 +55,7 @@ service to other computers in the network.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch2 -p1 -b .service-helper
+%patch3 -p1 -b .test
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
