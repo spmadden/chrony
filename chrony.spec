@@ -55,7 +55,7 @@ service to other computers in the network.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch2 -p1 -b .service-helper
-%patch3 -p1 -b .test
+%patch3 -p1
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
