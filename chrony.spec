@@ -1,9 +1,10 @@
 %global _hardened_build 1
-%global clknetsim_ver 5b4d14
+%global prerelease -pre1
+%global clknetsim_ver 774308
 %bcond_without debug
 
 Name:           chrony
-Version:        3.3
+Version:        3.4
 Release:        5%{?dist}
 Summary:        An NTP client/server
 
@@ -19,12 +20,8 @@ Source4:        chrony-dnssrv@.timer
 Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
 
-# move pidfile to /var/run/chrony to allow chronyd to remove it on exit
-Patch1:         chrony-pidfile.patch
 # add NTP servers from DHCP when starting service
 Patch2:         chrony-service-helper.patch
-# avoid blocking in getrandom system call
-Patch3:         chrony-getrandom.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
@@ -55,9 +52,7 @@ service to other computers in the network.
 %prep
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
-%patch1 -p1 -b .pidfile
 %patch2 -p1 -b .service-helper
-%patch3 -p1 -b .getrandom
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -67,7 +62,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         e473a9fab7fe200cacce3dca8b66290b  examples/chrony.conf.example2
         ba6bb05c50e03f6b5ab54a2b7914800d  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
-        63e0781f84e89ba6029d93ef0722c4ce  examples/chrony.nm-dispatcher
+        8748a663f0b1943ea491858f414a6b26  examples/chrony.nm-dispatcher
         921b354e94f5e3db124cb50d11cd560f  examples/chronyd.service
 EOF
 
