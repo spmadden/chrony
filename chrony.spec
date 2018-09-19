@@ -1,5 +1,4 @@
 %global _hardened_build 1
-%global prerelease -pre1
 %global clknetsim_ver 774308
 %bcond_without debug
 
@@ -22,8 +21,6 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add NTP servers from DHCP when starting service
 Patch2:         chrony-service-helper.patch
-# fix test suite to pass quick check
-Patch3:         chrony-test.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
@@ -55,7 +52,6 @@ service to other computers in the network.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch2 -p1 -b .service-helper
-%patch3 -p1
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -63,7 +59,7 @@ service to other computers in the network.
 md5sum -c <<-EOF | (! grep -v 'OK$')
         47ad7eccc410b981d2f2101cf5682616  examples/chrony-wait.service
         e473a9fab7fe200cacce3dca8b66290b  examples/chrony.conf.example2
-        ba6bb05c50e03f6b5ab54a2b7914800d  examples/chrony.keys.example
+        96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         8748a663f0b1943ea491858f414a6b26  examples/chrony.nm-dispatcher
         921b354e94f5e3db124cb50d11cd560f  examples/chronyd.service
