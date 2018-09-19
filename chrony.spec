@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.4
-Release:        0.1.pre1%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 Group:          System Environment/Daemons
@@ -192,6 +192,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Sep 19 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.4-1
+- update to 3.4
+
 * Fri Aug 31 2018 Miroslav Lichvar <mlichvar@redhat.com> 3.4-0.1.pre1
 - update to 3.4-pre1
 
