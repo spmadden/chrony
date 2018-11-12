@@ -34,7 +34,9 @@ chrony (3.4-1ubuntu1) disco; urgency=medium
     - d/p/lp-1718227-nm-dispatcher-for-networkd.patch
     - d/p/lp-1787366-fall-back-to-urandom.patch: avoid hangs when starting
       the service on newer kernels by falling back to urandom. (LP: 1787366)
-
+  * Added Changes:
+    - d/postrm: respect policy-rc.d when restoring systemd-timesyncd
+      (LP: #1771994)
 
  -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Mon, 12 Nov 2018 11:39:08 +0100
 
