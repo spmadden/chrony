@@ -1,3 +1,13 @@
+chrony (2.1.1-1ubuntu0.1) xenial-security; urgency=medium
+
+  * SECURITY UPDATE: Remote attackers to conduct impersonation attacks via
+    an arbitrary trusted key, aka a "skeleton key".
+    - debian/patches/CVE-2016-1567.patch: restrict authentication of
+      server/peer to specified key.
+    - CVE-2016-1567
+
+ -- Eduardo Barretto <eduardo.barretto@canonical.com>  Wed, 05 Dec 2018 18:51:33 -0200
+
 chrony (2.1.1-1) unstable; urgency=medium
 
   * Import upstream version 2.0 and 2.1.1:
