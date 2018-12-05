@@ -990,7 +990,8 @@ receive_packet(NTP_Packet *message, struct timeval *now, double now_err, NCR_Ins
       if (!KEY_KeyKnown(auth_key_id)) {
         test5 = 0;
       } else {
-        test5 = check_packet_auth(message, auth_key_id, auth_len);
+        test5 = check_packet_auth(message, auth_key_id, auth_len) &&
+                auth_key_id == inst->auth_key_id;
       }
     } else {
       /* If we expect authenticated info from this peer/server and the packet
