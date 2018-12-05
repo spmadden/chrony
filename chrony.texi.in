@@ -2423,6 +2423,10 @@ clientloglimit 1048576
 The syntax of this directive is identical to that for the @code{server}
 directive (@pxref{server directive}), except that it is used to specify
 an NTP peer rather than an NTP server.
+ 
+When a key is specified by the @code{key} option to enable authentication, both
+peers must be configured to use the same key and the same key number.
+
 @c }}}
 @c {{{ pidfile
 @node pidfile directive

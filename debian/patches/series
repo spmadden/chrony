@@ -2,3 +2,7 @@
 03_recreate-always-getdate-c.patch
 04_do-not-look-for-ncurses.patch
 05_disable-installation-of-license.patch
+CVE-2015-1821.patch
+CVE-2015-1822.patch
+CVE-2015-1853.patch
+CVE-2016-1567.patch
