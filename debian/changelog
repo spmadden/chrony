@@ -1,3 +1,28 @@
+chrony (1.29-1ubuntu0.1) trusty-security; urgency=medium
+
+  * SECURITY UPDATE: Heap-based buffer overflow
+    - debian/patches/CVE-2015-1821.patch: Fix access configuration with
+      subnet size indivisible by 4.
+    - CVE-2015-1821
+  * SECURITY UPDATE: DoS (uninitialized pointer dereference and daemon
+    crash) or possibly execute arbitrary code via a large number of
+    command requests.
+    - debian/patches/CVE-2015-1822.patch: Fix initialization of allocated
+      reply slots.
+    - CVE-2015-1822
+  * SECURITY UPDATE: Authentication doesn't protect symmetric associations
+    against DoS attacks
+    - debian/patches/CVE-2015-1853.patch: Protect authenticated symmetric
+      associations against DoS attacks.
+    - CVE-2015-1853
+  * SECURITY UPDATE: Remote attackers to conduct impersonation attacks via
+    an arbitrary trusted key, aka a "skeleton key".
+    - debian/patches/CVE-2016-1567.patch: restrict authentication of
+      server/peer to specified key.
+    - CVE-2016-1567
+
+ -- Eduardo Barretto <eduardo.barretto@canonical.com>  Wed, 05 Dec 2018 17:57:24 -0200
+
 chrony (1.29-1) unstable; urgency=medium
 
   * New upstream release with some bugfixes:
