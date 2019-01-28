@@ -7,7 +7,6 @@ Version:        3.4
 Release:        1%{?dist}
 Summary:        An NTP client/server
 
-Group:          System Environment/Daemons
 License:        GPLv2
 URL:            https://chrony.tuxfamily.org
 Source0:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
