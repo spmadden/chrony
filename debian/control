@@ -3,10 +3,10 @@ Section: net
 Priority: optional
 Maintainer: Vincent Blut <vincent.debian@free.fr>
 Uploaders: Joachim Wiedorn <joodebian@joonet.de>
-Standards-Version: 4.2.1
+Standards-Version: 4.3.0
 Build-Depends: asciidoctor (>= 1.5.3-1~),
                bison,
-               debhelper (>= 11),
+               debhelper-compat (= 12),
                dh-apparmor,
                libcap-dev [linux-any],
                libedit-dev,
@@ -21,13 +21,15 @@ Rules-Requires-Root: no
 
 Package: chrony
 Architecture: linux-any
+Pre-Depends: ${misc:Pre-Depends}
 Depends: adduser,
          iproute2 [linux-any],
          lsb-base,
          ucf,
          ${misc:Depends},
          ${shlibs:Depends}
-Suggests: dnsutils
+Suggests: dnsutils,
+          networkd-dispatcher
 Conflicts: ntp,
            time-daemon
 Provides: time-daemon
