@@ -1,2 +1,4 @@
 allow_getpid_in_seccomp_filter.patch
+allow-_llseek-in-seccomp-filter.patch
+allow-waitpid-in-seccomp-filter.patch
 fix_time_smoothing_in_interleaved_mode.patch
