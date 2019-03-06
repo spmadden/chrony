@@ -1,3 +1,15 @@
+chrony (3.0-4+deb9u2) stretch; urgency=medium
+
+  * debian/patches/*:
+    - Add allow-_llseek-in-seccomp-filter.patch. Needed on various 32-bit
+    plateforms to log the {raw}measurements and statistics information when
+    the seccomp filter is enabled. Thanks a lot to Francesco Poli (wintermute)
+    <invernomuto@paranoici.org> for the report. (Closes: #923137)
+    - Add allow-waitpid-in-seccomp-filter.patch. Needed to correctly stop
+    chronyd on some plateforms when the seccomp filter is enabled.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Wed, 06 Mar 2019 11:13:29 +0100
+
 chrony (3.0-4+deb9u1) stretch; urgency=medium
 
   * debian/chrony.if-up:
