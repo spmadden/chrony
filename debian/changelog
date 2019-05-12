@@ -1,3 +1,37 @@
+chrony (3.5~pre1-1) experimental; urgency=medium
+
+  * Import upstream version 3.5-pre1:
+    - Please see /usr/share/doc/chrony/NEWS.gz for the release notes.
+
+  * debian/.gitlab-ci.yml:
+    - Use .build-package template job instead of .build-unstable. The latter
+    is deprecated.
+
+  * debian/chrony.keys:
+    - Fix the comment about the location of the list of supported hash
+    functions and output encoding. These information are now available by
+    consulting the “keyfile” directive in the chrony.conf(5) man page.
+
+  * debian/control:
+    - Drop dependency on lsb-base. Is is required when booting with sysvinit
+    and initscripts, however initscripts already Depends on lsb-base.
+    - Build-depend on net-tools and procps. kill, netstat and ps are needed
+    for the new system tests executed at build time (iff building as root).
+
+  * debian/copyright:
+    - Add an entry for test/system/* files.
+
+  * debian/patches/*:
+    - Drop all patches, they have been applied upstream.
+
+  * debian/postinst:
+    - Drop migration code from pre-stretch.
+
+  * debian/README.Debian:
+    - Fix information related to the chrony.keys file.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Sun, 12 May 2019 22:16:14 +0200
+
 chrony (3.4-4) unstable; urgency=medium
 
   * debian/patches/*:
