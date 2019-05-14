@@ -27,7 +27,9 @@ chrony (3.4-4ubuntu1) eoan; urgency=medium
     - d/postrm: re-establish systemd-timesyncd on removal (LP 1764357)
     - d/postrm: respect policy-rc.d when restoring systemd-timesyncd
       (LP 1771994)
-  * Dropped Changes
+  * Added Changes:
+    - removed d/init to avoid weird interactions between sysV and systemd
+  * Dropped Changes:
     - Notify chrony to update sources in response to systemd-networkd
       events (LP: 1718227)
       + d/links: link dispatcher script to networkd-dispatcher events routable
