@@ -1,6 +1,5 @@
 %global _hardened_build 1
-%global prerelease -pre1
-%global clknetsim_ver 58c5e8
+%global clknetsim_ver 3f5ef9
 %bcond_without debug
 
 Name:           chrony
@@ -62,7 +61,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         8748a663f0b1943ea491858f414a6b26  examples/chrony.nm-dispatcher
-        921b354e94f5e3db124cb50d11cd560f  examples/chronyd.service
+        b23bcc3bd78e195ca2849459e459f3ed  examples/chronyd.service
 EOF
 
 # don't allow packaging without vendor zone

@@ -1,8 +1,8 @@
-diff -up chrony-3.1/examples/chronyd.service.service-helper chrony-3.1/examples/chronyd.service
---- chrony-3.1/examples/chronyd.service.service-helper	2017-01-31 12:12:01.863772826 +0100
-+++ chrony-3.1/examples/chronyd.service	2017-01-31 12:12:30.371860064 +0100
+diff -up chrony-3.5/examples/chronyd.service.service-helper chrony-3.5/examples/chronyd.service
+--- chrony-3.5/examples/chronyd.service.service-helper	2019-05-10 12:22:57.000000000 +0200
++++ chrony-3.5/examples/chronyd.service	2019-05-14 13:42:38.069516800 +0200
 @@ -10,6 +10,7 @@ Type=forking
- PIDFile=/var/run/chrony/chronyd.pid
+ PIDFile=/run/chrony/chronyd.pid
  EnvironmentFile=-/etc/sysconfig/chronyd
  ExecStart=/usr/sbin/chronyd $OPTIONS
 +ExecStartPost=/usr/libexec/chrony-helper update-daemon
