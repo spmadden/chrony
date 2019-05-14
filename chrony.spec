@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.5
-Release:        0.1.pre1%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -191,6 +191,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue May 14 2019 Miroslav Lichvar <mlichvar@redhat.com> 3.5-1
+- update to 3.5
+
 * Thu May 02 2019 Miroslav Lichvar <mlichvar@redhat.com> 3.5-0.1.pre1
 - update to 3.5-pre1
 
