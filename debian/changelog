@@ -1,3 +1,11 @@
+chrony (3.4-4ubuntu2) eoan; urgency=medium
+
+  * Dropped sysV change added in 3.4-4ubuntu1 (LP: #1829700):
+    - removed d/init to avoid weird interactions between sysV and systemd
+    [With debhelper compat level 12 this isn't an issue anymore]
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Wed, 22 May 2019 09:10:41 +0200
+
 chrony (3.4-4ubuntu1) eoan; urgency=medium
 
   * Merge with Debian unstable (LP: #1828992). Remaining changes:
