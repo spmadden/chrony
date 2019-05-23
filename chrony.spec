@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.5
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -191,6 +191,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu May 23 2019 Miroslav Lichvar <mlichvar@redhat.com> 3.5-2
+- fix shellcheck warnings in helper scripts
+
 * Tue May 14 2019 Miroslav Lichvar <mlichvar@redhat.com> 3.5-1
 - update to 3.5
 
