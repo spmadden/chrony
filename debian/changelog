@@ -1,3 +1,36 @@
+chrony (3.5-2ubuntu1) eoan; urgency=medium
+
+  * Merge with Debian experimental (LP: #1835046). Remaining changes:
+    - d/chrony.conf: use ubuntu ntp pool and server (LP 1744664 1754358)
+    - Set -x as default if unable to set time (e.g. in containers) (LP 1589780)
+      Chrony is a single service which acts as both NTP client (i.e. syncing the
+      local clock) and NTP server (i.e. providing NTP services to the network),
+      and that is both desired and expected in the vast majority of cases.
+      But in containers syncing the local clock is usually impossible, but this
+      shall not break the providing of NTP services to the network.
+      To some extent this makes chrony's default config more similar to 'ntpd',
+      which complained in syslog but still provided NTP server service in those
+      cases.
+      + debian/chrony.service: allow the service to run without CAP_SYS_TIME
+      + debian/control: add new dependency libcap2-bin for capsh (usually
+        installed anyway, but make them explicit to be sure).
+      + debian/chrony.default: new option SYNC_IN_CONTAINER to not fall back
+        (Default off) [fixed a minor typo in the comment in this update]
+      + debian/chronyd-starter.sh: wrapper to handle special cases in containers
+        and if CAP_SYS_TIME is missing. Effectively allows to run NTP server in
+        containers on a default installation and avoid failing to sync time (or
+        if allowed to sync, avoid multiple containers to fight over it by
+        accident).
+      + debian/install: make chrony-starter.sh available on install.
+      + debian/docs, debian/README.container: provide documentation about the
+        handling of this case.
+   * Dropped changes (accepted in Debian now):
+    - d/postrm: re-establish systemd-timesyncd on removal (LP 1764357)
+    - d/postrm: respect policy-rc.d when restoring systemd-timesyncd
+      (LP 1771994)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Tue, 02 Jul 2019 13:37:23 +0200
+
 chrony (3.5-2) unstable; urgency=medium
 
   * Merge branch “experimental” into “master”.
