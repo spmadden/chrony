@@ -2,3 +2,4 @@ lp1589780-sys_linux-don-t-keep-CAP_SYS_TIME-with-x-option.patch
 lp-1718227-ignore-non-up-down-events-in-nm-dispatcher.patch
 lp-1718227-nm-dispatcher-for-networkd.patch
 lp-1787366-fall-back-to-urandom.patch
+update_processing_of_packet_log.patch
