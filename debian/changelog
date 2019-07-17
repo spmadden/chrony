@@ -1,3 +1,10 @@
+chrony (3.5-2ubuntu2) eoan; urgency=medium
+
+  * d/t/control: allow stderr for recent changes in resolved/iproute
+    (LP: #1836882)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Wed, 17 Jul 2019 12:41:58 +0200
+
 chrony (3.5-2ubuntu1) eoan; urgency=medium
 
   * Merge with Debian experimental (LP: #1835046). Remaining changes:
