@@ -4,4 +4,4 @@ Restrictions: isolation-container, needs-root, allow-stderr, rw-build-tree, buil
 
 Tests: time-sources-from-dhcp-servers
 Depends: @, isc-dhcp-server, isc-dhcp-client, iproute2, kmod
-Restrictions: isolation-machine, needs-root
+Restrictions: isolation-machine, needs-root, allow-stderr
