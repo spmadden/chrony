@@ -1,3 +1,17 @@
+chrony (3.4-1ubuntu1.1) disco; urgency=medium
+
+  * Fix recently degraded autopkgtests:
+    - d/t/control: allow stderr for recent changes in other packages causing a non
+      critical stderr output in the test (LP: #1836882)
+    - Backport fixes from 3.5-2 to clksim execution (Thanks to Vincent Blut)
+      (LP: #1836929)
+      + d/t/upstream-simulation-test-suite: Fix make call
+      + d/t/upstream-simulation-test-suite: Fix unability to launch run script
+      + d/t/upstream-simulation-test-suite: Use a known good clknetsim commit
+      + d/p/: Add update_processing_of_packet_log.patch for changed output
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Thu, 18 Jul 2019 07:42:03 +0200
+
 chrony (3.4-1ubuntu1) disco; urgency=medium
 
   * Merge with Debian unstable (LP: #1802886). Remaining changes:
