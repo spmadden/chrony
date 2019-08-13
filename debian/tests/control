@@ -1,7 +1,16 @@
 Tests: upstream-simulation-test-suite
-Depends: @, git, build-essential, ca-certificates
-Restrictions: isolation-container, needs-root, allow-stderr, rw-build-tree, build-needed
+Depends: build-essential, ca-certificates, wget
+Restrictions: isolation-container, build-needed, skippable
 
 Tests: time-sources-from-dhcp-servers
 Depends: @, isc-dhcp-server, isc-dhcp-client, iproute2, kmod
 Restrictions: isolation-machine, needs-root
+
+Features: test-name=run_system_tests
+Test-Command: debian/tests/upstream-system-tests
+Restrictions: build-needed, isolation-container, needs-root
+
+Features: test-name=run_destructive_system_tests
+Test-Command: debian/tests/upstream-system-tests -d 1[0-9][0-9]-*
+Depends: @, @builddeps@, ethtool
+Restrictions: build-needed, isolation-machine, needs-root

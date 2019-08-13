@@ -1,20 +1,11 @@
-include: https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/salsa-ci.yml
+include:
+    - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/salsa-ci.yml
+    - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/pipeline-jobs.yml
 
-build:
-    extends: .build-package
-
+# Skip the reprotest job as long as it is run as root due to problems with
+# chrony system tests.
 reprotest:
     extends: .test-reprotest
-
-lintian:
-    extends: .test-lintian
-
-autopkgtest:
-    extends: .test-autopkgtest
-    allow_failure: true
-
-piuparts:
-    extends: .test-piuparts
-
-blhc:
-    extends: .test-blhc
+    only:
+        variables:
+            - $SEE_YOU_SOON_REPROTEST
