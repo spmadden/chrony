@@ -6,20 +6,27 @@
 
 set -e
 
-if ! dpkg-architecture -ilinux-any; then
-    echo "Simulation tests supported only on Linux…"
-    exit 0
-fi
+testdir="$PWD/test/simulation"
+clknetsim_ver=156b8e4
+clknetsim_src=https://github.com/mlichvar/clknetsim/archive/"$clknetsim_ver"/clknetsim-"$clknetsim_ver".tar.gz
+clknetsim_archive=$(basename "$clknetsim_src")
 
-cd test/simulation
+export CLKNETSIM_PATH="$AUTOPKGTEST_TMP"
 
-if [ ! -d clknetsim ]; then
-    git clone https://github.com/mlichvar/clknetsim && cd clknetsim && \
-        git checkout 156b8e4
-fi
+# The simulation tests are only supported on Linux.
+dpkg-architecture -ilinux-any || exit 77
 
-if [ ! -x "clknetsim" ] && [ ! -e "clknetsim.so" ]; then
-    make
-fi
+prepare_clknetsim() {
+    wget -q -P "$CLKNETSIM_PATH" "$clknetsim_src" && tar -xzf "$CLKNETSIM_PATH"/"$clknetsim_archive" \
+        -C "$CLKNETSIM_PATH" --strip-components=1
 
-cd .. && ./run -i 20 -m 2
+    if [ ! -x "$CLKNETSIM_PATH/clknetsim" ] && [ ! -e "$CLKNETSIM_PATH/clknetsim.so" ]; then
+        make -C "$CLKNETSIM_PATH"
+    fi
+}
+
+run_test() {
+    cd "$testdir" && ./run -i 20 -m 2
+}
+
+prepare_clknetsim && run_test
