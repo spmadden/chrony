@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.5
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -34,6 +34,9 @@ Requires(pre):  shadow-utils
 
 # install timedated implementation that can control chronyd service
 Recommends:     timedatex
+
+# Old NetworkManager expects the dispatcher scripts in a different place
+Conflicts:      NetworkManager < 1.20
 
 # suggest drivers for hardware reference clocks
 Suggests:       ntp-refclock
@@ -105,17 +108,15 @@ rm -rf $RPM_BUILD_ROOT%{_docdir}
 
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/{sysconfig,logrotate.d}
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/{lib,log}/chrony
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d
 mkdir -p $RPM_BUILD_ROOT%{_libexecdir}
+mkdir -p $RPM_BUILD_ROOT%{_prefix}/lib/NetworkManager/dispatcher.d
 mkdir -p $RPM_BUILD_ROOT{%{_unitdir},%{_prefix}/lib/systemd/ntp-units.d}
 
 install -m 644 -p chrony.conf $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
 
 install -m 640 -p examples/chrony.keys.example \
         $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
-install -m 755 -p examples/chrony.nm-dispatcher \
-        $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
 install -m 755 -p %{SOURCE3} \
         $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d/chrony.sh
 install -m 644 -p examples/chrony.logrotate \
@@ -123,6 +124,8 @@ install -m 644 -p examples/chrony.logrotate \
 
 install -m 644 -p examples/chronyd.service \
         $RPM_BUILD_ROOT%{_unitdir}/chronyd.service
+install -m 755 -p examples/chrony.nm-dispatcher \
+        $RPM_BUILD_ROOT%{_prefix}/lib/NetworkManager/dispatcher.d/20-chrony
 install -m 644 -p examples/chrony-wait.service \
         $RPM_BUILD_ROOT%{_unitdir}/chrony-wait.service
 install -m 644 -p %{SOURCE5} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.service
@@ -179,11 +182,11 @@ fi
 %config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
 %config(noreplace) %{_sysconfdir}/logrotate.d/chrony
 %config(noreplace) %{_sysconfdir}/sysconfig/chronyd
-%{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
 %{_sysconfdir}/dhcp/dhclient.d/chrony.sh
 %{_bindir}/chronyc
 %{_sbindir}/chronyd
 %{_libexecdir}/chrony-helper
+%{_prefix}/lib/NetworkManager
 %{_prefix}/lib/systemd/ntp-units.d/*.list
 %{_unitdir}/chrony*.service
 %{_unitdir}/chrony*.timer
@@ -194,6 +197,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Aug 22 2019 Lubomir Rintel <lkundrak@v3.sk> - 3.5-5
+- Move the NetworkManager dispatcher script out of /etc
+
 * Wed Jul 24 2019 Fedora Release Engineering <releng@fedoraproject.org> - 3.5-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_31_Mass_Rebuild
 
