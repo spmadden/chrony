@@ -10,10 +10,12 @@ Summary:        An NTP client/server
 License:        GPLv2
 URL:            https://chrony.tuxfamily.org
 Source0:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
-Source1:        chrony.dhclient
-Source2:        chrony.helper
-Source3:        chrony-dnssrv@.service
-Source4:        chrony-dnssrv@.timer
+Source1:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}-tar-gz-asc.txt
+Source2:        https://chrony.tuxfamily.org/gpgkey-8B1F4A9ADA73D401E3085A0B5FF06F29BA1E013B.asc
+Source3:        chrony.dhclient
+Source4:        chrony.helper
+Source5:        chrony-dnssrv@.service
+Source6:        chrony-dnssrv@.timer
 # simulator for test suite
 Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
@@ -25,7 +27,7 @@ BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
 BuildRequires:  libseccomp-devel
 %endif
-BuildRequires:  gcc gcc-c++ bison systemd
+BuildRequires:  gcc gcc-c++ bison systemd gnupg2
 
 Requires(pre):  shadow-utils
 %{?systemd_requires}
@@ -48,6 +50,7 @@ service to other computers in the network.
 %endif
 
 %prep
+%{gpgverify} --keyring=%{SOURCE2} --signature=%{SOURCE1} --data=%{SOURCE0}
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch2 -p1 -b .service-helper
@@ -113,7 +116,7 @@ install -m 640 -p examples/chrony.keys.example \
         $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
 install -m 755 -p examples/chrony.nm-dispatcher \
         $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dispatcher.d/20-chrony
-install -m 755 -p %{SOURCE1} \
+install -m 755 -p %{SOURCE3} \
         $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d/chrony.sh
 install -m 644 -p examples/chrony.logrotate \
         $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/chrony
@@ -122,10 +125,10 @@ install -m 644 -p examples/chronyd.service \
         $RPM_BUILD_ROOT%{_unitdir}/chronyd.service
 install -m 644 -p examples/chrony-wait.service \
         $RPM_BUILD_ROOT%{_unitdir}/chrony-wait.service
-install -m 644 -p %{SOURCE3} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.service
-install -m 644 -p %{SOURCE4} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.timer
+install -m 644 -p %{SOURCE5} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.service
+install -m 644 -p %{SOURCE6} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.timer
 
-install -m 755 -p %{SOURCE2} $RPM_BUILD_ROOT%{_libexecdir}/chrony-helper
+install -m 755 -p %{SOURCE4} $RPM_BUILD_ROOT%{_libexecdir}/chrony-helper
 
 cat > $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/chronyd <<EOF
 # Command-line options for chronyd
