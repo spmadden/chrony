@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.5
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -194,6 +194,10 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Oct 09 2019 Miroslav Lichvar <mlichvar@redhat.com> 3.5-6
+- drop timedatex recommendation
+- verify upstream signatures
+
 * Thu Aug 22 2019 Lubomir Rintel <lkundrak@v3.sk> - 3.5-5
 - Move the NetworkManager dispatcher script out of /etc
 
