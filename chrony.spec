@@ -32,9 +32,6 @@ BuildRequires:  gcc gcc-c++ bison systemd gnupg2
 Requires(pre):  shadow-utils
 %{?systemd_requires}
 
-# install timedated implementation that can control chronyd service
-Recommends:     timedatex
-
 # Old NetworkManager expects the dispatcher scripts in a different place
 Conflicts:      NetworkManager < 1.20
 
