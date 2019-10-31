@@ -1,3 +1,9 @@
+chrony (3.5-2ubuntu3) focal; urgency=medium
+
+  * No-change rebuild against libnettle7
+
+ -- Steve Langasek <steve.langasek@ubuntu.com>  Thu, 31 Oct 2019 22:07:56 +0000
+
 chrony (3.5-2ubuntu2) eoan; urgency=medium
 
   * d/t/control: allow stderr for recent changes in resolved/iproute
