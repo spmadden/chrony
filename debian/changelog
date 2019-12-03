@@ -1,3 +1,12 @@
+chrony (3.5-4ubuntu2) focal; urgency=medium
+
+  * d/t/control: destructive_system_tests only work on amd64 and s390x right
+    now
+  * d/t/upstream-simulation-test-suite: ignore warnings on stderr while
+    running clksim make
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Tue, 03 Dec 2019 14:50:50 +0100
+
 chrony (3.5-4ubuntu1) focal; urgency=medium
 
   * Merge with Debian unstable (LP: #1854328). Remaining changes:
