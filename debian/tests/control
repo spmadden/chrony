@@ -11,6 +11,7 @@ Test-Command: debian/tests/upstream-system-tests
 Restrictions: build-needed, isolation-container, needs-root
 
 Features: test-name=run_destructive_system_tests
-Test-Command: debian/tests/upstream-system-tests -d 1[0-9][0-9]-*
+# Known to fail on other architectures than amd64 and s390x
+Test-Command: if [[ "$(dpkg --print-architecture)" =~ ^(amd64|s390x)$ ]]; then debian/tests/upstream-system-tests -d 1[0-9][0-9]-*; else echo "Skip architecture"; exit 77; fi
 Depends: @, @builddeps@, ethtool
-Restrictions: build-needed, isolation-machine, needs-root
+Restrictions: build-needed, isolation-machine, needs-root, breaks-testbed, skippable
