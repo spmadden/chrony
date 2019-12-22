@@ -527,6 +527,22 @@ write_coefs_to_file(int valid,time_t ref_time,double offset,double rate)
   return RTC_ST_OK;
 }
 
+/* ================================================== */
+
+static int
+switch_interrupts(int on_off)
+{
+  if (ioctl(fd, on_off ? RTC_UIE_ON : RTC_UIE_OFF, 0) < 0) {
+    LOG(LOGS_ERR, "Could not %s RTC interrupt : %s",
+        on_off ? "enable" : "disable", strerror(errno));
+    return 0;
+  }
+
+  if (on_off)
+    skip_interrupts = 1;
+
+  return 1;
+}
 
 /* ================================================== */
 /* file_name is the name of the file where we save the RTC params
@@ -536,6 +552,23 @@ write_coefs_to_file(int valid,time_t ref_time,double offset,double rate)
 int
 RTC_Linux_Initialise(void)
 {
+  /* Try to open the device */
+  fd = open(CNF_GetRtcDevice(), O_RDWR);
+  if (fd < 0) {
+    LOG(LOGS_ERR, "Could not open RTC device %s : %s",
+        CNF_GetRtcDevice(), strerror(errno));
+    return 0;
+  }
+
+  /* Make sure the RTC supports interrupts */
+  if (!switch_interrupts(1) || !switch_interrupts(0)) {
+    close(fd);
+    return 0;
+  }
+
+  /* Close on exec */
+  UTI_FdSetCloexec(fd);
+
   rtc_sec = MallocArray(time_t, MAX_SAMPLES);
   rtc_trim = MallocArray(double, MAX_SAMPLES);
   system_times = MallocArray(struct timespec, MAX_SAMPLES);
@@ -545,18 +578,6 @@ RTC_Linux_Initialise(void)
 
   /* In case it didn't get done by pre-init */
   coefs_file_name = CNF_GetRtcFile();
-
-  /* Try to open device */
-
-  fd = open (CNF_GetRtcDevice(), O_RDWR);
-  if (fd < 0) {
-    LOG(LOGS_ERR, "Could not open RTC device %s : %s",
-        CNF_GetRtcDevice(), strerror(errno));
-    return 0;
-  }
-
-  /* Close on exec */
-  UTI_FdSetCloexec(fd);
 
   n_samples = 0;
   n_samples_since_regression = 0;
@@ -590,6 +611,7 @@ RTC_Linux_Finalise(void)
   /* Remove input file handler */
   if (fd >= 0) {
     SCH_RemoveFileHandler(fd);
+    switch_interrupts(0);
     close(fd);
 
     /* Save the RTC data */
@@ -600,29 +622,6 @@ RTC_Linux_Finalise(void)
   Free(rtc_trim);
   Free(system_times);
 }
-
-/* ================================================== */
-
-static void
-switch_interrupts(int onoff)
-{
-  int status;
-
-  if (onoff) {
-    status = ioctl(fd, RTC_UIE_ON, 0);
-    if (status < 0) {
-      LOG(LOGS_ERR, "Could not %s RTC interrupt : %s", "enable", strerror(errno));
-      return;
-    }
-    skip_interrupts = 1;
-  } else {
-    status = ioctl(fd, RTC_UIE_OFF, 0);
-    if (status < 0) {
-      LOG(LOGS_ERR, "Could not %s RTC interrupt : %s", "disable", strerror(errno));
-      return;
-    }
-  }
-}    
 
 /* ================================================== */
 
