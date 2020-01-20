@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.5
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -197,6 +197,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Jan 20 2020 Miroslav Lichvar <mlichvar@redhat.com> 3.5-7
+- fix testing with new glibc (#1792854)
+
 * Wed Oct 09 2019 Miroslav Lichvar <mlichvar@redhat.com> 3.5-6
 - drop timedatex recommendation
 - verify upstream signatures
