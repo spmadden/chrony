@@ -4,7 +4,7 @@
 
 Name:           chrony
 Version:        3.5
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -197,6 +197,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Jan 28 2020 Fedora Release Engineering <releng@fedoraproject.org> - 3.5-8
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
+
 * Mon Jan 20 2020 Miroslav Lichvar <mlichvar@redhat.com> 3.5-7
 - fix testing with new glibc (#1792854)
 
