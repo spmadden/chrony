@@ -1,9 +1,11 @@
 %global _hardened_build 1
-%global clknetsim_ver 79ffe4
+%global prerelease -pre1
+%global clknetsim_ver 09cbc3
 %bcond_without debug
+%bcond_without nts
 
 Name:           chrony
-Version:        3.5
+Version:        4.0
 Release:        8%{?dist}
 Summary:        An NTP client/server
 
@@ -22,14 +24,13 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add NTP servers from DHCP when starting service
 Patch2:         chrony-service-helper.patch
-# fix test suite to work with newer clknetsim
-Patch3:         chrony-packettest.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
 BuildRequires:  libseccomp-devel
 %endif
 BuildRequires:  gcc gcc-c++ bison systemd gnupg2 net-tools
+%{?with_nts:BuildRequires: gnutls-devel gnutls-utils}
 
 Requires(pre):  shadow-utils
 %{?systemd_requires}
@@ -59,7 +60,6 @@ service to other computers in the network.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch2 -p1 -b .service-helper
-%patch3 -p1 -b .packettest
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -97,6 +97,7 @@ mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
 %{?with_debug: --enable-debug} \
         --enable-ntp-signd \
         --enable-scfilter \
+%{!?with_nts: --disable-nts} \
         --docdir=%{_docdir} \
         --with-ntp-era=$(date -d '1970-01-01 00:00:00+00:00' +'%s') \
         --with-user=chrony \
