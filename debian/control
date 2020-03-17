@@ -10,7 +10,7 @@ Build-Depends: asciidoctor (>= 1.5.3-1~),
                dh-apparmor,
                libcap-dev [linux-any],
                libedit-dev,
-               libseccomp-dev (>= 2.2.3-3~) [amd64 arm64 armel armhf hppa i386 mips mipsel mips64el powerpc powerpcspe ppc64 ppc64el s390x x32],
+               libseccomp-dev (>= 2.4.3-1~) [amd64 arm64 armel armhf hppa i386 mips mipsel mips64el powerpc powerpcspe ppc64 ppc64el riscv64 s390x x32],
                net-tools <!nocheck>,
                nettle-dev,
                pkg-config,
@@ -31,6 +31,7 @@ Depends: adduser,
          ${shlibs:Depends}
 Suggests: dnsutils,
           networkd-dispatcher
+Breaks: network-manager (<< 1.20.0-1~)
 Conflicts: time-daemon
 Provides: time-daemon
 Replaces: time-daemon
