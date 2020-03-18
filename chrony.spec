@@ -1,6 +1,6 @@
 %global _hardened_build 1
 %global prerelease -pre1
-%global clknetsim_ver 09cbc3
+%global clknetsim_ver cbea2f
 %bcond_without debug
 %bcond_without nts
 
@@ -149,7 +149,7 @@ echo 'chronyd.service' > \
 
 %check
 # set random seed to get deterministic results
-export CLKNETSIM_RANDOM_SEED=24502
+export CLKNETSIM_RANDOM_SEED=24505
 make %{?_smp_mflags} -C test/simulation/clknetsim
 make quickcheck
 
