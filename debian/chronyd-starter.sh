@@ -47,7 +47,7 @@ if [ ${X_SET} -ne 1 ]; then
   HAS_CAP=1
   CAPSH="/sbin/capsh"
   if [ -x "${CAPSH}" ]; then
-      ${CAPSH} --print | grep -q "^Current.*${CAP}" || HAS_CAP=0
+      ${CAPSH} --has-p="${CAP}" || HAS_CAP=0
   fi
 
   if [ ${HAS_CAP} -eq 0 ]; then

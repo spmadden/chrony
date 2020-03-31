@@ -1,3 +1,12 @@
+chrony (3.5-6ubuntu2) focal; urgency=medium
+
+  * fix capsh usage in focal avoiding to always fall back to -x (LP: #1867036)
+    - d/control: add versioned dependency to libcap2-bin new enough to
+      support --has-p
+    - d/chronyd-starter.sh: update capsh usage to use --has-p
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Tue, 31 Mar 2020 10:19:20 +0200
+
 chrony (3.5-6ubuntu1) focal; urgency=medium
 
   * Merge with Debian unstable (LP: #1866753). Remaining changes:
