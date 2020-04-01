@@ -529,17 +529,19 @@ write_coefs_to_file(int valid,time_t ref_time,double offset,double rate)
 
 /* ================================================== */
 
-static void
+static int
 switch_interrupts(int on_off)
 {
   if (ioctl(fd, on_off ? RTC_UIE_ON : RTC_UIE_OFF, 0) < 0) {
     LOG(LOGS_ERR, "Could not %s RTC interrupt : %s",
         on_off ? "enable" : "disable", strerror(errno));
-    return;
+    return 0;
   }
 
   if (on_off)
     skip_interrupts = 1;
+
+  return 1;
 }
 
 /* ================================================== */
@@ -555,6 +557,12 @@ RTC_Linux_Initialise(void)
   if (fd < 0) {
     LOG(LOGS_ERR, "Could not open RTC device %s : %s",
         CNF_GetRtcDevice(), strerror(errno));
+    return 0;
+  }
+
+  /* Make sure the RTC supports interrupts */
+  if (!switch_interrupts(0)) {
+    close(fd);
     return 0;
   }
 
