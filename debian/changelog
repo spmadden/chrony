@@ -1,3 +1,13 @@
+chrony (3.5-6ubuntu3) focal; urgency=medium
+
+  * avoid multiple time services running concurrently (LP: #1870144).
+    This fixes the autopkgtests vs chrond itself, the issue of concurrent
+    systemd-timesyncd will be fixed in systemd by (LP 1849156)
+    - d/t/upstream-system-tests: stop chrony/systemd-timesynd before tests
+    - d/t/upstream-system-tests: fix stderr in case services do not exist
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Wed, 01 Apr 2020 09:25:45 +0200
+
 chrony (3.5-6ubuntu2) focal; urgency=medium
 
   * fix capsh usage in focal avoiding to always fall back to -x (LP: #1867036)
