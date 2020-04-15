@@ -12,7 +12,7 @@ restore_timesyncd() {
     # unsynchronized until then. So as the Conflicts in the service file kill
     # systemd-timesyncd re-establish it if it is enabled
     if [ "$(systemctl is-enabled systemd-timesyncd 2>/dev/null)" = "enabled" ] ; then
-        systemctl start systemd-timesyncd
+        deb-systemd-invoke start systemd-timesyncd || true
     fi
 }
 
