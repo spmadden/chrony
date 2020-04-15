@@ -1,3 +1,19 @@
+chrony (3.5-6ubuntu5) focal; urgency=medium
+
+  * d/t/control: harden time-sources-from-dhcp-servers test for systemd change
+    (LP: #1873031)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Wed, 15 Apr 2020 18:23:10 +0200
+
+chrony (3.5-6ubuntu4) focal; urgency=medium
+
+  * debian/postrm:
+    - Stop starting systemd-timesyncd in postrm. This is no longer relevant
+      since systemd-timesyncd is a standalone package declaring
+      Conflicts/Replaces/Provides: time-daemon. (Closes 955773, LP: #1872183)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Wed, 15 Apr 2020 09:01:30 +0200
+
 chrony (3.5-6ubuntu3) focal; urgency=medium
 
   * avoid multiple time services running concurrently (LP: #1870144).
