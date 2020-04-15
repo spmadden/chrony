@@ -1,3 +1,10 @@
+chrony (3.2-4ubuntu4.3) bionic; urgency=medium
+
+  * d/postrm: gracefully ignore issues on starting systemd-timesyncd
+    (LP: #1872183)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Wed, 15 Apr 2020 09:06:43 +0200
+
 chrony (3.2-4ubuntu4.2) bionic; urgency=medium
 
   * d/p/lp-1787366-fall-back-to-urandom.patch: avoid hangs when starting
