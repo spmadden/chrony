@@ -1,3 +1,14 @@
+chrony (3.2-4ubuntu4.4) bionic; urgency=medium
+
+  * fix autopkgtest to continue working in Bionic
+    - take Eoans version of d/t/upstream-simulation-test-suite
+    - use a defined version of clknetsim
+    - ignore compiler warnings when running make
+    - d/p/update_processing_of_packet_log.patch: Two new fields have been
+      added to the packet log, which broke some of the simulation tests.
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Thu, 16 Apr 2020 07:47:40 +0200
+
 chrony (3.2-4ubuntu4.3) bionic; urgency=medium
 
   * d/postrm: gracefully ignore issues on starting systemd-timesyncd
