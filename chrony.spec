@@ -6,7 +6,7 @@
 
 Name:           chrony
 Version:        4.0
-Release:        0.1.pre1%{?dist}
+Release:        0.2.pre2%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -201,6 +201,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Apr 20 2020 Miroslav Lichvar <mlichvar@redhat.com> 4.0-0.2.pre2
+- update to 4.0-pre2
+
 * Tue Mar 17 2020 Miroslav Lichvar <mlichvar@redhat.com> 4.0-0.1.pre1
 - update to 4.0-pre1
 - add net-tools to build requirements for testing
