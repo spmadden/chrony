@@ -1,3 +1,11 @@
+chrony (3.5-6ubuntu6.1) focal; urgency=medium
+
+  * d/patches/: Add allow-some-*time64-syscalls-in-seccomp-filter.patch
+    (LP: #1878005) Thanks to Vincent Blut
+    - backport time64 fix to 3.5-6 level
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Wed, 20 May 2020 10:16:34 +0200
+
 chrony (3.5-6ubuntu6) focal; urgency=medium
 
   * d/postrm: Reinstate the remove target (LP: #1873810)
