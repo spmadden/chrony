@@ -1,6 +1,7 @@
 Description: allow some *time64 syscalls in seccomp filter
  Allowing these system calls is required for 32-bit architectures with new
  system calls using 64-bit time_t.
+BackportNote: some line wraps changed, but the syscalls stayed the same
 Author: Vincent Blut <vincent.debian@free.fr>
 Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/chrony/+bug/1878005
 Forwarded: https://www.mail-archive.com/chrony-dev@chrony.tuxfamily.org/msg02172.html
@@ -26,7 +27,7 @@ Last-Update: 2020-05-18
      /* Process */
      SCMP_SYS(clone), SCMP_SYS(exit), SCMP_SYS(exit_group), SCMP_SYS(getpid),
 @@ -497,14 +504,29 @@ SYS_Linux_EnableSystemCallFilter(int lev
-     SCMP_SYS(statfs64), SCMP_SYS(unlink), SCMP_SYS(unlinkat),
+     SCMP_SYS(unlink), SCMP_SYS(unlinkat),
      /* Socket */
      SCMP_SYS(bind), SCMP_SYS(connect), SCMP_SYS(getsockname), SCMP_SYS(getsockopt),
 -    SCMP_SYS(recv), SCMP_SYS(recvfrom), SCMP_SYS(recvmmsg), SCMP_SYS(recvmsg),
