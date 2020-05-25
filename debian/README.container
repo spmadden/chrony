@@ -1,7 +1,7 @@
 Chrony in Containers
 --------------------
 
-Currently in in 99.9+% of the cases syncing the local clock in a container
+Currently in 99.9+% of the cases syncing the local clock in a container
 is wrong. Most of the time it will be unable to do so, because it is lacking
 CAP_SYS_TIME. Or worse, if the CAP_SYS_TIME privilege is granted, multiple
 containers could fight over the system's time, because the Linux kernel does
