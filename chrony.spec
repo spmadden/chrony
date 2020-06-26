@@ -21,6 +21,10 @@ Source6:        chrony-dnssrv@.timer
 Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
 
+# add Fedora/RHEL-specific bits to DHCP dispatcher, including
+# deferring to dhclient if installled, and using /etc/sysconfig
+Patch1:         chrony-nm-dispatcher-dhcp.patch
+
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
 BuildRequires:  libseccomp-devel
@@ -52,6 +56,7 @@ service to other computers in the network.
 %{gpgverify} --keyring=%{SOURCE2} --signature=%{SOURCE1} --data=%{SOURCE0}
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
+%patch1 -p1 -b .nm-dispatcher-dhcp
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -61,6 +66,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         dcad37a5f1aae2d2ea7b935f279e0eca  examples/chrony.conf.example2
         96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
+        63aa1412fd9044bde26475e4a9770fbf  examples/chrony.nm-dispatcher.dhcp
         8f5a98fcb400a482d355b929d04b5518  examples/chrony.nm-dispatcher.onoffline
         32c34c995c59fd1c3ad1616d063ae4a0  examples/chronyd.service
 EOF
@@ -128,7 +134,9 @@ install -m 644 -p examples/chrony.logrotate \
 install -m 644 -p examples/chronyd.service \
         $RPM_BUILD_ROOT%{_unitdir}/chronyd.service
 install -m 755 -p examples/chrony.nm-dispatcher.onoffline \
-        $RPM_BUILD_ROOT%{_prefix}/lib/NetworkManager/dispatcher.d/20-chrony
+        $RPM_BUILD_ROOT%{_prefix}/lib/NetworkManager/dispatcher.d/20-chrony-onoffline
+install -m 755 -p examples/chrony.nm-dispatcher.dhcp \
+        $RPM_BUILD_ROOT%{_prefix}/lib/NetworkManager/dispatcher.d/20-chrony-dhcp
 install -m 644 -p examples/chrony-wait.service \
         $RPM_BUILD_ROOT%{_unitdir}/chrony-wait.service
 install -m 644 -p %{SOURCE5} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.service
