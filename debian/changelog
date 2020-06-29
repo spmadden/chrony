@@ -1,3 +1,9 @@
+chrony (3.5-9ubuntu2) groovy; urgency=medium
+
+  * No change rebuild against new libnettle8 and libhogweed6 ABI.
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Mon, 29 Jun 2020 22:22:19 +0100
+
 chrony (3.5-9ubuntu1) groovy; urgency=medium
 
   * Merge with Debian unstable (LP: #1878005). Remaining changes:
