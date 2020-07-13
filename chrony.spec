@@ -6,7 +6,7 @@
 
 Name:           chrony
 Version:        4.0
-Release:        0.3.pre2%{?dist}
+Release:        0.4.pre2%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -103,10 +103,10 @@ mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
         --with-user=chrony \
         --with-hwclockfile=%{_sysconfdir}/adjtime \
         --with-sendmail=%{_sbindir}/sendmail
-make %{?_smp_mflags}
+%make_build
 
 %install
-make install DESTDIR=$RPM_BUILD_ROOT
+%make_install
 
 rm -rf $RPM_BUILD_ROOT%{_docdir}
 
@@ -150,7 +150,7 @@ echo 'chronyd.service' > \
 %check
 # set random seed to get deterministic results
 export CLKNETSIM_RANDOM_SEED=24505
-make %{?_smp_mflags} -C test/simulation/clknetsim
+%make_build -C test/simulation/clknetsim
 make quickcheck
 
 %pre
@@ -201,6 +201,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Jul 13 2020 Tom Stellard <tstellar@redhat.com> 4.0-0.4.pre2
+- use make macros
+
 * Mon May 04 2020 Miroslav Lichvar <mlichvar@redhat.com> 4.0-0.3.pre2
 - rebuild for new nettle
 
