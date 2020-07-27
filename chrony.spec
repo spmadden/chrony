@@ -6,7 +6,7 @@
 
 Name:           chrony
 Version:        4.0
-Release:        0.4.pre2%{?dist}
+Release:        0.5.pre2%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -201,6 +201,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Jul 27 2020 Fedora Release Engineering <releng@fedoraproject.org> - 4.0-0.5.pre2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild
+
 * Mon Jul 13 2020 Tom Stellard <tstellar@redhat.com> 4.0-0.4.pre2
 - use make macros
 
