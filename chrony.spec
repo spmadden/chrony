@@ -6,7 +6,7 @@
 
 Name:           chrony
 Version:        4.0
-Release:        0.6.pre2%{?dist}
+Release:        0.7.pre2%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -93,6 +93,11 @@ rm -f getdate.c
 mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
 
 %build
+# This package fails its testsuite when LTO is enabled on s390x
+# Disable LTO for now
+%ifarch s390x
+%define _lto_cflags %{nil}
+%endif
 %configure \
 %{?with_debug: --enable-debug} \
         --enable-ntp-signd \
@@ -201,6 +206,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Mon Aug 10 2020 Jeff Law <law@redhat.com> - 4.0-0.7.pre2
+- Disable LTO on s390x
+
 * Sat Aug 01 2020 Fedora Release Engineering <releng@fedoraproject.org> - 4.0-0.6.pre2
 - Second attempt - Rebuilt for
   https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild
