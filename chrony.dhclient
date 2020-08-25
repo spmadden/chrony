@@ -1,20 +1,22 @@
 #!/bin/bash
 
-SERVERFILE=$SAVEDIR/chrony.servers.$interface
+CHRONY_SOURCEDIR=/run/chrony-dhcp
+SERVERFILE=$CHRONY_SOURCEDIR/$interface.sources
 
 chrony_config() {
 	rm -f "$SERVERFILE"
 	if [ "$PEERNTP" != "no" ]; then
+		mkdir -p $CHRONY_SOURCEDIR
 		for server in $new_ntp_servers; do
-			echo "$server ${NTPSERVERARGS:-iburst}" >> "$SERVERFILE"
+			echo "server $server ${NTPSERVERARGS:-iburst}" >> "$SERVERFILE"
 		done
-		/usr/libexec/chrony-helper update-daemon || :
+		/usr/bin/chronyc reload sources > /dev/null 2>&1 || :
 	fi
 }
 
 chrony_restore() {
 	if [ -f "$SERVERFILE" ]; then
 		rm -f "$SERVERFILE"
-		/usr/libexec/chrony-helper update-daemon || :
+		/usr/bin/chronyc reload sources > /dev/null 2>&1 || :
 	fi
 }

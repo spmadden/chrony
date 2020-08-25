@@ -15,15 +15,11 @@ Source0:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerel
 Source1:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}-tar-gz-asc.txt
 Source2:        https://chrony.tuxfamily.org/gpgkey-8B1F4A9ADA73D401E3085A0B5FF06F29BA1E013B.asc
 Source3:        chrony.dhclient
-Source4:        chrony.helper
 Source5:        chrony-dnssrv@.service
 Source6:        chrony-dnssrv@.timer
 # simulator for test suite
 Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
-
-# add NTP servers from DHCP when starting service
-Patch2:         chrony-service-helper.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
@@ -34,9 +30,6 @@ BuildRequires:  gcc gcc-c++ bison systemd gnupg2 net-tools
 
 Requires(pre):  shadow-utils
 %{?systemd_requires}
-
-# required by chrony-helper
-Requires:       coreutils
 
 # Old NetworkManager expects the dispatcher scripts in a different place
 Conflicts:      NetworkManager < 1.20
@@ -59,7 +52,6 @@ service to other computers in the network.
 %{gpgverify} --keyring=%{SOURCE2} --signature=%{SOURCE1} --data=%{SOURCE0}
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
-%patch2 -p1 -b .service-helper
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -70,7 +62,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         8f5a98fcb400a482d355b929d04b5518  examples/chrony.nm-dispatcher.onoffline
-        b23bcc3bd78e195ca2849459e459f3ed  examples/chronyd.service
+        32c34c995c59fd1c3ad1616d063ae4a0  examples/chronyd.service
 EOF
 
 # don't allow packaging without vendor zone
@@ -80,9 +72,11 @@ test -n "%{vendorzone}"
 # - use our vendor zone (2.*pool.ntp.org names include IPv6 addresses)
 # - enable leapsectz to get TAI-UTC offset and leap seconds from tzdata
 # - enable keyfile
+# - use NTP servers from DHCP
 sed -e 's|^\(pool \)\(pool.ntp.org\)|\12.%{vendorzone}\2|' \
     -e 's|#\(leapsectz\)|\1|' \
     -e 's|#\(keyfile\)|\1|' \
+    -e 's|^pool.*pool.ntp.org.*|&\n\n# Use NTP servers from DHCP.\nsourcedir /run/chrony-dhcp|' \
         < examples/chrony.conf.example2 > chrony.conf
 
 touch -r examples/chrony.conf.example2 chrony.conf
@@ -140,8 +134,6 @@ install -m 644 -p examples/chrony-wait.service \
 install -m 644 -p %{SOURCE5} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.service
 install -m 644 -p %{SOURCE6} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.timer
 
-install -m 755 -p %{SOURCE4} $RPM_BUILD_ROOT%{_libexecdir}/chrony-helper
-
 cat > $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/chronyd <<EOF
 # Command-line options for chronyd
 OPTIONS=""
@@ -175,6 +167,16 @@ then
 fi
 # workaround for late reload of unit file (#1614751)
 %{_bindir}/systemctl daemon-reload
+# migrate from chrony-helper to sourcedir directive
+if test -a %{_libexecdir}/chrony-helper; then
+        grep -qi 'sourcedir /run/chrony-dhcp$' %{_sysconfdir}/chrony.conf 2> /dev/null || \
+                echo -e '\n# Use NTP servers from DHCP.\nsourcedir /run/chrony-dhcp' >> \
+                        %{_sysconfdir}/chrony.conf
+        mkdir -p /run/chrony-dhcp
+        for f in %{_localstatedir}/lib/dhclient/chrony.servers.*; do
+                sed 's|.*|server &|' < $f > /run/chrony-dhcp/"${f##*servers.}.sources"
+        done 2> /dev/null
+fi
 %systemd_post chronyd.service chrony-wait.service
 
 %preun
@@ -194,7 +196,6 @@ fi
 %{_sysconfdir}/dhcp/dhclient.d/chrony.sh
 %{_bindir}/chronyc
 %{_sbindir}/chronyd
-%{_libexecdir}/chrony-helper
 %{_prefix}/lib/NetworkManager
 %{_prefix}/lib/systemd/ntp-units.d/*.list
 %{_unitdir}/chrony*.service
