@@ -1,3 +1,16 @@
+chrony (3.5-6ubuntu6.2) focal-security; urgency=medium
+
+  * SECURITY UPDATE: Denial of service
+    - debian/patches/CVE-2020-14367.patch: add functions for common file
+      operations and switch to new util file functions in
+      logging.c, main.c, sysincl.h, util.c, util.h.
+    - CVE-2020-14367
+  * Fix test for NTP era split
+    - debian/patches/test-fix-util-unit-test-for-NTP-era-split.patch: in
+      test/unit/util.c.
+
+ -- Leonidas S. Barbosa <leo.barbosa@canonical.com>  Tue, 25 Aug 2020 11:47:23 -0300
+
 chrony (3.5-6ubuntu6.1) focal; urgency=medium
 
   * d/patches/: Add allow-some-*time64-syscalls-in-seccomp-filter.patch
