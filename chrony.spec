@@ -165,14 +165,6 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 :
 
 %post
-# fix PIDFile in local chronyd.service on upgrades from chrony < 3.3-2
-if grep -q 'PIDFile=%{_localstatedir}/run/chronyd.pid' \
-                %{_sysconfdir}/systemd/system/chronyd.service 2> /dev/null && \
-        ! grep -qi '^[ '$'\t'']*pidfile' %{_sysconfdir}/chrony.conf 2> /dev/null
-then
-        sed -i '/PIDFile=/s|/run/|/run/chrony/|' \
-                %{_sysconfdir}/systemd/system/chronyd.service
-fi
 # workaround for late reload of unit file (#1614751)
 %{_bindir}/systemctl daemon-reload
 # migrate from chrony-helper to sourcedir directive
