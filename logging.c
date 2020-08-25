@@ -171,6 +171,7 @@ void LOG_Message(LOG_Severity severity,
           log_message(1, severity, buf);
         }
       }
+      exit(1);
       break;
     default:
       assert(0);
