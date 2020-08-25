@@ -1,3 +1,16 @@
+chrony (3.2-4ubuntu4.5) bionic-security; urgency=medium
+
+  * SECURITY UPDATE: Denial of service
+    - debian/patches/CVE-2020-14367.patch: add functions for common file
+      operations and switch to new util file functions in
+      logging.c, main.c, sysincl.h, util.c, util.h.
+    - CVE-2020-14367
+  * Fix test for NTP era split
+    - debian/patches/test-fix-util-unit-test-for-NTP-era-split.patch: in
+      test/unit/util.c.
+
+ -- Leonidas S. Barbosa <leo.barbosa@canonical.com>  Tue, 25 Aug 2020 13:42:46 -0300
+
 chrony (3.2-4ubuntu4.4) bionic; urgency=medium
 
   * fix autopkgtest to continue working in Bionic
