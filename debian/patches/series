@@ -3,3 +3,5 @@ lp-1718227-ignore-non-up-down-events-in-nm-dispatcher.patch
 lp-1718227-nm-dispatcher-for-networkd.patch
 lp-1787366-fall-back-to-urandom.patch
 update_processing_of_packet_log.patch
+CVE-2020-14367.patch
+test-fix-util-unit-test-for-NTP-era-split.patch
