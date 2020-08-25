@@ -1,6 +1,6 @@
 %global _hardened_build 1
-%global prerelease -pre2
-%global clknetsim_ver 0a5e99
+%global prerelease -pre3
+%global clknetsim_ver c4ccc2
 %bcond_without debug
 %bcond_without nts
 
@@ -66,10 +66,10 @@ service to other computers in the network.
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
         47ad7eccc410b981d2f2101cf5682616  examples/chrony-wait.service
-        e473a9fab7fe200cacce3dca8b66290b  examples/chrony.conf.example2
+        dcad37a5f1aae2d2ea7b935f279e0eca  examples/chrony.conf.example2
         96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
-        8748a663f0b1943ea491858f414a6b26  examples/chrony.nm-dispatcher
+        8f5a98fcb400a482d355b929d04b5518  examples/chrony.nm-dispatcher.onoffline
         b23bcc3bd78e195ca2849459e459f3ed  examples/chronyd.service
 EOF
 
@@ -133,7 +133,7 @@ install -m 644 -p examples/chrony.logrotate \
 
 install -m 644 -p examples/chronyd.service \
         $RPM_BUILD_ROOT%{_unitdir}/chronyd.service
-install -m 755 -p examples/chrony.nm-dispatcher \
+install -m 755 -p examples/chrony.nm-dispatcher.onoffline \
         $RPM_BUILD_ROOT%{_prefix}/lib/NetworkManager/dispatcher.d/20-chrony
 install -m 644 -p examples/chrony-wait.service \
         $RPM_BUILD_ROOT%{_unitdir}/chrony-wait.service
