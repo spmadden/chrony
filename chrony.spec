@@ -6,7 +6,7 @@
 
 Name:           chrony
 Version:        4.0
-Release:        0.7.pre2%{?dist}
+Release:        0.8.pre3%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -209,6 +209,14 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Aug 26 2020 Miroslav Lichvar <mlichvar@redhat.com> 4.0-0.8.pre3
+- update to 4.0-pre3
+- switch to sourcedir directive for loading servers from DHCP
+- add NetworkManager dispatcher script to save servers from DHCP when
+  dhclient is not installed (Robert Fairley)
+- drop old migration code from scriptlet
+- move default paths in /var/run to /run
+
 * Mon Aug 10 2020 Jeff Law <law@redhat.com> - 4.0-0.7.pre2
 - Disable LTO on s390x
 
