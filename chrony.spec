@@ -66,7 +66,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         dcad37a5f1aae2d2ea7b935f279e0eca  examples/chrony.conf.example2
         96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
-        63aa1412fd9044bde26475e4a9770fbf  examples/chrony.nm-dispatcher.dhcp
+        e051740bb4b21e2e12e6dc63f5195c48  examples/chrony.nm-dispatcher.dhcp
         8f5a98fcb400a482d355b929d04b5518  examples/chrony.nm-dispatcher.onoffline
         32c34c995c59fd1c3ad1616d063ae4a0  examples/chronyd.service
 EOF
@@ -103,10 +103,12 @@ mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
         --enable-ntp-signd \
         --enable-scfilter \
 %{!?with_nts: --disable-nts} \
+        --chronyrundir=/run/chrony \
         --docdir=%{_docdir} \
         --with-ntp-era=$(date -d '1970-01-01 00:00:00+00:00' +'%s') \
         --with-user=chrony \
         --with-hwclockfile=%{_sysconfdir}/adjtime \
+        --with-pidfile=/run/chrony/chronyd.pid \
         --with-sendmail=%{_sbindir}/sendmail
 %make_build
 
