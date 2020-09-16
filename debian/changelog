@@ -1,3 +1,19 @@
+chrony (3.4-4+deb10u1) buster; urgency=medium
+
+  * debian/patches/:
+    - Add create-new-file-when-writing-pidfile.patch to prevent symlink race
+    when writing to PID file (CVE-2020-14367).
+
+  * debian/tests/:
+    - Fix a regression when running upstream-simulation-test-suite autopkgtest
+    on Buster.
+
+  [ Matt Corallo ]
+  * debian/usr.sbin.chronyd:
+    - Fix temperature reading. (Closes: #970421)
+
+ -- Vincent Blut <vincent.debian@free.fr>  Wed, 16 Sep 2020 13:44:04 +0200
+
 chrony (3.4-4) unstable; urgency=medium
 
   * debian/patches/*:
