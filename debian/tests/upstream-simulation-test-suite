@@ -14,11 +14,13 @@ fi
 cd test/simulation
 
 if [ ! -d clknetsim ]; then
-    git clone https://github.com/mlichvar/clknetsim
+    if git clone https://github.com/mlichvar/clknetsim; then
+        cd clknetsim && git checkout 58c5e8b
+    fi
 fi
 
-if [ ! -x "clknetsim/clknetsim" ] && [ ! -e "clknetsim/clknetsim.so" ]; then
-    make -C clknetsim
+if [ ! -x "clknetsim" ] && [ ! -e "clknetsim.so" ]; then
+    make
 fi
 
-./run -i 20 -m 2
+cd - && ./run -i 20 -m 2
