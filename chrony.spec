@@ -6,7 +6,7 @@
 
 Name:           chrony
 Version:        4.0
-Release:        0.8.pre3%{?dist}
+Release:        0.9.pre4%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -209,6 +209,9 @@ fi
 %dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Sep 16 2020 Miroslav Lichvar <mlichvar@redhat.com> 4.0-0.9.pre4
+- update to 4.0-pre4
+
 * Wed Aug 26 2020 Miroslav Lichvar <mlichvar@redhat.com> 4.0-0.8.pre3
 - update to 4.0-pre3
 - switch to sourcedir directive for loading servers from DHCP
