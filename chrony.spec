@@ -203,10 +203,10 @@ fi
 %{_unitdir}/chrony*.service
 %{_unitdir}/chrony*.timer
 %{_mandir}/man[158]/%{name}*.[158]*
-%dir %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony
+%dir %attr(750,chrony,chrony) %{_localstatedir}/lib/chrony
 %ghost %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony/drift
 %ghost %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony/rtc
-%dir %attr(-,chrony,chrony) %{_localstatedir}/log/chrony
+%dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
 * Wed Sep 16 2020 Miroslav Lichvar <mlichvar@redhat.com> 4.0-0.9.pre4
