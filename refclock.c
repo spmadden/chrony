@@ -253,8 +253,9 @@ RCL_AddRefclock(RefclockParameters *params)
   inst->filter = SPF_CreateInstance(MIN(params->filter_length, 4), params->filter_length,
                                     params->max_dispersion, 0.6);
 
-  inst->source = SRC_CreateNewInstance(inst->ref_id, SRC_REFCLOCK, params->sel_options, NULL,
-                                       params->min_samples, params->max_samples, 0.0, 0.0);
+  inst->source = SRC_CreateNewInstance(inst->ref_id, SRC_REFCLOCK, 0, params->sel_options,
+                                       NULL, params->min_samples, params->max_samples,
+                                       0.0, 0.0);
 
   DEBUG_LOG("refclock %s refid=%s poll=%d dpoll=%d filter=%d",
       params->driver_name, UTI_RefidToString(inst->ref_id),
@@ -415,7 +416,6 @@ accumulate_sample(RCL_Instance instance, struct timespec *sample_time, double of
   sample.root_delay = instance->delay;
   sample.peer_dispersion = dispersion;
   sample.root_dispersion = dispersion;
-  sample.leap = instance->leap_status;
 
   /* Handle special case when PPS is used with the local reference */
   if (instance->pps_active && instance->lock_ref == -1)
@@ -704,6 +704,7 @@ poll_timeout(void *arg)
 
     if (SPF_GetFilteredSample(inst->filter, &sample)) {
       SRC_UpdateReachability(inst->source, 1);
+      SRC_SetLeapStatus(inst->source, inst->leap_status);
       SRC_AccumulateSample(inst->source, &sample);
       SRC_SelectSource(inst->source);
 
