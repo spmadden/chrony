@@ -390,12 +390,9 @@ read_hwclock_file(const char *hwclock_file)
   if (!hwclock_file || !hwclock_file[0])
     return;
 
-  in = fopen(hwclock_file, "r");
-  if (!in) {
-    LOG(LOGS_WARN, "Could not open %s : %s",
-        hwclock_file, strerror(errno));
+  in = UTI_OpenFile(NULL, hwclock_file, NULL, 'r', 0);
+  if (!in)
     return;
-  }
 
   /* Read third line from the file. */
   for (i = 0; i < 3; i++) {
@@ -445,7 +442,8 @@ read_coefs_from_file(void)
 
     tried_to_load_coefs = 1;
 
-    if (coefs_file_name && (in = fopen(coefs_file_name, "r"))) {
+    if (coefs_file_name &&
+        (in = UTI_OpenFile(NULL, coefs_file_name, NULL, 'r', 0))) {
       if (fscanf(in, "%d%ld%lf%lf",
                  &valid_coefs_from_file,
                  &file_ref_time,
@@ -466,63 +464,20 @@ read_coefs_from_file(void)
 static int
 write_coefs_to_file(int valid,time_t ref_time,double offset,double rate)
 {
-  struct stat buf;
-  char *temp_coefs_file_name;
   FILE *out;
-  int r1, r2;
 
   /* Create a temporary file with a '.tmp' extension. */
-
-  temp_coefs_file_name = (char*) Malloc(strlen(coefs_file_name)+8);
-
-  if(!temp_coefs_file_name) {
+  out = UTI_OpenFile(NULL, coefs_file_name, ".tmp", 'w', 0644);
+  if (!out)
     return RTC_ST_BADFILE;
-  }
-
-  strcpy(temp_coefs_file_name,coefs_file_name);
-  strcat(temp_coefs_file_name,".tmp");
-
-  out = fopen(temp_coefs_file_name, "w");
-  if (!out) {
-    Free(temp_coefs_file_name);
-    LOG(LOGS_WARN, "Could not open temporary RTC file %s.tmp for writing",
-        coefs_file_name);
-    return RTC_ST_BADFILE;
-  }
 
   /* Gain rate is written out in ppm */
-  r1 = fprintf(out, "%1d %ld %.6f %.3f\n",
-               valid, ref_time, offset, 1.0e6 * rate);
-  r2 = fclose(out);
-  if (r1 < 0 || r2) {
-    Free(temp_coefs_file_name);
-    LOG(LOGS_WARN, "Could not write to temporary RTC file %s.tmp",
-        coefs_file_name);
+  fprintf(out, "%1d %ld %.6f %.3f\n", valid, ref_time, offset, 1.0e6 * rate);
+  fclose(out);
+
+  /* Rename the temporary file to the correct location */
+  if (!UTI_RenameTempFile(NULL, coefs_file_name, ".tmp", NULL))
     return RTC_ST_BADFILE;
-  }
-
-  /* Clone the file attributes from the existing file if there is one. */
-
-  if (!stat(coefs_file_name,&buf)) {
-    if (chown(temp_coefs_file_name,buf.st_uid,buf.st_gid) ||
-        chmod(temp_coefs_file_name,buf.st_mode & 0777)) {
-      LOG(LOGS_WARN,
-          "Could not change ownership or permissions of temporary RTC file %s.tmp",
-          coefs_file_name);
-    }
-  }
-
-  /* Rename the temporary file to the correct location (see rename(2) for details). */
-
-  if (rename(temp_coefs_file_name,coefs_file_name)) {
-    unlink(temp_coefs_file_name);
-    Free(temp_coefs_file_name);
-    LOG(LOGS_WARN, "Could not replace old RTC file %s.tmp with new one %s",
-        coefs_file_name, coefs_file_name);
-    return RTC_ST_BADFILE;
-  }
-
-  Free(temp_coefs_file_name);
 
   return RTC_ST_OK;
 }
@@ -618,6 +573,10 @@ RTC_Linux_Finalise(void)
     (void) RTC_Linux_WriteParameters();
 
   }
+
+  if (rtc_sec)
+    LCL_RemoveParameterChangeHandler(slew_samples, NULL);
+
   Free(rtc_sec);
   Free(rtc_trim);
   Free(system_times);
