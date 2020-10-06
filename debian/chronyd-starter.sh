@@ -25,12 +25,10 @@ fi
 
 # Check if -x is already set manually, don't process further if that is the case
 X_SET=0
-while getopts ":x" opt; do
-    case $opt in
-        x)
-            X_SET=1
-            ;;
-    esac
+for arg in $@; do
+    if echo "$arg" | grep -q -e '^-[a-zA-Z0-9]*x'; then
+         X_SET=1
+    fi
 done
 
 if [ ${X_SET} -ne 1 ]; then

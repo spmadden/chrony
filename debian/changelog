@@ -1,3 +1,9 @@
+chrony (3.5.1-1ubuntu2) groovy; urgency=medium
+
+  * d/chronyd-starter.sh: fix commandline argument parsing (LP: #1898000)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Tue, 06 Oct 2020 12:20:40 +0200
+
 chrony (3.5.1-1ubuntu1) groovy; urgency=medium
 
   * Merge with Debian unstable. Remaining changes:
