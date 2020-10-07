@@ -1,5 +1,4 @@
 %global _hardened_build 1
-%global prerelease -pre4
 %global clknetsim_ver c4ccc2
 %bcond_without debug
 %bcond_without nts
@@ -63,7 +62,7 @@ service to other computers in the network.
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
         bc563c1bcf67b2da774bd8c2aef55a06  examples/chrony-wait.service
-        dcad37a5f1aae2d2ea7b935f279e0eca  examples/chrony.conf.example2
+        2d01b94bc1a7b7fb70cbee831488d121  examples/chrony.conf.example2
         96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         e051740bb4b21e2e12e6dc63f5195c48  examples/chrony.nm-dispatcher.dhcp
