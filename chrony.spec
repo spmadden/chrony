@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        4.0
-Release:        0.9.pre4%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -208,6 +208,10 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Oct 07 2020 Miroslav Lichvar <mlichvar@redhat.com> 4.0-1
+- update to 4.0
+- update directory permissions to follow upstream
+
 * Wed Sep 16 2020 Miroslav Lichvar <mlichvar@redhat.com> 4.0-0.9.pre4
 - update to 4.0-pre4
 
