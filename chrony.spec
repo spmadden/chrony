@@ -14,8 +14,6 @@ Source0:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerel
 Source1:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}-tar-gz-asc.txt
 Source2:        https://chrony.tuxfamily.org/gpgkey-8B1F4A9ADA73D401E3085A0B5FF06F29BA1E013B.asc
 Source3:        chrony.dhclient
-Source5:        chrony-dnssrv@.service
-Source6:        chrony-dnssrv@.timer
 # simulator for test suite
 Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
@@ -140,8 +138,6 @@ install -m 755 -p examples/chrony.nm-dispatcher.dhcp \
         $RPM_BUILD_ROOT%{_prefix}/lib/NetworkManager/dispatcher.d/20-chrony-dhcp
 install -m 644 -p examples/chrony-wait.service \
         $RPM_BUILD_ROOT%{_unitdir}/chrony-wait.service
-install -m 644 -p %{SOURCE5} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.service
-install -m 644 -p %{SOURCE6} $RPM_BUILD_ROOT%{_unitdir}/chrony-dnssrv@.timer
 
 cat > $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/chronyd <<EOF
 # Command-line options for chronyd
@@ -200,7 +196,6 @@ fi
 %{_prefix}/lib/NetworkManager
 %{_prefix}/lib/systemd/ntp-units.d/*.list
 %{_unitdir}/chrony*.service
-%{_unitdir}/chrony*.timer
 %{_mandir}/man[158]/%{name}*.[158]*
 %dir %attr(750,chrony,chrony) %{_localstatedir}/lib/chrony
 %ghost %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony/drift
