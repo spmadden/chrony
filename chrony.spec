@@ -27,6 +27,7 @@ BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 BuildRequires:  libseccomp-devel
 %endif
 BuildRequires:  gcc gcc-c++ bison systemd gnupg2 net-tools
+BuildRequires: make
 %{?with_nts:BuildRequires: gnutls-devel gnutls-utils}
 
 Requires(pre):  shadow-utils
