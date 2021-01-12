@@ -26,8 +26,7 @@ BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 %ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
 BuildRequires:  libseccomp-devel
 %endif
-BuildRequires:  gcc gcc-c++ bison systemd gnupg2 net-tools
-BuildRequires: make
+BuildRequires:  gcc gcc-c++ make bison systemd gnupg2 net-tools
 %{?with_nts:BuildRequires: gnutls-devel gnutls-utils}
 
 Requires(pre):  shadow-utils
