@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Vincent Blut <vincent.debian@free.fr>
 Uploaders: Joachim Wiedorn <joodebian@joonet.de>
-Standards-Version: 4.5.0
+Standards-Version: 4.5.1
 Build-Depends: asciidoctor (>= 1.5.3-1~),
                bison,
                debhelper-compat (= 13),
@@ -28,6 +28,7 @@ Architecture: linux-any
 Pre-Depends: ${misc:Pre-Depends}
 Depends: adduser,
          iproute2 [linux-any],
+         tzdata,
          ucf,
          ${misc:Depends},
          ${shlibs:Depends}
