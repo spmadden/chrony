@@ -1,0 +1,39 @@
+#!/bin/sh
+# Make sure that NTP sources from /etc/chrony/sources.d are usable.
+
+set -eu
+
+. debian/tests/helper-functions
+
+server_addr="192.0.2.1"
+
+check_sources() {
+    chronyc sources | grep -q "$server_addr" && __test_ok || __test_fail
+}
+
+reload_sources() {
+    chronyc reload sources > /dev/null 2>&1 && __test_ok || __test_fail
+}
+
+restart_chronyd() {
+    systemctl --quiet restart chrony.service
+}
+
+printf "Preparing chronyd configuration: "
+__no_system_clock_control && __test_ok || __test_fail
+
+printf "Adding a dummy server to the list of NTP sources: "
+printf "server $server_addr" > /etc/chrony/sources.d/dummy-server.sources && __test_ok || __test_fail
+
+printf "Reloading NTP sources: "
+reload_sources
+
+printf "Checking for dummy server availability: "
+check_sources
+
+printf "Checking for dummy server availability after restarting chronyd: "
+restart_chronyd
+sleep 2
+check_sources
+
+exit 0
