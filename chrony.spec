@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        4.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -204,6 +204,9 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Jan 26 2021 Fedora Release Engineering <releng@fedoraproject.org> - 4.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_34_Mass_Rebuild
+
 * Wed Oct 07 2020 Miroslav Lichvar <mlichvar@redhat.com> 4.0-1
 - update to 4.0
 - update directory permissions to follow upstream
