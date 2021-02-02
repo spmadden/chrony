@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        4.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -203,8 +203,13 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Feb 02 2021 Miroslav Lichvar <mlichvar@redhat.com> 4.0-3
+- update NM DHCP dispatcher script
+
 * Tue Jan 26 2021 Fedora Release Engineering <releng@fedoraproject.org> - 4.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_34_Mass_Rebuild
+- Add BuildRequires: make
+- drop dnssrv service and timer
 
 * Wed Oct 07 2020 Miroslav Lichvar <mlichvar@redhat.com> 4.0-1
 - update to 4.0
