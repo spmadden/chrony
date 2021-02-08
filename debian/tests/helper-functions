@@ -24,3 +24,27 @@ __test_skip() {
     [ -n "$1" ] && printf 'SKIP: (%s)\n' "$1" || printf 'SKIP\n'
     exit 77
 }
+
+reload_sources() {
+    chronyc reload sources > /dev/null 2>&1 && __test_ok || __test_fail
+}
+
+restart_chronyd() {
+    systemctl --quiet restart chrony.service
+}
+
+check_sources() {
+    chronyc sources | grep -q "$1" && __test_ok || __test_fail
+}
+
+check_auth() {
+    chronyc -c authdata | grep -q "$1" && __test_ok || __test_fail
+}
+
+# Ubuntu's default config is fully populated causing issues with the test
+# If any of those tests run on Ubuntu, clear some and restart the daemon
+# to pick this up before entering the tests.
+if grep -q "^pool.*ubuntu.pool.ntp.org" /etc/chrony/chrony.conf; then
+    sudo sed -i -e '/^pool.*ubuntu.pool.ntp.org/d' /etc/chrony/chrony.conf
+    restart_chronyd
+fi
