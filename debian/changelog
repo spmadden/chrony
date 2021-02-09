@@ -24,6 +24,11 @@ chrony (4.0-5ubuntu1) hirsute; urgency=medium
       + debian/install: make chrony-starter.sh available on install.
       + debian/docs, debian/README.container: provide documentation about the
         handling of this case.
+  * Added changes:
+    - d/t/helper-functions: reduce default ubuntu config, to make space for
+      testcase config
+    - d/t/{dynamically-add-source,ntp-server-and-nts-auth,helper-functions}:
+      unify tests to use reload and restart
 
  -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Mon, 08 Feb 2021 12:45:05 +0100
 
