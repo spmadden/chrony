@@ -1,3 +1,10 @@
+chrony (4.0-5ubuntu2) hirsute; urgency=medium
+
+  * d/p/lp-1915006-sys_linux-allow-statx-and-fstatat64-in-seccomp-filte.patch:
+    add compatibility for glibc 2.33 (LP: 1915006)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Mon, 15 Feb 2021 12:50:29 +0100
+
 chrony (4.0-5ubuntu1) hirsute; urgency=medium
 
   * Merge with Debian unstable (LP: #1915006). Remaining changes:
