@@ -1,1 +1,2 @@
 nm-dispatcher-dhcp_Move-server_dir-to-run.patch
+lp-1915006-sys_linux-allow-statx-and-fstatat64-in-seccomp-filte.patch
