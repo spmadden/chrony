@@ -1,0 +1,52 @@
+From ae2e0318d1b18534061706fe51528be1f484594c Mon Sep 17 00:00:00 2001
+From: Christian Ehrhardt <christian.ehrhardt@canonical.com>
+Date: Fri, 12 Feb 2021 10:19:55 +0100
+Subject: [PATCH] sys_linux: allow statx and fstatat64 in seccomp filter
+
+With glibc 2.33 on armhf statx and fstatat64 are triggered.
+Allow this call to un-break chrony on such platforms.
+
+Without this e.g. test 005-scfilter fails and with ltrace -rTS reports:
+a)
+  0.001684 SYS_397(11, 0xf75def08, 6144, 2047 <no return ...>
+  0.759239 +++ killed by SIGSYS +++
+b)
+  0.003749 SYS_327(-100, 0xffdbcc3c, 0xffdbcb50, 0)
+  0.000821 --- SIGSYS (Bad system call) ---
+
+Current armhf syscalls from:
+https://github.com/torvalds/linux/blob/v5.10/arch/arm/tools/syscall.tbl
+
+Signed-off-by: Christian Ehrhardt <christian.ehrhardt@canonical.com>
+
+Origin: upstream, https://git.tuxfamily.org/chrony/chrony.git/commit/?id=ae2e0318d1b
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/1915006
+Last-Update: 2021-02-15
+
+---
+ sys_linux.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/sys_linux.c b/sys_linux.c
+index 202da845..058cec37 100644
+--- a/sys_linux.c
++++ b/sys_linux.c
+@@ -537,6 +537,7 @@ SYS_Linux_EnableSystemCallFilter(int level, SYS_ProcessContext context)
+     SCMP_SYS(fchownat),
+     SCMP_SYS(fstat),
+     SCMP_SYS(fstat64),
++    SCMP_SYS(fstatat64),
+     SCMP_SYS(getdents),
+     SCMP_SYS(getdents64),
+     SCMP_SYS(lseek),
+@@ -554,6 +555,7 @@ SYS_Linux_EnableSystemCallFilter(int level, SYS_ProcessContext context)
+     SCMP_SYS(stat64),
+     SCMP_SYS(statfs),
+     SCMP_SYS(statfs64),
++    SCMP_SYS(statx),
+     SCMP_SYS(unlink),
+     SCMP_SYS(unlinkat),
+ 
+-- 
+2.30.0
+
