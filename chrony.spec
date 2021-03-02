@@ -5,7 +5,7 @@
 
 Name:           chrony
 Version:        4.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -203,6 +203,10 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Mar 02 2021 Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl> - 4.0-4
+- Rebuilt for updated systemd-rpm-macros
+  See https://pagure.io/fesco/issue/2583.
+
 * Tue Feb 02 2021 Miroslav Lichvar <mlichvar@redhat.com> 4.0-3
 - update NM DHCP dispatcher script
 
