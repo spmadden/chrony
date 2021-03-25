@@ -1,5 +1,5 @@
 %global _hardened_build 1
-%global clknetsim_ver c4ccc2
+%global clknetsim_ver 1ca4a9
 %bcond_without debug
 %bcond_without nts
 
@@ -90,11 +90,6 @@ rm -f getdate.c
 mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
 
 %build
-# This package fails its testsuite when LTO is enabled on s390x
-# Disable LTO for now
-%ifarch s390x
-%define _lto_cflags %{nil}
-%endif
 %configure \
 %{?with_debug: --enable-debug} \
         --enable-ntp-signd \
