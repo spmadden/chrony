@@ -1,3 +1,10 @@
+chrony (4.0-5ubuntu3) hirsute; urgency=medium
+
+  * d/t/upstream-simulation-test-suite: Update clknetsim version to fix
+    a test failure on s390x when LTO is enabled at build time (LP: #1921377)
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Thu, 25 Mar 2021 15:45:47 +0100
+
 chrony (4.0-5ubuntu2) hirsute; urgency=medium
 
   * d/p/lp-1915006-sys_linux-allow-statx-and-fstatat64-in-seccomp-filte.patch:
