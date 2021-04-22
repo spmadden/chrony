@@ -1,38 +1,17 @@
-From 1b29e43133d992e735ffbf87d79f008994479036 Mon Sep 17 00:00:00 2001
 From: Robert Fairley <rfairley@redhat.com>
 Date: Wed, 17 Jun 2020 10:14:19 -0400
-Subject: [PATCH] examples/nm-dispatcher.dhcp: use sysconfig, detect dhclient
+Subject: [PATCH] examples/nm-dispatcher.dhcp: use sysconfig
 
 Use the PEERNTP and NTPSERVERARGS environment variables from
-/etc/sysconfig/network{-scripts}. Detect a dhclient install to avoid a
-redundant operation with the 11-dhclient NM dispatcher in the
-dhcp-client package.
+/etc/sysconfig/network{-scripts}.
 
 Co-Authored-By: Christian Glombek <cglombek@redhat.com>
----
- examples/chrony.nm-dispatcher.dhcp | 21 +++++++++++++++++++--
- 1 file changed, 19 insertions(+), 2 deletions(-)
 
 diff --git a/examples/chrony.nm-dispatcher.dhcp b/examples/chrony.nm-dispatcher.dhcp
 index 6ea4c37..a6ad35a 100644
 --- a/examples/chrony.nm-dispatcher.dhcp
 +++ b/examples/chrony.nm-dispatcher.dhcp
-@@ -6,21 +6,39 @@
- 
- export LC_ALL=C
- 
-+# If a dhclient installation is present, avoid a redundant operation
-+# in case dhclient handles NTP server config through its own chrony config script,
-+# exec'ed by NetworkManager's 11-dhclient dispatcher script.
-+# In RHCOS, 11-dhclient is excluded and not shipped with base image.
-+[ -e /usr/sbin/dhclient ] && \
-+    [ -e /etc/dhcp/dhclient.d/chrony.sh ] && \
-+    [ -e /etc/NetworkManager/dispatcher.d/11-dhclient -o \
-+      -e /usr/lib/NetworkManager/dispatcher.d/11-dhclient ] && \
-+    exit 0
-+
- interface=$1
- action=$2
+@@ -6,16 +6,24 @@
  
  chronyc=/usr/bin/chronyc
  default_server_options=iburst

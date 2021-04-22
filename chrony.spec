@@ -63,7 +63,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         2d01b94bc1a7b7fb70cbee831488d121  examples/chrony.conf.example2
         96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
-        2da011da89727ef009799502d84e7cd0  examples/chrony.nm-dispatcher.dhcp
+        a7054c9352c07384bd7ea0477e6e8a8c  examples/chrony.nm-dispatcher.dhcp
         8f5a98fcb400a482d355b929d04b5518  examples/chrony.nm-dispatcher.onoffline
         32c34c995c59fd1c3ad1616d063ae4a0  examples/chronyd.service
 EOF
