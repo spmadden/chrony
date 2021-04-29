@@ -1,3 +1,48 @@
+chrony (4.1-1ubuntu1) impish; urgency=medium
+
+  * Merge new upstream 4.1 and yet unrelased changes from Debian salsa.
+    Remaining changes:
+    - d/chrony.conf: use ubuntu ntp pool and server (LP 1744664 1754358)
+    - Set -x as default if unable to set time (e.g. in containers) (LP 1589780)
+      Chrony is a single service which acts as both NTP client (i.e. syncing the
+      local clock) and NTP server (i.e. providing NTP services to the network),
+      and that is both desired and expected in the vast majority of cases.
+      But in containers syncing the local clock is usually impossible, but this
+      shall not break the providing of NTP services to the network.
+      To some extent this makes chrony's default config more similar to 'ntpd',
+      which complained in syslog but still provided NTP server service in those
+      cases.
+      + debian/chrony.service: allow the service to run without CAP_SYS_TIME
+      + debian/control: add new dependency libcap2-bin for capsh (usually
+        installed anyway, but make them explicit to be sure).
+      + debian/chrony.default: new option SYNC_IN_CONTAINER to not fall back
+        (Default off) [fixed a minor typo in the comment in this update]
+      + debian/chronyd-starter.sh: wrapper to handle special cases in containers
+        and if CAP_SYS_TIME is missing. Effectively allows on to run NTP server
+        in containers on a default installation and avoid failing to sync time
+        (or if allowed to sync, avoid multiple containers to fight over it by
+        accident).
+      + debian/install: make chrony-starter.sh available on install.
+      + debian/docs, debian/README.container: provide documentation about the
+        handling of this case.
+  * Dropped changes:
+    - d/t/helper-functions: reduce default ubuntu config, to make space for
+      testcase config
+      [ in Debian 4.0-6 ]
+    - d/t/{dynamically-add-source,ntp-server-and-nts-auth,helper-functions}:
+      unify tests to use reload and restart
+      [ in Debian 4.0-6 ]
+    - d/t/upstream-simulation-test-suite: Update clknetsim version to fix
+      a test failure on s390x when LTO is enabled at build time (LP #1921377)
+      [ in Debian 4.1~pre1-1 ]
+    - d/p/lp-1915006-sys_linux-allow-statx-and-fstatat64-in-seccomp-filte.patch:
+      add compatibility for glibc 2.33 (LP: 1915006)
+      [ upstream in 4.1-pre1 ]
+  * Added changes:
+    - d/t/helper-functions: restart explicitly to fix test issues
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Tue, 18 May 2021 08:12:59 +0200
+
 chrony (4.1-1) experimental; urgency=medium
 
   * Import upstream version 4.1:
