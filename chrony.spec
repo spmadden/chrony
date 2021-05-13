@@ -3,6 +3,10 @@
 %bcond_without debug
 %bcond_without nts
 
+%ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
+%bcond_without seccomp
+%endif
+
 Name:           chrony
 Version:        4.1
 Release:        0.1.pre1%{?dist}
@@ -23,11 +27,9 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 Patch1:         chrony-nm-dispatcher-dhcp.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
-%ifarch %{ix86} x86_64 %{arm} aarch64 mipsel mips64el ppc64 ppc64le s390 s390x
-BuildRequires:  libseccomp-devel
-%endif
 BuildRequires:  gcc gcc-c++ make bison systemd gnupg2 net-tools
 %{?with_nts:BuildRequires: gnutls-devel gnutls-utils}
+%{?with_seccomp:BuildRequires: libseccomp-devel}
 
 Requires(pre):  shadow-utils
 %{?systemd_requires}
@@ -93,7 +95,7 @@ mv clknetsim-%{clknetsim_ver}* test/simulation/clknetsim
 %configure \
 %{?with_debug: --enable-debug} \
         --enable-ntp-signd \
-        --enable-scfilter \
+%{?with_seccomp: --enable-scfilter} \
 %{!?with_nts: --disable-nts} \
         --chronyrundir=/run/chrony \
         --docdir=%{_docdir} \
