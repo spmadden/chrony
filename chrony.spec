@@ -138,7 +138,7 @@ install -m 644 -p examples/chrony-wait.service \
 
 cat > $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/chronyd <<EOF
 # Command-line options for chronyd
-OPTIONS=""
+OPTIONS="%{?with_seccomp:-F 2}"
 EOF
 
 touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
