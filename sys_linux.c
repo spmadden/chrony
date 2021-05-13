@@ -508,6 +508,7 @@ SYS_Linux_EnableSystemCallFilter(int level, SYS_ProcessContext context)
     SCMP_SYS(getpid),
     SCMP_SYS(getrlimit),
     SCMP_SYS(getuid),
+    SCMP_SYS(getuid32),
     SCMP_SYS(rt_sigaction),
     SCMP_SYS(rt_sigreturn),
     SCMP_SYS(rt_sigprocmask),
@@ -618,6 +619,9 @@ SYS_Linux_EnableSystemCallFilter(int level, SYS_ProcessContext context)
     { SOL_IP, IP_PKTINFO }, { SOL_IP, IP_FREEBIND }, { SOL_IP, IP_TOS },
 #ifdef FEAT_IPV6
     { SOL_IPV6, IPV6_V6ONLY }, { SOL_IPV6, IPV6_RECVPKTINFO },
+#endif
+#ifdef SO_BINDTODEVICE
+    { SOL_SOCKET, SO_BINDTODEVICE },
 #endif
     { SOL_SOCKET, SO_BROADCAST }, { SOL_SOCKET, SO_REUSEADDR },
 #ifdef SO_REUSEPORT
