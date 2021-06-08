@@ -22,8 +22,7 @@ Source3:        chrony.dhclient
 Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
 
-# add Fedora/RHEL-specific bits to DHCP dispatcher, including
-# deferring to dhclient if installled, and using /etc/sysconfig
+# add distribution-specific bits to DHCP dispatcher
 Patch1:         chrony-nm-dispatcher-dhcp.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
