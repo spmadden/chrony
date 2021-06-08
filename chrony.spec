@@ -26,7 +26,7 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 Patch1:         chrony-nm-dispatcher-dhcp.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
-BuildRequires:  gcc gcc-c++ make bison systemd gnupg2 net-tools
+BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
 %{?with_nts:BuildRequires: gnutls-devel gnutls-utils}
 %{?with_seccomp:BuildRequires: libseccomp-devel}
 
