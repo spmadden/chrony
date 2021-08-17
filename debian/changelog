@@ -1,3 +1,38 @@
+chrony (4.1-3ubuntu1) impish; urgency=medium
+
+  * Merge with Debian unstable (LP: #1940252). Remaining changes:
+    Remaining changes:
+    - d/chrony.conf: use ubuntu ntp pool and server (LP 1744664 1754358)
+    - Set -x as default if unable to set time (e.g. in containers) (LP 1589780)
+      Chrony is a single service which acts as both NTP client (i.e. syncing the
+      local clock) and NTP server (i.e. providing NTP services to the network),
+      and that is both desired and expected in the vast majority of cases.
+      But in containers syncing the local clock is usually impossible, but this
+      shall not break the providing of NTP services to the network.
+      To some extent this makes chrony's default config more similar to 'ntpd',
+      which complained in syslog but still provided NTP server service in those
+      cases.
+      + debian/chrony.service: allow the service to run without CAP_SYS_TIME
+      + debian/control: add new dependency libcap2-bin for capsh (usually
+        installed anyway, but make them explicit to be sure).
+      + debian/chrony.default: new option SYNC_IN_CONTAINER to not fall back
+        (Default off) [fixed a minor typo in the comment in this update]
+      + debian/chronyd-starter.sh: wrapper to handle special cases in containers
+        and if CAP_SYS_TIME is missing. Effectively allows on to run NTP server
+        in containers on a default installation and avoid failing to sync time
+        (or if allowed to sync, avoid multiple containers to fight over it by
+        accident).
+      + debian/install: make chrony-starter.sh available on install.
+      + debian/docs, debian/README.container: provide documentation about the
+        handling of this case.
+  * Dropped changes:
+    - d/t/helper-functions: restart explicitly to fix test issues
+  * Added changes:
+    - d/p/lp-1940252-rtc-avoid-printing-and-scanning-time_t.patch: glibc 2.34
+      compatibility
+
+ -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Tue, 17 Aug 2021 12:22:32 +0200
+
 chrony (4.1-3) unstable; urgency=medium
 
   * Upload to unstable.
