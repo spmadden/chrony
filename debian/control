@@ -1,7 +1,8 @@
 Source: chrony
 Section: net
 Priority: optional
-Maintainer: Vincent Blut <vincent.debian@free.fr>
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Vincent Blut <vincent.debian@free.fr>
 Standards-Version: 4.5.1
 Build-Depends: asciidoctor,
                bison,
@@ -27,6 +28,7 @@ Architecture: linux-any
 Pre-Depends: ${misc:Pre-Depends}
 Depends: adduser,
          iproute2 [linux-any],
+         libcap2-bin (>= 1:2.32-1),
          tzdata,
          ucf,
          ${misc:Depends},
