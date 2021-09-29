@@ -26,6 +26,8 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 Patch1:         chrony-nm-dispatcher-dhcp.patch
 # update seccomp filter for new glibc
 Patch2:         chrony-seccomp.patch
+# harden chronyd and chrony-wait services
+Patch3:         chrony-services.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
@@ -58,18 +60,19 @@ service to other computers in the network.
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .nm-dispatcher-dhcp
 %patch2 -p1 -b .seccomp
+%patch3 -p1 -b .services
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
-        bc563c1bcf67b2da774bd8c2aef55a06  examples/chrony-wait.service
+        222e652b95027289877fa77146d3b9b1  examples/chrony-wait.service
         2d01b94bc1a7b7fb70cbee831488d121  examples/chrony.conf.example2
         96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         a7054c9352c07384bd7ea0477e6e8a8c  examples/chrony.nm-dispatcher.dhcp
         8f5a98fcb400a482d355b929d04b5518  examples/chrony.nm-dispatcher.onoffline
-        32c34c995c59fd1c3ad1616d063ae4a0  examples/chronyd.service
+        76c8a32a5ac6692a7f15f65e2b5f3239  examples/chronyd.service
 EOF
 
 # don't allow packaging without vendor zone

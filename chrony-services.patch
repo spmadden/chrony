@@ -1,0 +1,120 @@
+commit 83f96efdfd2d42a8de51ac3b05120acf5292bb00
+Author: Miroslav Lichvar <mlichvar@redhat.com>
+Date:   Wed Sep 29 15:25:48 2021 +0200
+
+    examples: harden systemd services
+    
+    Add various settings to the example chronyd and chrony-wait services to
+    decrease the exposure reported by the "systemd-analyze security"
+    command. The original exposure was high as the analyzer does not check
+    the actual process (e.g. that it dropped the root privileges or that it
+    has its own seccomp filter).
+    
+    Limit read-write access to /run, /var/lib/chrony, and /var/spool.
+    Access to /run (instead of /run/chrony) is needed for the refclock
+    socket expected by gpsd.
+    
+    The mailonchange directive is most likely to break as it executes
+    /usr/sbin/sendmail, which can do unexpected operations depending on the
+    implementation. It should work with a setuid/setgid binary, but it is
+    not expected to write outside of /var/spool and the private /tmp.
+
+diff --git a/examples/chrony-wait.service b/examples/chrony-wait.service
+index b3aa7aa2..72b028f2 100644
+--- a/examples/chrony-wait.service
++++ b/examples/chrony-wait.service
+@@ -16,5 +16,32 @@ TimeoutStartSec=180
+ RemainAfterExit=yes
+ StandardOutput=null
+ 
++CapabilityBoundingSet=
++DevicePolicy=closed
++DynamicUser=yes
++IPAddressAllow=localhost
++IPAddressDeny=any
++LockPersonality=yes
++MemoryDenyWriteExecute=yes
++PrivateDevices=yes
++PrivateUsers=yes
++ProcSubset=pid
++ProtectClock=yes
++ProtectControlGroups=yes
++ProtectHome=yes
++ProtectHostname=yes
++ProtectKernelLogs=yes
++ProtectKernelModules=yes
++ProtectKernelTunables=yes
++ProtectProc=invisible
++ProtectSystem=strict
++RestrictAddressFamilies=AF_INET AF_INET6
++RestrictNamespaces=yes
++RestrictRealtime=yes
++SystemCallArchitectures=native
++SystemCallFilter=@system-service
++SystemCallFilter=~@privileged @resources
++UMask=0777
++
+ [Install]
+ WantedBy=multi-user.target
+diff --git a/examples/chronyd.service b/examples/chronyd.service
+index 289548cb..2cac6026 100644
+--- a/examples/chronyd.service
++++ b/examples/chronyd.service
+@@ -10,9 +10,40 @@ Type=forking
+ PIDFile=/run/chrony/chronyd.pid
+ EnvironmentFile=-/etc/sysconfig/chronyd
+ ExecStart=/usr/sbin/chronyd $OPTIONS
++
++CapabilityBoundingSet=~CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_AUDIT_WRITE
++CapabilityBoundingSet=~CAP_BLOCK_SUSPEND CAP_KILL CAP_LEASE CAP_LINUX_IMMUTABLE
++CapabilityBoundingSet=~CAP_MAC_ADMIN CAP_MAC_OVERRIDE CAP_MKNOD CAP_SYS_ADMIN
++CapabilityBoundingSet=~CAP_SYS_BOOT CAP_SYS_CHROOT CAP_SYS_MODULE CAP_SYS_PACCT
++CapabilityBoundingSet=~CAP_SYS_PTRACE CAP_SYS_RAWIO CAP_SYS_TTY_CONFIG CAP_WAKE_ALARM
++DeviceAllow=char-pps rw
++DeviceAllow=char-ptp rw
++DeviceAllow=char-rtc rw
++DevicePolicy=closed
++LockPersonality=yes
++MemoryDenyWriteExecute=yes
++NoNewPrivileges=yes
+ PrivateTmp=yes
++ProcSubset=pid
++ProtectControlGroups=yes
+ ProtectHome=yes
+-ProtectSystem=full
++ProtectHostname=yes
++ProtectKernelLogs=yes
++ProtectKernelModules=yes
++ProtectKernelTunables=yes
++ProtectProc=invisible
++ProtectSystem=strict
++ReadWritePaths=/run /var/lib/chrony
++RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
++RestrictNamespaces=yes
++RestrictSUIDSGID=yes
++SystemCallArchitectures=native
++SystemCallFilter=~@cpu-emulation @debug @module @mount @obsolete @raw-io @reboot @swap
++
++# Adjust restrictions for /usr/sbin/sendmail (mailonchange directive)
++NoNewPrivileges=no
++ReadWritePaths=/var/spool
++RestrictAddressFamilies=AF_NETLINK
+ 
+ [Install]
+ WantedBy=multi-user.target
+
+Avoid a SELinux issue
+
+diff --git a/examples/chrony-wait.service b/examples/chrony-wait.service
+index 72b028f2..57646950 100644
+--- a/examples/chrony-wait.service
++++ b/examples/chrony-wait.service
+@@ -18,7 +18,7 @@ StandardOutput=null
+ 
+ CapabilityBoundingSet=
+ DevicePolicy=closed
+-DynamicUser=yes
++#DynamicUser=yes
+ IPAddressAllow=localhost
+ IPAddressDeny=any
+ LockPersonality=yes
