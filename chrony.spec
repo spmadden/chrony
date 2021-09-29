@@ -9,7 +9,7 @@
 
 Name:           chrony
 Version:        4.1
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -205,6 +205,9 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Sep 29 2021 Miroslav Lichvar <mlichvar@redhat.com> 4.1-4
+- harden chronyd and chrony-wait services
+
 * Mon Aug 09 2021 Miroslav Lichvar <mlichvar@redhat.com> 4.1-3
 - update seccomp filter for new glibc
 - remove unnecessary build requirement
