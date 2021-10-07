@@ -1,4 +1,8 @@
-# Last Modified: Sat Jan 20 10:45:05 2018
+# vim:syntax=apparmor
+# Last Modified: Sun Sep 05 16:48:05 2021
+
+abi <abi/3.0>,
+
 #include <tunables/global>
 
 /usr/sbin/chronyd flags=(attach_disconnected) {
