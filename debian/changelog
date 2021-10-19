@@ -1,3 +1,12 @@
+chrony (4.0-8+deb11u1) bullseye; urgency=medium
+
+  * debian/patches/:
+    - Add fix-seccomp-filter-for-BINDTODEVICE-socket-option.patch to be able
+    to bind a socket to a network device with a name longer than 3 characters
+    when the system call filter is enabled. (Closes: #995207)
+
+ -- Vincent Blut <vincent.debian@free.fr>  Tue, 19 Oct 2021 22:02:40 +0200
+
 chrony (4.0-8) unstable; urgency=medium
 
   * debian/patches/:

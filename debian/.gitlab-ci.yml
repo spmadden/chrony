@@ -9,3 +9,6 @@ reprotest:
     only:
         variables:
             - $SEE_YOU_SOON_REPROTEST
+
+variables:
+    RELEASE: 'bullseye'
