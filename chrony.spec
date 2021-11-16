@@ -72,7 +72,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         a7054c9352c07384bd7ea0477e6e8a8c  examples/chrony.nm-dispatcher.dhcp
         8f5a98fcb400a482d355b929d04b5518  examples/chrony.nm-dispatcher.onoffline
-        76c8a32a5ac6692a7f15f65e2b5f3239  examples/chronyd.service
+        677ad16d6439daa369da44a1b75d1772  examples/chronyd.service
 EOF
 
 # don't allow packaging without vendor zone

@@ -118,3 +118,34 @@ index 72b028f2..57646950 100644
  IPAddressAllow=localhost
  IPAddressDeny=any
  LockPersonality=yes
+commit 76a905d652cafccfac1023f74d12ffa7facc4832
+Author: Miroslav Lichvar <mlichvar@redhat.com>
+Date:   Mon Oct 4 10:54:40 2021 +0200
+
+    examples: improve chronyd service
+    
+    Allow writing logfiles (enabled by logdir or -l option) to /var/log and
+    don't require /var/spool to exist.
+
+diff --git a/examples/chronyd.service b/examples/chronyd.service
+index 2cac6026..4fb930ef 100644
+--- a/examples/chronyd.service
++++ b/examples/chronyd.service
+@@ -33,7 +33,7 @@ ProtectKernelModules=yes
+ ProtectKernelTunables=yes
+ ProtectProc=invisible
+ ProtectSystem=strict
+-ReadWritePaths=/run /var/lib/chrony
++ReadWritePaths=/run /var/lib/chrony -/var/log
+ RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+ RestrictNamespaces=yes
+ RestrictSUIDSGID=yes
+@@ -42,7 +42,7 @@ SystemCallFilter=~@cpu-emulation @debug @module @mount @obsolete @raw-io @reboot
+ 
+ # Adjust restrictions for /usr/sbin/sendmail (mailonchange directive)
+ NoNewPrivileges=no
+-ReadWritePaths=/var/spool
++ReadWritePaths=-/var/spool
+ RestrictAddressFamilies=AF_NETLINK
+ 
+ [Install]
