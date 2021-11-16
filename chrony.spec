@@ -9,7 +9,7 @@
 
 Name:           chrony
 Version:        4.1
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -205,6 +205,9 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Nov 16 2021 Miroslav Lichvar <mlichvar@redhat.com> 4.1-5
+- fix hardened chronyd service to allow writing log files
+
 * Wed Sep 29 2021 Miroslav Lichvar <mlichvar@redhat.com> 4.1-4
 - harden chronyd and chrony-wait services
 
