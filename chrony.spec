@@ -1,5 +1,6 @@
 %global _hardened_build 1
-%global clknetsim_ver f89702
+%global prerelease -pre1
+%global clknetsim_ver 470b5e
 %bcond_without debug
 %bcond_without nts
 
@@ -8,7 +9,7 @@
 %endif
 
 Name:           chrony
-Version:        4.1
+Version:        4.2
 Release:        5%{?dist}
 Summary:        An NTP client/server
 
@@ -24,10 +25,6 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add distribution-specific bits to DHCP dispatcher
 Patch1:         chrony-nm-dispatcher-dhcp.patch
-# update seccomp filter for new glibc
-Patch2:         chrony-seccomp.patch
-# harden chronyd and chrony-wait services
-Patch3:         chrony-services.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
@@ -59,14 +56,12 @@ service to other computers in the network.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .nm-dispatcher-dhcp
-%patch2 -p1 -b .seccomp
-%patch3 -p1 -b .services
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
-        222e652b95027289877fa77146d3b9b1  examples/chrony-wait.service
+        b40117b4aac846d31e4ad196dc44cda3  examples/chrony-wait.service
         2d01b94bc1a7b7fb70cbee831488d121  examples/chrony.conf.example2
         96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
