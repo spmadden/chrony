@@ -9,7 +9,7 @@
 
 Name:           chrony
 Version:        4.2
-Release:        0.1.pre1%{?dist}
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -199,6 +199,9 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Dec 16 2021 Miroslav Lichvar <mlichvar@redhat.com> 4.2-1
+- update to 4.2
+
 * Thu Dec 02 2021 Miroslav Lichvar <mlichvar@redhat.com> 4.2-0.1.pre1
 - update to 4.2-pre1
 
