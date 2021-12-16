@@ -200,7 +200,7 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
-* Thu Dec 02 2021 Miroslav Lichvar <mlichvar@redhat.com> 4.2-1
+* Thu Dec 02 2021 Miroslav Lichvar <mlichvar@redhat.com> 4.2-0.1.pre1
 - update to 4.2-pre1
 
 * Tue Nov 16 2021 Miroslav Lichvar <mlichvar@redhat.com> 4.1-5
