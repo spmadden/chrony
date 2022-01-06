@@ -40,6 +40,7 @@
 #include "array.h"
 #include "logging.h"
 #include "privops.h"
+#include "ptp.h"
 #include "util.h"
 
 #define INVALID_SOCK_FD (-4)
@@ -58,10 +59,16 @@ struct Message {
   union sockaddr_all name;
   struct iovec iov;
   /* Buffer of sufficient length for all expected messages */
-  union {
-    NTP_Packet ntp_msg;
-    CMD_Request cmd_request;
-    CMD_Reply cmd_reply;
+  struct {
+    /* Extra space for Ethernet, IPv4/IPv6, and UDP headers in
+       timestamped messages received from the Linux error queue */
+    uint8_t l234_headers[64];
+    union {
+      NTP_Packet ntp_msg;
+      PTP_NtpMessage ptp_msg;
+      CMD_Request cmd_request;
+      CMD_Reply cmd_reply;
+    } msg;
   } msg_buf;
   /* Aligned buffer for control messages */
   struct cmsghdr cmsg_buf[CMSG_BUF_SIZE / sizeof (struct cmsghdr)];
@@ -498,6 +505,8 @@ bind_unix_address(int sock_fd, const char *addr, int flags)
 {
   union sockaddr_all saddr;
 
+  memset(&saddr, 0, sizeof (saddr));
+
   if (snprintf(saddr.un.sun_path, sizeof (saddr.un.sun_path), "%s", addr) >=
       sizeof (saddr.un.sun_path)) {
     DEBUG_LOG("Unix socket path %s too long", addr);
@@ -529,6 +538,8 @@ static int
 connect_unix_address(int sock_fd, const char *addr)
 {
   union sockaddr_all saddr;
+
+  memset(&saddr, 0, sizeof (saddr));
 
   if (snprintf(saddr.un.sun_path, sizeof (saddr.un.sun_path), "%s", addr) >=
       sizeof (saddr.un.sun_path)) {
