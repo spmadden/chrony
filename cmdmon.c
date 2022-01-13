@@ -321,7 +321,8 @@ transmit_reply(int sock_fd, int request_length, SCK_Message *message)
 
 #if !defined(HAVE_IN_PKTINFO) && defined(IP_SENDSRCADDR)
   /* On FreeBSD a local IPv4 address cannot be specified on bound socket */
-  if (message->local_addr.ip.family == IPADDR_INET4 && (sock_fd != sock_fd4 || bound_sock_fd4))
+  if (message->addr_type == SCK_ADDR_IP && message->local_addr.ip.family == IPADDR_INET4 &&
+      (sock_fd != sock_fd4 || bound_sock_fd4))
     message->local_addr.ip.family = IPADDR_UNSPEC;
 #endif
 
@@ -768,6 +769,8 @@ handle_add_source(CMD_Request *rx_message, CMD_Reply *tx_message)
   params.burst = ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_BURST ? 1 : 0;
   params.nts = ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_NTS ? 1 : 0;
   params.copy = ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_COPY ? 1 : 0;
+  params.ext_fields =
+    ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_EF_EXP1 ? NTP_EF_FLAG_EXP1 : 0;
   params.sel_options =
     (ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_PREFER ? SRC_SELECT_PREFER : 0) |
     (ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_NOSELECT ? SRC_SELECT_NOSELECT : 0) |
@@ -1164,7 +1167,7 @@ handle_server_stats(CMD_Request *rx_message, CMD_Reply *tx_message)
   RPT_ServerStatsReport report;
 
   CLG_GetServerStatsReport(&report);
-  tx_message->reply = htons(RPY_SERVER_STATS2);
+  tx_message->reply = htons(RPY_SERVER_STATS3);
   tx_message->data.server_stats.ntp_hits = htonl(report.ntp_hits);
   tx_message->data.server_stats.nke_hits = htonl(report.nke_hits);
   tx_message->data.server_stats.cmd_hits = htonl(report.cmd_hits);
@@ -1173,6 +1176,9 @@ handle_server_stats(CMD_Request *rx_message, CMD_Reply *tx_message)
   tx_message->data.server_stats.cmd_drops = htonl(report.cmd_drops);
   tx_message->data.server_stats.log_drops = htonl(report.log_drops);
   tx_message->data.server_stats.ntp_auth_hits = htonl(report.ntp_auth_hits);
+  tx_message->data.server_stats.ntp_interleaved_hits = htonl(report.ntp_interleaved_hits);
+  tx_message->data.server_stats.ntp_timestamps = htonl(report.ntp_timestamps);
+  tx_message->data.server_stats.ntp_span_seconds = htonl(report.ntp_span_seconds);
 }
 
 /* ================================================== */
