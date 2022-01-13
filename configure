@@ -467,7 +467,7 @@ case $OPERATINGSYSTEM in
     ;;
     SunOS)
         EXTRA_OBJECTS="sys_generic.o sys_solaris.o sys_timex.o sys_posix.o"
-        LIBS="$LIBS -lsocket -lnsl -lresolv"
+        LIBS="$LIBS -lsocket -lnsl -lkvm -lelf -lresolv"
         try_setsched=1
         try_lockmem=1
         add_def SOLARIS
@@ -479,7 +479,7 @@ case $OPERATINGSYSTEM in
           add_def FEAT_PRIVDROP
           priv_ops="ADJUSTTIMEX SETTIME BINDSOCKET"
         fi
-        echo "Configuring for Solaris (" $SYSTEM "SunOS version" $VERSION ")" 
+        echo "Configuring for illumos (" $SYSTEM "SunOS version" $VERSION ")"
     ;;                                                                        
     * )
         echo "error: $SYSTEM is not supported (yet?)"
@@ -934,15 +934,42 @@ if [ $feat_sechash = "1" ] && [ "x$HASH_LINK" = "x" ] && [ $try_tomcrypt = "1" ]
   fi
 fi
 
+if [ $feat_sechash = "1" ] && [ "x$HASH_LINK" = "x" ] && [ $try_gnutls = "1" ]; then
+  test_cflags="`pkg_config --cflags gnutls`"
+  test_link="`pkg_config --libs gnutls`"
+  if test_code 'gnutls' 'gnutls/crypto.h' \
+    "$test_cflags" "$test_link" '
+      return gnutls_hash(NULL, NULL, 0);'
+  then
+    HASH_OBJ="hash_gnutls.o"
+    HASH_LINK="$test_link"
+    MYCPPFLAGS="$MYCPPFLAGS $test_cflags"
+    add_def FEAT_SECHASH
+
+    if test_code 'CMAC in gnutls' 'gnutls/crypto.h' "$test_cflags" "$test_link" \
+      'return gnutls_hmac_init(NULL, GNUTLS_MAC_AES_CMAC_128, NULL, 0);'
+    then
+      add_def HAVE_CMAC
+      EXTRA_OBJECTS="$EXTRA_OBJECTS cmac_gnutls.o"
+      EXTRA_CLI_OBJECTS="$EXTRA_CLI_OBJECTS cmac_gnutls.o"
+    fi
+  fi
+fi
+
 EXTRA_OBJECTS="$EXTRA_OBJECTS $HASH_OBJ"
 EXTRA_CLI_OBJECTS="$EXTRA_CLI_OBJECTS $HASH_OBJ"
 LIBS="$LIBS $HASH_LINK"
 
 if [ $feat_ntp = "1" ] && [ $feat_nts = "1" ] && [ $try_gnutls = "1" ]; then
-  test_cflags="`pkg_config --cflags gnutls`"
-  test_link="`pkg_config --libs gnutls`"
-  if test_code 'gnutls' 'gnutls/gnutls.h' \
-    "$test_cflags" "$test_link" '
+  if [ "$HASH_OBJ" = "hash_gnutls.o" ]; then
+    test_cflags=""
+    test_link=""
+  else
+    test_cflags="`pkg_config --cflags gnutls`"
+    test_link="`pkg_config --libs gnutls`"
+  fi
+  if test_code 'TLS1.3 in gnutls' 'gnutls/gnutls.h' \
+    "$test_cflags" "$test_link $LIBS" '
       return gnutls_init(NULL, 0) + GNUTLS_TLS1_3 +
         gnutls_priority_init2(NULL, "", NULL, GNUTLS_PRIORITY_INIT_DEF_APPEND) +
         gnutls_prf_rfc5705(NULL, 0, "", 0, "", 16, NULL);'
@@ -955,8 +982,8 @@ if [ $feat_ntp = "1" ] && [ $feat_nts = "1" ] && [ $try_gnutls = "1" ]; then
       add_def HAVE_SIV
       add_def HAVE_NETTLE_SIV_CMAC
     else
-      if test_code 'SIV in gnutls' 'gnutls/gnutls.h' \
-        "$test_cflags" "$test_link" '
+      if test_code 'SIV in gnutls' 'gnutls/crypto.h' \
+        "$test_cflags" "$test_link $LIBS" '
           return gnutls_aead_cipher_init(NULL, GNUTLS_CIPHER_AES_128_SIV, NULL);'
       then
         EXTRA_OBJECTS="$EXTRA_OBJECTS siv_gnutls.o"
