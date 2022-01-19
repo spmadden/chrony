@@ -202,6 +202,9 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Jan 19 2022 Miroslav Lichvar <mlichvar@redhat.com> 4.2-1
+- update to 4.2
+
 * Mon Aug 09 2021 Miroslav Lichvar <mlichvar@redhat.com> 4.1-3
 - update seccomp filter for new glibc
 - remove unnecessary build requirement
