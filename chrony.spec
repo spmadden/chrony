@@ -1,5 +1,5 @@
 %global _hardened_build 1
-%global clknetsim_ver f89702
+%global clknetsim_ver 470b5e
 %bcond_without debug
 %bcond_without nts
 
@@ -8,8 +8,8 @@
 %endif
 
 Name:           chrony
-Version:        4.1
-Release:        3%{?dist}
+Version:        4.2
+Release:        1%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -24,8 +24,8 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add distribution-specific bits to DHCP dispatcher
 Patch1:         chrony-nm-dispatcher-dhcp.patch
-# update seccomp filter for new glibc
-Patch2:         chrony-seccomp.patch
+# revert ProtectSystem in chronyd.service from strict to full
+Patch2:         chrony-services.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
@@ -57,19 +57,19 @@ service to other computers in the network.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .nm-dispatcher-dhcp
-%patch2 -p1 -b .seccomp
+%patch2 -p1 -b .services
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
-        bc563c1bcf67b2da774bd8c2aef55a06  examples/chrony-wait.service
+        b40117b4aac846d31e4ad196dc44cda3  examples/chrony-wait.service
         2d01b94bc1a7b7fb70cbee831488d121  examples/chrony.conf.example2
         96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         a7054c9352c07384bd7ea0477e6e8a8c  examples/chrony.nm-dispatcher.dhcp
         8f5a98fcb400a482d355b929d04b5518  examples/chrony.nm-dispatcher.onoffline
-        32c34c995c59fd1c3ad1616d063ae4a0  examples/chronyd.service
+        619dd00009ea312c7201beefde10341a  examples/chronyd.service
 EOF
 
 # don't allow packaging without vendor zone
