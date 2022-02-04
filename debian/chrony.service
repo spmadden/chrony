@@ -5,13 +5,12 @@ Conflicts=openntpd.service ntp.service ntpsec.service
 Wants=time-sync.target
 Before=time-sync.target
 After=network.target
-ConditionCapability=CAP_SYS_TIME
 
 [Service]
 Type=forking
 PIDFile=/run/chrony/chronyd.pid
 EnvironmentFile=-/etc/default/chrony
-ExecStart=/usr/sbin/chronyd $DAEMON_OPTS
+ExecStart=/usr/lib/systemd/scripts/chronyd-starter.sh $DAEMON_OPTS
 
 CapabilityBoundingSet=~CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_AUDIT_WRITE
 CapabilityBoundingSet=~CAP_BLOCK_SUSPEND CAP_KILL CAP_LEASE CAP_LINUX_IMMUTABLE
