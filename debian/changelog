@@ -27,6 +27,9 @@ chrony (4.2-2ubuntu1) jammy; urgency=medium
         handling of this case.
   * Dropped changes [ in 4.2-1 ]
     - Drop patches present in v4.2
+      + d/p/allow-clone3-and-pread64-in-seccomp-filter.patch
+      + d/p/fix-seccomp-filter-for-BINDTODEVICE-socket-option.patch
+      + d/p/lp-1940252-rtc-avoid-printing-and-scanning-time_t.patch
     - d/t/upstream-simulation-test-suite: bump to the matching clknetsim
 
  -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Fri, 04 Feb 2022 07:52:48 +0100
