@@ -1,3 +1,10 @@
+chrony (4.2-2ubuntu2) jammy; urgency=medium
+
+  * d/patches/add-rseq.patch: Add "rseq" to list of acceptable syscalls to fix
+    tests with glibc 2.35.
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Tue, 08 Feb 2022 16:48:09 +1300
+
 chrony (4.2-2ubuntu1) jammy; urgency=medium
 
   * Merge with Debian unstable. Remaining changes:

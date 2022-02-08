@@ -1,0 +1,12 @@
+--- a/sys_linux.c
++++ b/sys_linux.c
+@@ -601,6 +601,9 @@
+     SCMP_SYS(getrandom),
+     SCMP_SYS(sysinfo),
+     SCMP_SYS(uname),
++#ifdef __NR_rseq
++    SCMP_SYS(rseq),
++#endif
+   };
+ 
+   const int denied_any[] = {
