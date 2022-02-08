@@ -601,6 +601,9 @@ SYS_Linux_EnableSystemCallFilter(int level, SYS_ProcessContext context)
     SCMP_SYS(getrandom),
     SCMP_SYS(sysinfo),
     SCMP_SYS(uname),
+#ifdef __NR_rseq
+    SCMP_SYS(rseq),
+#endif
   };
 
   const int denied_any[] = {
