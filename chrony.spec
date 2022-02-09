@@ -9,7 +9,7 @@
 
 Name:           chrony
 Version:        4.2
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -202,6 +202,9 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Feb 09 2022 Miroslav Lichvar <mlichvar@redhat.com> 4.2-4
+- update seccomp filter for latest glibc
+
 * Tue Feb 08 2022 Miroslav Lichvar <mlichvar@redhat.com> 4.2-3
 - use NTP servers passed by NetworkManager from DHCPv6 NTP server option
 
