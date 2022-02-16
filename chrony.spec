@@ -9,7 +9,7 @@
 
 Name:           chrony
 Version:        4.2
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -161,8 +161,6 @@ getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
 :
 
 %post
-# workaround for late reload of unit file (#1614751)
-%{_bindir}/systemctl daemon-reload
 # migrate from chrony-helper to sourcedir directive
 if test -a %{_libexecdir}/chrony-helper; then
         grep -qi 'sourcedir /run/chrony-dhcp$' %{_sysconfdir}/chrony.conf 2> /dev/null || \
@@ -202,6 +200,9 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Feb 16 2022 Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl> - 4.2-5
+- Drop obsolete workaround in scriptlet
+
 * Wed Feb 09 2022 Miroslav Lichvar <mlichvar@redhat.com> 4.2-4
 - update seccomp filter for latest glibc
 
