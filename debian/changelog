@@ -1,3 +1,11 @@
+chrony (3.4-4+deb10u2) buster; urgency=medium
+
+  * debian/usr.sbin.chronyd:
+    - Allow reading the chronyd configuration file that timemaster(8)
+    generates. Thanks to Michael Lestinsky for the report! (Closes: #1004745)
+
+ -- Vincent Blut <vincent.debian@free.fr>  Tue, 15 Mar 2022 13:45:14 +0100
+
 chrony (3.4-4+deb10u1) buster; urgency=medium
 
   * debian/patches/:
