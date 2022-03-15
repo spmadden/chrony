@@ -50,6 +50,9 @@
   /dev/pps[0-9]* rw,
   /dev/ptp[0-9]* rw,
 
+  # Allow reading the chronyd configuration file that timemaster(8) generates
+  /{,var/}run/timemaster/chrony.conf r,
+
   # For use with clocks that report via shared memory (e.g. gpsd),
   # you may need to give ntpd access to all of shared memory, though
   # this can be considered dangerous. See https://launchpad.net/bugs/722815
