@@ -9,7 +9,7 @@
 
 Name:           chrony
 Version:        4.2
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -18,6 +18,7 @@ Source0:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerel
 Source1:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}-tar-gz-asc.txt
 Source2:        https://chrony.tuxfamily.org/gpgkey-8F375C7E8D0EE125A3D3BD51537E2B76F7680DAC.asc
 Source3:        chrony.dhclient
+Source4:        chrony.sysusers
 # simulator for test suite
 Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/clknetsim-%{clknetsim_ver}.tar.gz
 %{?gitpatch:Patch0: chrony-%{version}%{?prerelease}-%{gitpatch}.patch.gz}
@@ -32,8 +33,8 @@ BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
 %{?with_nts:BuildRequires: gnutls-devel gnutls-utils}
 %{?with_seccomp:BuildRequires: libseccomp-devel}
 
-Requires(pre):  shadow-utils
 %{?systemd_requires}
+%{?sysusers_requires_compat}
 
 # Old NetworkManager expects the dispatcher scripts in a different place
 Conflicts:      NetworkManager < 1.20
@@ -117,6 +118,7 @@ mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/{sysconfig,logrotate.d}
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/{lib,log}/chrony
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d
 mkdir -p $RPM_BUILD_ROOT%{_libexecdir}
+mkdir -p $RPM_BUILD_ROOT%{_sysusersdir}
 mkdir -p $RPM_BUILD_ROOT%{_prefix}/lib/NetworkManager/dispatcher.d
 mkdir -p $RPM_BUILD_ROOT{%{_unitdir},%{_prefix}/lib/systemd/ntp-units.d}
 
@@ -137,6 +139,8 @@ install -m 755 -p examples/chrony.nm-dispatcher.dhcp \
         $RPM_BUILD_ROOT%{_prefix}/lib/NetworkManager/dispatcher.d/20-chrony-dhcp
 install -m 644 -p examples/chrony-wait.service \
         $RPM_BUILD_ROOT%{_unitdir}/chrony-wait.service
+install -m 644 -p %{SOURCE4} \
+        $RPM_BUILD_ROOT%{_sysusersdir}/chrony.conf
 
 cat > $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/chronyd <<EOF
 # Command-line options for chronyd
@@ -155,10 +159,7 @@ export CLKNETSIM_RANDOM_SEED=24505
 make quickcheck
 
 %pre
-getent group chrony > /dev/null || /usr/sbin/groupadd -r chrony
-getent passwd chrony > /dev/null || /usr/sbin/useradd -r -g chrony \
-       -d %{_localstatedir}/lib/chrony -s /sbin/nologin chrony
-:
+%sysusers_create_compat %{SOURCE4}
 
 %post
 # migrate from chrony-helper to sourcedir directive
@@ -193,6 +194,7 @@ fi
 %{_prefix}/lib/NetworkManager
 %{_prefix}/lib/systemd/ntp-units.d/*.list
 %{_unitdir}/chrony*.service
+%{_sysusersdir}/chrony.conf
 %{_mandir}/man[158]/%{name}*.[158]*
 %dir %attr(750,chrony,chrony) %{_localstatedir}/lib/chrony
 %ghost %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony/drift
@@ -200,6 +202,9 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue May 24 2022 Luca BRUNO <lucab@lucabruno.net> - 4.2-6
+- Add a sysusers.d fragment for chrony user/group
+
 * Wed Feb 16 2022 Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl> - 4.2-5
 - Drop obsolete workaround in scriptlet
 
