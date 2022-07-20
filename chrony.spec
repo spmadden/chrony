@@ -9,7 +9,7 @@
 
 Name:           chrony
 Version:        4.2
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        An NTP client/server
 
 License:        GPLv2
@@ -202,6 +202,9 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Jul 20 2022 Fedora Release Engineering <releng@fedoraproject.org> - 4.2-7
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
+
 * Tue May 24 2022 Luca BRUNO <lucab@lucabruno.net> - 4.2-6
 - Add a sysusers.d fragment for chrony user/group
 
