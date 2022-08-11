@@ -353,7 +353,6 @@ add_source(NTP_Remote_Address *remote_addr, char *name, NTP_Source_Type type,
       record_lock = 1;
 
       record = get_record(slot);
-      assert(!name || !UTI_IsStringIP(name));
       record->name = Strdup(name ? name : UTI_IPToString(&remote_addr->ip_addr));
       record->data = NCR_CreateInstance(remote_addr, type, params, record->name);
       record->remote_addr = NCR_GetRemoteAddress(record->data);
@@ -698,21 +697,25 @@ static int get_unused_pool_id(void)
 
 /* ================================================== */
 
+static uint32_t
+get_next_conf_id(uint32_t *conf_id)
+{
+  last_conf_id++;
+
+  if (conf_id)
+    *conf_id = last_conf_id;
+
+  return last_conf_id;
+}
+
+/* ================================================== */
+
 NSR_Status
 NSR_AddSource(NTP_Remote_Address *remote_addr, NTP_Source_Type type,
               SourceParameters *params, uint32_t *conf_id)
 {
-  NSR_Status s;
-
-  s = add_source(remote_addr, NULL, type, params, INVALID_POOL, last_conf_id + 1);
-  if (s != NSR_Success)
-    return s;
-
-  last_conf_id++;
-  if (conf_id)
-    *conf_id = last_conf_id;
-
-  return s;
+  return add_source(remote_addr, NULL, type, params, INVALID_POOL,
+                    get_next_conf_id(conf_id));
 }
 
 /* ================================================== */
@@ -725,11 +728,13 @@ NSR_AddSourceByName(char *name, int port, int pool, NTP_Source_Type type,
   struct SourcePool *sp;
   NTP_Remote_Address remote_addr;
   int i, new_sources, pool_id;
+  uint32_t cid;
 
   /* If the name is an IP address, add the source with the address directly */
   if (UTI_StringToIP(name, &remote_addr.ip_addr)) {
     remote_addr.port = port;
-    return NSR_AddSource(&remote_addr, type, params, conf_id);
+    return add_source(&remote_addr, name, type, params, INVALID_POOL,
+                      get_next_conf_id(conf_id));
   }
 
   /* Make sure the name is at least printable and has no spaces */
@@ -770,14 +775,12 @@ NSR_AddSourceByName(char *name, int port, int pool, NTP_Source_Type type,
 
   append_unresolved_source(us);
 
-  last_conf_id++;
-  if (conf_id)
-    *conf_id = last_conf_id;
+  cid = get_next_conf_id(conf_id);
 
   for (i = 0; i < new_sources; i++) {
     if (i > 0)
       remote_addr.ip_addr.addr.id = ++last_address_id;
-    if (add_source(&remote_addr, name, type, params, us->pool_id, last_conf_id) != NSR_Success)
+    if (add_source(&remote_addr, name, type, params, us->pool_id, cid) != NSR_Success)
       return NSR_TooManySources;
   }
 

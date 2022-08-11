@@ -72,7 +72,7 @@ server, or its IP address. It supports the following options:
 This option specifies the minimum interval between requests sent to the server
 as a power of 2 in seconds. For example, *minpoll 5* would mean that the
 polling interval should not drop below 32 seconds. The default is 6 (64
-seconds), the minimum is -6 (1/64th of a second), and the maximum is 24 (6
+seconds), the minimum is -7 (1/128th of a second), and the maximum is 24 (6
 months). Note that intervals shorter than 6 (64 seconds) should generally not
 be used with public servers on the Internet, because it might be considered
 abuse. A sub-second interval will be enabled only when the server is reachable
@@ -82,7 +82,7 @@ should be in a local network.
 This option specifies the maximum interval between requests sent to the server
 as a power of 2 in seconds. For example, *maxpoll 9* indicates that the polling
 interval should stay at or below 9 (512 seconds). The default is 10 (1024
-seconds), the minimum is -6 (1/64th of a second), and the maximum is 24 (6
+seconds), the minimum is -7 (1/128th of a second), and the maximum is 24 (6
 months).
 *iburst*:::
 With this option, *chronyd* will start with a burst of 4-8 requests in order to
@@ -138,18 +138,33 @@ behind a lot of packets related to a download of some sort).
 If the user knows that round trip delays above a certain level should cause the
 measurement to be ignored, this level can be defined with the *maxdelay*
 option. For example, *maxdelay 0.3* would indicate that measurements with a
-round-trip delay of 0.3 seconds or more should be ignored. The default value is
-3 seconds and the maximum value is 1000 seconds.
+round-trip delay greater than 0.3 seconds should be ignored. The default value
+is 3 seconds and the maximum value is 1000 seconds.
 *maxdelayratio* _ratio_:::
 This option is similar to the *maxdelay* option above. *chronyd* keeps a record
 of the minimum round-trip delay amongst the previous measurements that it has
-buffered. If a measurement has a round trip delay that is greater than the
-specified ratio times the minimum delay, it will be rejected.
+buffered. If a measurement has a round-trip delay that is greater than the
+specified ratio times the minimum delay, it will be rejected. By default, this
+test is disabled.
 *maxdelaydevratio* _ratio_:::
 If a measurement has a ratio of the increase in the round-trip delay from the
 minimum delay amongst the previous measurements to the standard deviation of
 the previous measurements that is greater than the specified ratio, it will be
 rejected. The default is 10.0.
+*maxdelayquant* _p_:::
+This option disables the *maxdelaydevratio* test and specifies the maximum
+acceptable delay as a quantile of the round-trip delay instead of a function of
+the minimum delay amongst the buffered measurements. If a measurement has a
+round-trip delay that is greater than a long-term estimate of the _p_-quantile,
+it will be rejected.
++
+The specified _p_ value should be between 0.05 and 0.95. For example,
+*maxdelayquant 0.2* would indicate that only measurements with the lowest 20
+percent of round-trip delays should be accepted. Note that it can take many
+measurements for the estimated quantile to reach the expected value. This
+option is intended for synchronisation in mostly static local networks with
+very short polling intervals and possibly combined with the *filter* option.
+By default, this test is disabled in favour of the *maxdelaydevratio* test.
 *mindelay* _delay_:::
 This option specifies a fixed minimum round-trip delay to be used instead of
 the minimum amongst the previous measurements. This can be useful in networks
@@ -176,11 +191,12 @@ Set the minimum number of samples kept for this source. This overrides the
 *maxsamples* _samples_:::
 Set the maximum number of samples kept for this source. This overrides the
 <<maxsamples,*maxsamples*>> directive.
-*filter* _samples_:::
+*filter* _polls_:::
 This option enables a median filter to reduce noise in NTP measurements. The
-filter will reduce the specified number of samples to a single sample. It is
-intended to be used with very short polling intervals in local networks where
-it is acceptable to generate a lot of NTP traffic.
+filter will process samples collected in the specified number of polls
+into a single sample. It is intended to be used with very short polling
+intervals in local networks where it is acceptable to generate a lot of NTP
+traffic.
 *offline*:::
 If the server will not be reachable when *chronyd* is started, the *offline*
 option can be specified. *chronyd* will not try to poll the server until it is
@@ -511,8 +527,10 @@ Note that some PTP clocks cannot be configured to timestamp only assert or
 clear events, and it is necessary to use the *width* option to filter wrong
 PPS samples.
 *pin*=_index_::::
-This option specifies the index of the pin to which is connected the PPS
-signal. The default value is 0.
+This option specifies the index of the pin which should be enabled for the
+PPS timestamping. If the PHC does not have configurable pins (i.e. the channel
+function is fixed), the index needs to be set to -1 to disable the pin
+configuration. The default value is 0.
 *channel*=_index_::::
 This option specifies the index of the channel for the PPS mode. The default
 value is 0.
@@ -624,6 +642,13 @@ and that *chronyd* should correct its offset by the current TAI-UTC offset. The
 <<leapsectz,*leapsectz*>> directive must be used with this option and the
 database must be kept up to date in order for this correction to work as
 expected. This option does not make sense with PPS refclocks.
+*local*:::
+This option specifies that the reference clock is an unsynchronised clock which
+is more stable than the system clock (e.g. TCXO, OCXO, or atomic clock) and
+it should be used as a local standard to stabilise the system clock. The
+refclock will bypass the source selection. There should be at most one refclock
+specified with this option and it should have the shortest polling interval
+among all configured sources.
 *minsamples* _samples_:::
 Set the minimum number of samples kept for this source. This overrides the
 <<minsamples,*minsamples*>> directive.
@@ -1210,12 +1235,16 @@ This would step the system clock if the adjustment is larger than 0.1 seconds, b
 only in the first three clock updates.
 
 [[maxchange]]*maxchange* _offset_ _start_ _ignore_::
-This directive sets the maximum allowed offset corrected on a clock update. The
-check is performed only after the specified number of updates to allow a large
-initial adjustment of the system clock. When an offset larger than the
-specified maximum occurs, it will be ignored for the specified number of times
-and then *chronyd* will give up and exit (a negative value can be used to never
-exit). In both cases a message is sent to syslog.
+This directive sets the maximum offset to be accepted on a clock update. The
+offset is measured relative to the current estimate of the true time, which is
+different from the system time if a previous slew did not finish.
++
+The check is enabled after the specified number of clock updates to allow a
+large initial offset to be corrected on start. Offsets larger than the
+specified maximum will be ignored for the specified number of times. Another
+large offset will cause *chronyd* to give up and exit. A negative value
+can be used to disable the limit to ignore all large offsets. A syslog message
+will be generated when an offset is ignored or it causes the exit.
 +
 An example of the use of this directive is:
 +
@@ -2055,9 +2084,11 @@ from the example line above):
 . Stratum of remote computer. [2]
 . RFC 5905 tests 1 through 3 (1=pass, 0=fail) [111]
 . RFC 5905 tests 5 through 7 (1=pass, 0=fail) [111]
-. Tests for maximum delay, maximum delay ratio and maximum delay dev ratio,
-  against defined parameters, and a test for synchronisation loop (1=pass,
-  0=fail) [1111]
+. Results of the *maxdelay*, *maxdelayratio*, and *maxdelaydevratio* (or
+  *maxdelayquant*) tests, and a test for synchronisation loop (1=pass,
+  0=fail). The first test from these four also checks the server precision,
+  response time, and whether an interleaved response is acceptable for
+  synchronisation. [1111]
 . Local poll [10]
 . Remote poll [10]
 . '`Score`' (an internal score within each polling level used to decide when to
@@ -2130,6 +2161,71 @@ from the example line above):
   between -0.5 and +0.5. A negative value means the delay of packets sent to
   the source is more variable than the delay of packets sent from the source
   back. [0.00, i.e. no correction for asymmetry]
++
+*selection*:::
+This option logs information about selection of sources for synchronisation to
+a file called _selection.log_. Note that the rate of entries written to this
+file grows quadratically with the number of specified sources (each measurement
+triggers the selection for all sources). An example line (which actually
+appears as a single line in the file) from the log file is shown below.
++
+----
+2022-05-01 02:01:20 203.0.113.15    * -----  377  1.00  \
+     4.228e+01 -1.575e-04  1.239e-04
+----
++
+The columns are as follows (the quantities in square brackets are the values
+from the example line above):
++
+. Date [2022-05-01]
+. Hour:Minute:Second. Note that the date-time pair is expressed in
+  UTC, not the local time zone. [02:01:20]
+. IP address or reference ID of the source. [203.0.113.15]
+. State of the source indicated with one of the following symbols. [*]
+{blank}::::
+Not considered selectable for synchronisation:
+* _N_ - has the *noselect* option.
+* _s_ - is not synchronised.
+* _M_ - does not have enough measurements.
+* _d_ - has a root distance larger than the maximum distance (configured by the
+        <<maxdistance,*maxdistance*>> directive).
+* _~_ - has a jitter larger than the maximum jitter (configured by the
+        <<maxjitter,*maxjitter*>> directive).
+* _w_ - waits for other sources to get out of the _M_ state.
+* _S_ - has older measurements than other sources.
+* _O_ - has a stratum equal or larger than the orphan stratum (configured by
+        the <<local,*local*>> directive).
+* _T_ - does not fully agree with sources that have the *trust* option.
+* _x_ - does not agree with other sources (falseticker).
+{blank}::::
+Considered selectable for synchronisation, but not currently used:
+* _W_ - waits for other sources to be selectable (required by the
+        <<minsources,*minsources*>> directive, or the *require* option of
+        another source).
+* _P_ - another selectable source is preferred due to the *prefer* option.
+* _U_ - waits for a new measurement (after selecting a different best source).
+* _D_ - has, or recently had, a root distance which is too large to be combined
+        with other sources (configured by the <<combinelimit,*combinelimit*>>
+        directive).
+{blank}::::
+Used for synchronisation of the local clock:
+* _+_ - combined with the best source.
+* _*_ - selected as the best source to update the reference data (e.g. root
+        delay, root dispersion).
+. Reachability register printed as an octal number. The register has 8 bits and
+  is updated on every received or missed packet from the source. A value of 377
+  indicates that a valid reply was received for all from the last eight
+  transmissions. [377]
+. Current score against the source in the _*_ state. The scoring system avoids
+  frequent reselection when multiple sources have a similar root distance. A
+  value larger than 1 indicates this source was better than the _*_ source in
+  recent selections. If the score reaches 10, the best source will be reselected
+  and the scores will be reset to 1. [1.00]
+. Interval since the last measurement of the source in seconds. [4.228e+01]
+. Lower endpoint of the interval which was expected to contain the true offset
+  of the local clock determined by the root distance of the source. [-1.575e-04]
+. Upper endpoint of the interval which was expected to contain the true offset
+  of the local clock determined by the root distance of the source. [1.239e-04]
 +
 *tracking*:::
 This option logs changes to the estimate of the system's gain or loss rate, and
@@ -2385,13 +2481,20 @@ be enabled by the *xleave* option in the <<server,*server*>> or the
 +
 This directive is supported on Linux 3.19 and newer. The NIC must support HW
 timestamping, which can be verified with the *ethtool -T* command. The list of
-capabilities should include _SOF_TIMESTAMPING_RAW_HARDWARE_,
-_SOF_TIMESTAMPING_TX_HARDWARE_, and _SOF_TIMESTAMPING_RX_HARDWARE_. Receive
-filter _HWTSTAMP_FILTER_ALL_, or _HWTSTAMP_FILTER_NTP_ALL_, is necessary for
-timestamping of received NTP packets. Timestamping of packets received on bridged
-and bonded interfaces is supported on Linux 4.13 and newer. When *chronyd* is
-running, no other process (e.g. a PTP daemon) should be working with the NIC
-clock.
+capabilities should include _hardware-raw-clock_, _hardware-transmit_, and
+_hardware-receive_. The receive filter _all_, or _ntp_, is necessary for
+timestamping of received NTP packets. Timestamping of packets received on
+bridged and bonded interfaces is supported on Linux 4.13 and newer. If HW
+timestamping does not work for received packets, *chronyd* will use kernel
+receive timestamps instead. Transmit-only HW timestamping can still be useful
+to improve stability of the synchronisation.
++
+*chronyd* does not synchronise the NIC clock. It assumes the clock is running
+free. Multiple instances of *chronyd* can use the same interface with enabled
+HW timestamping. Applications which need HW timestamping with a synchronised
+clock (e.g. a PTP daemon) should use a virtual clock running on top of the
+physical clock created by writing to _/sys/class/ptp/ptpX/n_vclocks_. This
+feature is available on Linux 5.14 and newer.
 +
 If the kernel supports software timestamping, it will be enabled for all
 interfaces. The source of timestamps (i.e. hardware, kernel, or daemon) is
@@ -2449,7 +2552,8 @@ is selected by default. Some NICs can timestamp PTP packets only. By default,
 they will be configured with the _none_ filter and expected to provide hardware
 timestamps for transmitted packets only. Timestamping of PTP packets is useful
 with NTP-over-PTP enabled by the <<chrony.conf.adoc#ptpport,*ptpport*>>
-directive. Forcing timestamping of all packets with the _all_ filter could be
+directive, or when another application is receiving PTP packets on the
+interface. Forcing timestamping of all packets with the _all_ filter could be
 useful if the NIC supported both the _all_ and _ntp_ filters, and it should
 timestamp both NTP and PTP packets, or NTP packets on a different UDP port.
 {blank}::
@@ -2495,7 +2599,7 @@ The type is a name of a cryptographic hash function or cipher which is used to
 generate and verify the MAC. The default type is *MD5*, which is always
 supported.
 If *chronyd* was built with enabled support for hashing using a crypto library
-(nettle, nss, or libtomcrypt), the following functions are available: *MD5*,
+(Nettle, GnuTLS, NSS, or LibTomCrypt), the following functions are available: *MD5*,
 *SHA1*, *SHA256*, *SHA384*, *SHA512*. Depending on which library and version is
 *chronyd* using, some of the following hash functions and ciphers may
 also be available:

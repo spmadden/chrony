@@ -563,6 +563,8 @@ void
 LCL_NotifyExternalTimeStep(struct timespec *raw, struct timespec *cooked,
     double offset, double dispersion)
 {
+  LCL_CancelOffsetCorrection();
+
   /* Dispatch to all handlers */
   invoke_parameter_change_handlers(raw, cooked, 0.0, offset, LCL_ChangeUnknownStep);
 
@@ -624,6 +626,24 @@ LCL_AccumulateFrequencyAndOffset(double dfreq, double doffset, double corr_rate)
   invoke_parameter_change_handlers(&raw, &cooked, dfreq, doffset, LCL_ChangeAdjust);
 
   return 1;
+}
+
+/* ================================================== */
+
+int
+LCL_AccumulateFrequencyAndOffsetNoHandlers(double dfreq, double doffset, double corr_rate)
+{
+  ChangeListEntry *first_handler;
+  int r;
+
+  first_handler = change_list.next;
+  change_list.next = &change_list;
+
+  r = LCL_AccumulateFrequencyAndOffset(dfreq, doffset, corr_rate);
+
+  change_list.next = first_handler;
+
+  return r;
 }
 
 /* ================================================== */

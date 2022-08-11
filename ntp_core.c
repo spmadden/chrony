@@ -35,6 +35,7 @@
 #include "ntp_ext.h"
 #include "ntp_io.h"
 #include "memory.h"
+#include "quantiles.h"
 #include "sched.h"
 #include "reference.h"
 #include "local.h"
@@ -196,8 +197,12 @@ struct NCR_Instance_Record {
 
   SRC_Instance source;
 
+  /* Optional long-term quantile estimate of peer delay */
+  QNT_Instance delay_quant;
+
   /* Optional median filter for NTP measurements */
   SPF_Instance filter;
+  int filter_count;
 
   int burst_good_samples_to_go;
   int burst_total_samples_to_go;
@@ -265,8 +270,12 @@ static ARR_Instance broadcasts;
 #define MAX_MAXDELAYRATIO 1.0e6
 #define MAX_MAXDELAYDEVRATIO 1.0e6
 
+/* Parameters for the peer delay quantile */
+#define DELAY_QUANT_Q 100
+#define DELAY_QUANT_REPEAT 7
+
 /* Minimum and maximum allowed poll interval */
-#define MIN_POLL -6
+#define MIN_POLL -7
 #define MAX_POLL 24
 
 /* Enable sub-second polling intervals only when the peer delay is not
@@ -318,6 +327,7 @@ static void transmit_timeout(void *arg);
 static double get_transmit_delay(NCR_Instance inst, int on_tx, double last_tx);
 static double get_separation(int poll);
 static int parse_packet(NTP_Packet *packet, int length, NTP_PacketInfo *info);
+static void process_sample(NCR_Instance inst, NTP_Sample *sample);
 static void set_connectivity(NCR_Instance inst, SRC_Connectivity connectivity);
 
 /* ================================================== */
@@ -640,9 +650,16 @@ NCR_CreateInstance(NTP_Remote_Address *remote_addr, NTP_Source_Type type,
                                          params->min_samples, params->max_samples,
                                          params->min_delay, params->asymmetry);
 
+  if (params->max_delay_quant > 0.0) {
+    int k = round(CLAMP(0.05, params->max_delay_quant, 0.95) * DELAY_QUANT_Q);
+    result->delay_quant = QNT_CreateInstance(k, k, DELAY_QUANT_Q, DELAY_QUANT_REPEAT,
+                                             LCL_GetSysPrecisionAsQuantum() / 2.0);
+  } else {
+    result->delay_quant = NULL;
+  }
+
   if (params->filter_length >= 1)
-    result->filter = SPF_CreateInstance(params->filter_length, params->filter_length,
-                                        NTP_MAX_DISPERSION, 0.0);
+    result->filter = SPF_CreateInstance(1, params->filter_length, NTP_MAX_DISPERSION, 0.0);
   else
     result->filter = NULL;
 
@@ -650,7 +667,7 @@ NCR_CreateInstance(NTP_Remote_Address *remote_addr, NTP_Source_Type type,
   result->tx_timeout_id = 0;
   result->tx_suspended = 1;
   result->opmode = MD_OFFLINE;
-  result->local_poll = result->minpoll;
+  result->local_poll = MAX(result->minpoll, MIN_NONLAN_POLL);
   result->poll_score = 0.0;
   zero_local_timestamp(&result->local_tx);
   result->burst_good_samples_to_go = 0;
@@ -676,6 +693,8 @@ NCR_DestroyInstance(NCR_Instance instance)
   if (instance->mode == MODE_ACTIVE)
     NIO_CloseServerSocket(instance->local_addr.sock_fd);
 
+  if (instance->delay_quant)
+    QNT_DestroyInstance(instance->delay_quant);
   if (instance->filter)
     SPF_DestroyInstance(instance->filter);
 
@@ -732,8 +751,11 @@ NCR_ResetInstance(NCR_Instance instance)
   UTI_ZeroNtp64(&instance->init_remote_ntp_tx);
   zero_local_timestamp(&instance->init_local_rx);
 
+  if (instance->delay_quant)
+    QNT_Reset(instance->delay_quant);
   if (instance->filter)
     SPF_DropSamples(instance->filter);
+  instance->filter_count = 0;
 }
 
 /* ================================================== */
@@ -783,6 +805,8 @@ NCR_ChangeRemoteAddress(NCR_Instance inst, NTP_Remote_Address *remote_addr, int 
 static void
 adjust_poll(NCR_Instance inst, double adj)
 {
+  NTP_Sample last_sample;
+
   inst->poll_score += adj;
 
   if (inst->poll_score >= 1.0) {
@@ -808,7 +832,9 @@ adjust_poll(NCR_Instance inst, double adj)
      or it is not in a local network according to the measured delay */
   if (inst->local_poll < MIN_NONLAN_POLL &&
       (!SRC_IsReachable(inst->source) ||
-       SST_MinRoundTripDelay(SRC_GetSourcestats(inst->source)) > MAX_LAN_PEER_DELAY))
+       (SST_MinRoundTripDelay(SRC_GetSourcestats(inst->source)) > MAX_LAN_PEER_DELAY &&
+        (!inst->filter || !SPF_GetLastSample(inst->filter, &last_sample) ||
+         last_sample.peer_delay > MAX_LAN_PEER_DELAY))))
     inst->local_poll = MIN_NONLAN_POLL;
 }
 
@@ -1353,6 +1379,9 @@ transmit_timeout(void *arg)
     }
 
     SRC_UpdateReachability(inst->source, 0);
+
+    /* Count missing samples for the sample filter */
+    process_sample(inst, NULL);
   }
 
   /* With auto_offline take the source offline if sending failed */
@@ -1542,6 +1571,22 @@ check_delay_ratio(NCR_Instance inst, SST_Stats stats,
 /* ================================================== */
 
 static int
+check_delay_quant(NCR_Instance inst, double delay)
+{
+  double quant;
+
+  quant = QNT_GetQuantile(inst->delay_quant, QNT_GetMinK(inst->delay_quant));
+
+  if (delay <= quant)
+    return 1;
+
+  DEBUG_LOG("maxdelayquant: delay=%e quant=%e", delay, quant);
+  return 0;
+}
+
+/* ================================================== */
+
+static int
 check_delay_dev_ratio(NCR_Instance inst, SST_Stats stats,
                       struct timespec *sample_time, double offset, double delay)
 {
@@ -1626,32 +1671,28 @@ check_sync_loop(NCR_Instance inst, NTP_Packet *message, NTP_Local_Address *local
 static void
 process_sample(NCR_Instance inst, NTP_Sample *sample)
 {
-  double estimated_offset, error_in_estimate, filtered_sample_ago;
+  double estimated_offset, error_in_estimate;
   NTP_Sample filtered_sample;
-  int filtered_samples;
 
-  /* Accumulate the sample to the median filter if it is enabled.  When the
-     filter produces a result, check if it is not too old, i.e. the filter did
-     not miss too many samples due to missing responses or failing tests. */
+  /* Accumulate the sample to the median filter if enabled and wait for
+     the configured number of samples before processing (NULL indicates
+     a missing sample) */
   if (inst->filter) {
-    SPF_AccumulateSample(inst->filter, sample);
+    if (sample)
+      SPF_AccumulateSample(inst->filter, sample);
 
-    filtered_samples = SPF_GetNumberOfSamples(inst->filter);
+    if (++inst->filter_count < SPF_GetMaxSamples(inst->filter))
+      return;
 
     if (!SPF_GetFilteredSample(inst->filter, &filtered_sample))
       return;
 
-    filtered_sample_ago = UTI_DiffTimespecsToDouble(&sample->time, &filtered_sample.time);
-
-    if (filtered_sample_ago > SOURCE_REACH_BITS / 2 * filtered_samples *
-                              UTI_Log2ToDouble(inst->local_poll)) {
-      DEBUG_LOG("filtered sample dropped ago=%f poll=%d", filtered_sample_ago,
-                inst->local_poll);
-      return;
-    }
-
     sample = &filtered_sample;
+    inst->filter_count = 0;
   }
+
+  if (!sample)
+    return;
 
   /* Get the estimated offset predicted from previous samples.  The
      convention here is that positive means local clock FAST of
@@ -1907,12 +1948,17 @@ process_response(NCR_Instance inst, NTP_Local_Address *local_addr,
 
     /* Test A requires that the minimum estimate of the peer delay is not
        larger than the configured maximum, in both client modes that the server
-       processing time is sane, and in interleaved symmetric mode that the
+       processing time is sane, in interleaved client/server mode that the
+       previous response was not in basic mode (which prevents using timestamps
+       that minimise delay error), and in interleaved symmetric mode that the
        measured delay and intervals between remote timestamps don't indicate
        a missed response */
     testA = sample.peer_delay - sample.peer_dispersion <= inst->max_delay &&
             precision <= inst->max_delay &&
             !(inst->mode == MODE_CLIENT && response_time > MAX_SERVER_INTERVAL) &&
+            !(inst->mode == MODE_CLIENT && interleaved_packet &&
+              UTI_IsZeroTimespec(&inst->prev_local_tx.ts) &&
+              UTI_CompareTimespecs(&local_transmit.ts, &inst->local_tx.ts) == 0) &&
             !(inst->mode == MODE_ACTIVE && interleaved_packet &&
               (sample.peer_delay > 0.5 * prev_remote_poll_interval ||
                UTI_CompareNtp64(&message->receive_ts, &message->transmit_ts) <= 0 ||
@@ -1925,12 +1971,18 @@ process_response(NCR_Instance inst, NTP_Local_Address *local_addr,
        administrator-defined value */
     testB = check_delay_ratio(inst, stats, &sample.time, sample.peer_delay);
 
-    /* Test C requires that the ratio of the increase in delay from the minimum
+    /* Test C either requires that the delay is less than an estimate of an
+       administrator-defined quantile, or (if the quantile is not specified)
+       it requires that the ratio of the increase in delay from the minimum
        one in the stats data register to the standard deviation of the offsets
        in the register is less than an administrator-defined value or the
        difference between measured offset and predicted offset is larger than
        the increase in delay */
-    testC = check_delay_dev_ratio(inst, stats, &sample.time, sample.offset, sample.peer_delay);
+    if (inst->delay_quant)
+      testC = check_delay_quant(inst, sample.peer_delay);
+    else
+      testC = check_delay_dev_ratio(inst, stats, &sample.time, sample.offset,
+                                    sample.peer_delay);
 
     /* Test D requires that the source is not synchronised to us and is not us
        to prevent a synchronisation loop */
@@ -2063,6 +2115,9 @@ process_response(NCR_Instance inst, NTP_Local_Address *local_addr,
       }
 
       SRC_UpdateStatus(inst->source, MAX(inst->remote_stratum, inst->min_stratum), pkt_leap);
+
+      if (inst->delay_quant)
+        QNT_Accumulate(inst->delay_quant, sample.peer_delay);
     }
 
     if (good_packet) {
@@ -2088,6 +2143,9 @@ process_response(NCR_Instance inst, NTP_Local_Address *local_addr,
     } else {
       /* Slowly increase the polling interval if we can't get a good response */
       adjust_poll(inst, testD ? 0.02 : 0.1);
+
+      /* Count missing samples for the sample filter */
+      process_sample(inst, NULL);
     }
 
     /* If in client mode, no more packets are expected to be coming from the

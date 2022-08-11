@@ -283,6 +283,9 @@ open_io(void)
     close_io();
   }
 
+  /* Start from the first address if called again */
+  address_index = 0;
+
   return 0;
 }
 
@@ -949,6 +952,8 @@ process_cmd_add_source(CMD_Request *msg, char *line)
           (data.params.sel_options & SRC_SELECT_REQUIRE ? REQ_ADDSRC_REQUIRE : 0));
       msg->data.ntp_source.filter_length = htonl(data.params.filter_length);
       msg->data.ntp_source.cert_set = htonl(data.params.cert_set);
+      msg->data.ntp_source.max_delay_quant =
+        UTI_FloatHostToNetwork(data.params.max_delay_quant);
       memset(msg->data.ntp_source.reserved, 0, sizeof (msg->data.ntp_source.reserved));
 
       result = 1;
@@ -2396,12 +2401,12 @@ process_cmd_selectdata(char *line)
   n_sources = ntohl(reply.data.n_sources.n_sources);
 
   if (verbose) {
-    printf(    "  .-- State: N - noselect, M - missing samples, d/D - large distance,\n");
-    printf(    " /           ~ - jittery, w/W - waits for others, T - not trusted,\n");
-    printf(    "|            x - falseticker, P - not preferred, U - waits for update,\n");
-    printf(    "|            S - stale, O - orphan, + - combined, * - best.\n");
-    printf(    "|        Effective options ------.  (N - noselect, P - prefer\n");
-    printf(    "|       Configured options -.     \\  T - trust, R - require)\n");
+    printf(    "  . State: N - noselect, s - unsynchronised, M - missing samples,\n");
+    printf(    " /         d/D - large distance, ~ - jittery, w/W - waits for others,\n");
+    printf(    "|          S - stale, O - orphan, T - not trusted, P - not preferred,\n");
+    printf(    "|          U - waits for update,, x - falseticker, + - combined, * - best.\n");
+    printf(    "|   Effective options   ---------.  (N - noselect, P - prefer\n");
+    printf(    "|   Configured options  ----.     \\  T - trust, R - require)\n");
     printf(    "|   Auth. enabled (Y/N) -.   \\     \\     Offset interval --.\n");
     printf(    "|                        |    |     |                       |\n");
   }
@@ -3235,44 +3240,46 @@ process_line(char *line)
   if (do_normal_submit) {
     ret = request_reply(&tx_message, &rx_message, RPY_NULL, 1);
   }
+
   fflush(stderr);
-  fflush(stdout);
+
+  if (fflush(stdout) != 0 || ferror(stdout) != 0) {
+    LOG(LOGS_ERR, "Could not write to stdout");
+
+    /* Return error for commands that print data */
+    if (!do_normal_submit)
+      return 0;
+  }
+
   return ret;
 }
 
 /* ================================================== */
 
+#define MAX_LINE_LENGTH 2048
+
 static int
 process_args(int argc, char **argv, int multi)
 {
-  int total_length, i, ret = 0;
-  char *line;
+  char line[MAX_LINE_LENGTH];
+  int i, l, ret = 0;
 
-  total_length = 0;
-  for(i=0; i<argc; i++) {
-    total_length += strlen(argv[i]) + 1;
-  }
-
-  line = (char *) Malloc((2 + total_length) * sizeof(char));
-
-  for (i = 0; i < argc; i++) {
-    line[0] = '\0';
-    if (multi) {
-      strcat(line, argv[i]);
-    } else {
-      for (; i < argc; i++) {
-        strcat(line, argv[i]);
-        if (i + 1 < argc)
-          strcat(line, " ");
-      }
+  for (i = l = 0; i < argc; i++) {
+    l += snprintf(line + l, sizeof (line) - l, "%s ", argv[i]);
+    if (l >= sizeof (line)) {
+      LOG(LOGS_ERR, "Command too long");
+      return 0;
     }
+
+    if (!multi && i + 1 < argc)
+      continue;
 
     ret = process_line(line);
     if (!ret || quit)
       break;
-  }
 
-  Free(line);
+    l = 0;
+  }
 
   return ret;
 }

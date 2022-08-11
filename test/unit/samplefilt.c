@@ -45,6 +45,8 @@ test_unit(void)
 
     filter = SPF_CreateInstance(min_samples, max_samples, 2.0, combine_ratio);
 
+    TEST_CHECK(max_samples == SPF_GetMaxSamples(filter));
+
     for (j = 0, sum_count = 0, sum_err = 0.0; j < 100; j++) {
       DEBUG_LOG("iteration %d/%d", i, j);
 
@@ -69,6 +71,7 @@ test_unit(void)
         TEST_CHECK(!memcmp(&sample_in, &sample_out, sizeof (sample_in)));
 
         SPF_SlewSamples(filter, &sample_in.time, 0.0, 0.0);
+        SPF_CorrectOffset(filter, 0.0);
         SPF_AddDispersion(filter, 0.0);
 
         if (k + 1 < min_samples)
@@ -102,6 +105,7 @@ test_unit(void)
 
       } else {
         SPF_DropSamples(filter);
+        TEST_CHECK(filter->last < 0);
       }
 
       TEST_CHECK(SPF_GetNumberOfSamples(filter) == 0);

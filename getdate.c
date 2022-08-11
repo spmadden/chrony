@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 3.7.6.  */
+/* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison implementation for Yacc-like parsers in C
 
@@ -46,10 +46,10 @@
    USER NAME SPACE" below.  */
 
 /* Identify Bison output, and Bison version.  */
-#define YYBISON 30706
+#define YYBISON 30802
 
 /* Bison version string.  */
-#define YYBISON_VERSION "3.7.6"
+#define YYBISON_VERSION "3.8.2"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -321,7 +321,9 @@ typedef union YYSTYPE YYSTYPE;
 
 extern YYSTYPE yylval;
 
+
 int yyparse (void);
+
 
 
 /* Symbol kind.  */
@@ -518,12 +520,18 @@ typedef int yy_state_fast_t;
 # define YY_USE(E) /* empty */
 #endif
 
-#if defined __GNUC__ && ! defined __ICC && 407 <= __GNUC__ * 100 + __GNUC_MINOR__
 /* Suppress an incorrect diagnostic about yylval being uninitialized.  */
-# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN                            \
+#if defined __GNUC__ && ! defined __ICC && 406 <= __GNUC__ * 100 + __GNUC_MINOR__
+# if __GNUC__ * 100 + __GNUC_MINOR__ < 407
+#  define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN                           \
+    _Pragma ("GCC diagnostic push")                                     \
+    _Pragma ("GCC diagnostic ignored \"-Wuninitialized\"")
+# else
+#  define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN                           \
     _Pragma ("GCC diagnostic push")                                     \
     _Pragma ("GCC diagnostic ignored \"-Wuninitialized\"")              \
     _Pragma ("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
+# endif
 # define YY_IGNORE_MAYBE_UNINITIALIZED_END      \
     _Pragma ("GCC diagnostic pop")
 #else
@@ -739,7 +747,7 @@ static const yytype_int8 yytranslate[] =
 };
 
 #if YYDEBUG
-  /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
+/* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
        0,   193,   193,   194,   197,   200,   203,   206,   209,   212,
@@ -778,17 +786,6 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#ifdef YYPRINT
-/* YYTOKNUM[NUM] -- (External) token number corresponding to the
-   (internal) symbol number NUM (which must be that of a token).  */
-static const yytype_int16 yytoknum[] =
-{
-       0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
-     265,   266,   267,   268,   269,   270,   271,   272,   273,    58,
-      44,    47
-};
-#endif
-
 #define YYPACT_NINF (-20)
 
 #define yypact_value_is_default(Yyn) \
@@ -799,8 +796,8 @@ static const yytype_int16 yytoknum[] =
 #define yytable_value_is_error(Yyn) \
   0
 
-  /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
-     STATE-NUM.  */
+/* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
+   STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
      -20,     0,   -20,   -19,   -20,   -20,   -20,   -20,   -13,   -20,
@@ -812,9 +809,9 @@ static const yytype_int8 yypact[] =
      -20
 };
 
-  /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
-     Performed when YYTABLE does not specify something else to do.  Zero
-     means the default is an error.  */
+/* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
+   Performed when YYTABLE does not specify something else to do.  Zero
+   means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
        2,     0,     1,    18,    39,    16,    42,    45,     0,    36,
@@ -826,23 +823,23 @@ static const yytype_int8 yydefact[] =
       13
 };
 
-  /* YYPGOTO[NTERM-NUM].  */
+/* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
      -20,   -20,   -20,   -20,   -20,   -20,   -20,   -20,   -20,   -20,
       -7
 };
 
-  /* YYDEFGOTO[NTERM-NUM].  */
+/* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
        0,     1,    15,    16,    17,    18,    19,    20,    21,    22,
       55
 };
 
-  /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
-     positive, shift that token.  If negative, reduce the rule whose
-     number is the opposite.  If YYTABLE_NINF, syntax error.  */
+/* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
+   positive, shift that token.  If negative, reduce the rule whose
+   number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
        2,    23,    52,    24,     3,     4,     5,    59,     6,    46,
@@ -863,8 +860,8 @@ static const yytype_int8 yycheck[] =
       57
 };
 
-  /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
-     symbol of state STATE-NUM.  */
+/* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
+   state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
        0,    23,     0,     4,     5,     6,     8,    11,    12,    13,
@@ -876,7 +873,7 @@ static const yytype_int8 yystos[] =
       32
 };
 
-  /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
+/* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
        0,    22,    23,    23,    24,    24,    24,    24,    24,    24,
@@ -887,7 +884,7 @@ static const yytype_int8 yyr1[] =
       32,    32
 };
 
-  /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
+/* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
        0,     2,     0,     2,     1,     1,     1,     1,     1,     1,
@@ -907,6 +904,7 @@ enum { YYENOMEM = -2 };
 #define YYACCEPT        goto yyacceptlab
 #define YYABORT         goto yyabortlab
 #define YYERROR         goto yyerrorlab
+#define YYNOMEM         goto yyexhaustedlab
 
 
 #define YYRECOVERING()  (!!yyerrstatus)
@@ -947,10 +945,7 @@ do {                                            \
     YYFPRINTF Args;                             \
 } while (0)
 
-/* This macro is provided for backward compatibility. */
-# ifndef YY_LOCATION_PRINT
-#  define YY_LOCATION_PRINT(File, Loc) ((void) 0)
-# endif
+
 
 
 # define YY_SYMBOL_PRINT(Title, Kind, Value, Location)                    \
@@ -977,10 +972,6 @@ yy_symbol_value_print (FILE *yyo,
   YY_USE (yyoutput);
   if (!yyvaluep)
     return;
-# ifdef YYPRINT
-  if (yykind < YYNTOKENS)
-    YYPRINT (yyo, yytoknum[yykind], *yyvaluep);
-# endif
   YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
   YY_USE (yykind);
   YY_IGNORE_MAYBE_UNINITIALIZED_END
@@ -1165,6 +1156,7 @@ yyparse (void)
   YYDPRINTF ((stderr, "Starting parse\n"));
 
   yychar = YYEMPTY; /* Cause a token to be read.  */
+
   goto yysetstate;
 
 
@@ -1190,7 +1182,7 @@ yysetstate:
 
   if (yyss + yystacksize - 1 <= yyssp)
 #if !defined yyoverflow && !defined YYSTACK_RELOCATE
-    goto yyexhaustedlab;
+    YYNOMEM;
 #else
     {
       /* Get the current used size of the three stacks, in elements.  */
@@ -1218,7 +1210,7 @@ yysetstate:
 # else /* defined YYSTACK_RELOCATE */
       /* Extend the stack our own way.  */
       if (YYMAXDEPTH <= yystacksize)
-        goto yyexhaustedlab;
+        YYNOMEM;
       yystacksize *= 2;
       if (YYMAXDEPTH < yystacksize)
         yystacksize = YYMAXDEPTH;
@@ -1229,7 +1221,7 @@ yysetstate:
           YY_CAST (union yyalloc *,
                    YYSTACK_ALLOC (YY_CAST (YYSIZE_T, YYSTACK_BYTES (yystacksize))));
         if (! yyptr)
-          goto yyexhaustedlab;
+          YYNOMEM;
         YYSTACK_RELOCATE (yyss_alloc, yyss);
         YYSTACK_RELOCATE (yyvs_alloc, yyvs);
 #  undef YYSTACK_RELOCATE
@@ -1250,6 +1242,7 @@ yysetstate:
         YYABORT;
     }
 #endif /* !defined yyoverflow && !defined YYSTACK_RELOCATE */
+
 
   if (yystate == YYFINAL)
     YYACCEPT;
@@ -1367,7 +1360,7 @@ yyreduce:
                {
 	    yyHaveTime++;
 	}
-#line 1371 "getdate.c"
+#line 1364 "getdate.c"
     break;
 
   case 5: /* item: zone  */
@@ -1375,7 +1368,7 @@ yyreduce:
                {
 	    yyHaveZone++;
 	}
-#line 1379 "getdate.c"
+#line 1372 "getdate.c"
     break;
 
   case 6: /* item: date  */
@@ -1383,7 +1376,7 @@ yyreduce:
                {
 	    yyHaveDate++;
 	}
-#line 1387 "getdate.c"
+#line 1380 "getdate.c"
     break;
 
   case 7: /* item: day  */
@@ -1391,7 +1384,7 @@ yyreduce:
               {
 	    yyHaveDay++;
 	}
-#line 1395 "getdate.c"
+#line 1388 "getdate.c"
     break;
 
   case 8: /* item: rel  */
@@ -1399,7 +1392,7 @@ yyreduce:
               {
 	    yyHaveRel++;
 	}
-#line 1403 "getdate.c"
+#line 1396 "getdate.c"
     break;
 
   case 10: /* time: tUNUMBER tMERIDIAN  */
@@ -1410,7 +1403,7 @@ yyreduce:
 	    yySeconds = 0;
 	    yyMeridian = (yyvsp[0].Meridian);
 	}
-#line 1414 "getdate.c"
+#line 1407 "getdate.c"
     break;
 
   case 11: /* time: tUNUMBER ':' tUNUMBER o_merid  */
@@ -1421,7 +1414,7 @@ yyreduce:
 	    yySeconds = 0;
 	    yyMeridian = (yyvsp[0].Meridian);
 	}
-#line 1425 "getdate.c"
+#line 1418 "getdate.c"
     break;
 
   case 12: /* time: tUNUMBER ':' tUNUMBER tSNUMBER  */
@@ -1435,7 +1428,7 @@ yyreduce:
 			  ? -(yyvsp[0].Number) % 100 + (-(yyvsp[0].Number) / 100) * 60
 			  : - ((yyvsp[0].Number) % 100 + ((yyvsp[0].Number) / 100) * 60));
 	}
-#line 1439 "getdate.c"
+#line 1432 "getdate.c"
     break;
 
   case 13: /* time: tUNUMBER ':' tUNUMBER ':' tUNUMBER o_merid  */
@@ -1446,7 +1439,7 @@ yyreduce:
 	    yySeconds = (yyvsp[-1].Number);
 	    yyMeridian = (yyvsp[0].Meridian);
 	}
-#line 1450 "getdate.c"
+#line 1443 "getdate.c"
     break;
 
   case 14: /* time: tUNUMBER ':' tUNUMBER ':' tUNUMBER tSNUMBER  */
@@ -1461,7 +1454,7 @@ yyreduce:
 			  ? -(yyvsp[0].Number) % 100 + (-(yyvsp[0].Number) / 100) * 60
 			  : - ((yyvsp[0].Number) % 100 + ((yyvsp[0].Number) / 100) * 60));
 	}
-#line 1465 "getdate.c"
+#line 1458 "getdate.c"
     break;
 
   case 15: /* zone: tZONE  */
@@ -1469,7 +1462,7 @@ yyreduce:
                 {
 	    yyTimezone = (yyvsp[0].Number);
 	}
-#line 1473 "getdate.c"
+#line 1466 "getdate.c"
     break;
 
   case 16: /* zone: tDAYZONE  */
@@ -1477,7 +1470,7 @@ yyreduce:
                    {
 	    yyTimezone = (yyvsp[0].Number) - 60;
 	}
-#line 1481 "getdate.c"
+#line 1474 "getdate.c"
     break;
 
   case 17: /* zone: tZONE tDST  */
@@ -1485,7 +1478,7 @@ yyreduce:
                      {
 	    yyTimezone = (yyvsp[-1].Number) - 60;
 	}
-#line 1489 "getdate.c"
+#line 1482 "getdate.c"
     break;
 
   case 18: /* day: tDAY  */
@@ -1494,7 +1487,7 @@ yyreduce:
 	    yyDayOrdinal = 1;
 	    yyDayNumber = (yyvsp[0].Number);
 	}
-#line 1498 "getdate.c"
+#line 1491 "getdate.c"
     break;
 
   case 19: /* day: tDAY ','  */
@@ -1503,7 +1496,7 @@ yyreduce:
 	    yyDayOrdinal = 1;
 	    yyDayNumber = (yyvsp[-1].Number);
 	}
-#line 1507 "getdate.c"
+#line 1500 "getdate.c"
     break;
 
   case 20: /* day: tUNUMBER tDAY  */
@@ -1512,7 +1505,7 @@ yyreduce:
 	    yyDayOrdinal = (yyvsp[-1].Number);
 	    yyDayNumber = (yyvsp[0].Number);
 	}
-#line 1516 "getdate.c"
+#line 1509 "getdate.c"
     break;
 
   case 21: /* date: tUNUMBER '/' tUNUMBER  */
@@ -1521,7 +1514,7 @@ yyreduce:
 	    yyMonth = (yyvsp[-2].Number);
 	    yyDay = (yyvsp[0].Number);
 	}
-#line 1525 "getdate.c"
+#line 1518 "getdate.c"
     break;
 
   case 22: /* date: tUNUMBER '/' tUNUMBER '/' tUNUMBER  */
@@ -1544,7 +1537,7 @@ yyreduce:
 	      yyYear = (yyvsp[0].Number);
 	    }
 	}
-#line 1548 "getdate.c"
+#line 1541 "getdate.c"
     break;
 
   case 23: /* date: tUNUMBER tSNUMBER tSNUMBER  */
@@ -1555,7 +1548,7 @@ yyreduce:
 	    yyMonth = -(yyvsp[-1].Number);
 	    yyDay = -(yyvsp[0].Number);
 	}
-#line 1559 "getdate.c"
+#line 1552 "getdate.c"
     break;
 
   case 24: /* date: tUNUMBER tMONTH tSNUMBER  */
@@ -1566,7 +1559,7 @@ yyreduce:
 	    yyMonth = (yyvsp[-1].Number);
 	    yyYear = -(yyvsp[0].Number);
 	}
-#line 1570 "getdate.c"
+#line 1563 "getdate.c"
     break;
 
   case 25: /* date: tMONTH tUNUMBER  */
@@ -1575,7 +1568,7 @@ yyreduce:
 	    yyMonth = (yyvsp[-1].Number);
 	    yyDay = (yyvsp[0].Number);
 	}
-#line 1579 "getdate.c"
+#line 1572 "getdate.c"
     break;
 
   case 26: /* date: tMONTH tUNUMBER ',' tUNUMBER  */
@@ -1585,7 +1578,7 @@ yyreduce:
 	    yyDay = (yyvsp[-2].Number);
 	    yyYear = (yyvsp[0].Number);
 	}
-#line 1589 "getdate.c"
+#line 1582 "getdate.c"
     break;
 
   case 27: /* date: tUNUMBER tMONTH  */
@@ -1594,7 +1587,7 @@ yyreduce:
 	    yyMonth = (yyvsp[0].Number);
 	    yyDay = (yyvsp[-1].Number);
 	}
-#line 1598 "getdate.c"
+#line 1591 "getdate.c"
     break;
 
   case 28: /* date: tUNUMBER tMONTH tUNUMBER  */
@@ -1604,7 +1597,7 @@ yyreduce:
 	    yyDay = (yyvsp[-2].Number);
 	    yyYear = (yyvsp[0].Number);
 	}
-#line 1608 "getdate.c"
+#line 1601 "getdate.c"
     break;
 
   case 29: /* rel: relunit tAGO  */
@@ -1617,7 +1610,7 @@ yyreduce:
 	    yyRelMonth = -yyRelMonth;
 	    yyRelYear = -yyRelYear;
 	}
-#line 1621 "getdate.c"
+#line 1614 "getdate.c"
     break;
 
   case 31: /* relunit: tUNUMBER tYEAR_UNIT  */
@@ -1625,7 +1618,7 @@ yyreduce:
                               {
 	    yyRelYear += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
-#line 1629 "getdate.c"
+#line 1622 "getdate.c"
     break;
 
   case 32: /* relunit: tSNUMBER tYEAR_UNIT  */
@@ -1633,7 +1626,7 @@ yyreduce:
                               {
 	    yyRelYear += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
-#line 1637 "getdate.c"
+#line 1630 "getdate.c"
     break;
 
   case 33: /* relunit: tYEAR_UNIT  */
@@ -1641,7 +1634,7 @@ yyreduce:
                      {
 	    yyRelYear += (yyvsp[0].Number);
 	}
-#line 1645 "getdate.c"
+#line 1638 "getdate.c"
     break;
 
   case 34: /* relunit: tUNUMBER tMONTH_UNIT  */
@@ -1649,7 +1642,7 @@ yyreduce:
                                {
 	    yyRelMonth += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
-#line 1653 "getdate.c"
+#line 1646 "getdate.c"
     break;
 
   case 35: /* relunit: tSNUMBER tMONTH_UNIT  */
@@ -1657,7 +1650,7 @@ yyreduce:
                                {
 	    yyRelMonth += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
-#line 1661 "getdate.c"
+#line 1654 "getdate.c"
     break;
 
   case 36: /* relunit: tMONTH_UNIT  */
@@ -1665,7 +1658,7 @@ yyreduce:
                       {
 	    yyRelMonth += (yyvsp[0].Number);
 	}
-#line 1669 "getdate.c"
+#line 1662 "getdate.c"
     break;
 
   case 37: /* relunit: tUNUMBER tDAY_UNIT  */
@@ -1673,7 +1666,7 @@ yyreduce:
                              {
 	    yyRelDay += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
-#line 1677 "getdate.c"
+#line 1670 "getdate.c"
     break;
 
   case 38: /* relunit: tSNUMBER tDAY_UNIT  */
@@ -1681,7 +1674,7 @@ yyreduce:
                              {
 	    yyRelDay += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
-#line 1685 "getdate.c"
+#line 1678 "getdate.c"
     break;
 
   case 39: /* relunit: tDAY_UNIT  */
@@ -1689,7 +1682,7 @@ yyreduce:
                     {
 	    yyRelDay += (yyvsp[0].Number);
 	}
-#line 1693 "getdate.c"
+#line 1686 "getdate.c"
     break;
 
   case 40: /* relunit: tUNUMBER tHOUR_UNIT  */
@@ -1697,7 +1690,7 @@ yyreduce:
                               {
 	    yyRelHour += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
-#line 1701 "getdate.c"
+#line 1694 "getdate.c"
     break;
 
   case 41: /* relunit: tSNUMBER tHOUR_UNIT  */
@@ -1705,7 +1698,7 @@ yyreduce:
                               {
 	    yyRelHour += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
-#line 1709 "getdate.c"
+#line 1702 "getdate.c"
     break;
 
   case 42: /* relunit: tHOUR_UNIT  */
@@ -1713,7 +1706,7 @@ yyreduce:
                      {
 	    yyRelHour += (yyvsp[0].Number);
 	}
-#line 1717 "getdate.c"
+#line 1710 "getdate.c"
     break;
 
   case 43: /* relunit: tUNUMBER tMINUTE_UNIT  */
@@ -1721,7 +1714,7 @@ yyreduce:
                                 {
 	    yyRelMinutes += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
-#line 1725 "getdate.c"
+#line 1718 "getdate.c"
     break;
 
   case 44: /* relunit: tSNUMBER tMINUTE_UNIT  */
@@ -1729,7 +1722,7 @@ yyreduce:
                                 {
 	    yyRelMinutes += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
-#line 1733 "getdate.c"
+#line 1726 "getdate.c"
     break;
 
   case 45: /* relunit: tMINUTE_UNIT  */
@@ -1737,7 +1730,7 @@ yyreduce:
                        {
 	    yyRelMinutes += (yyvsp[0].Number);
 	}
-#line 1741 "getdate.c"
+#line 1734 "getdate.c"
     break;
 
   case 46: /* relunit: tUNUMBER tSEC_UNIT  */
@@ -1745,7 +1738,7 @@ yyreduce:
                              {
 	    yyRelSeconds += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
-#line 1749 "getdate.c"
+#line 1742 "getdate.c"
     break;
 
   case 47: /* relunit: tSNUMBER tSEC_UNIT  */
@@ -1753,7 +1746,7 @@ yyreduce:
                              {
 	    yyRelSeconds += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
-#line 1757 "getdate.c"
+#line 1750 "getdate.c"
     break;
 
   case 48: /* relunit: tSEC_UNIT  */
@@ -1761,7 +1754,7 @@ yyreduce:
                     {
 	    yyRelSeconds += (yyvsp[0].Number);
 	}
-#line 1765 "getdate.c"
+#line 1758 "getdate.c"
     break;
 
   case 49: /* number: tUNUMBER  */
@@ -1796,7 +1789,7 @@ yyreduce:
 		  }
 	      }
 	  }
-#line 1800 "getdate.c"
+#line 1793 "getdate.c"
     break;
 
   case 50: /* o_merid: %empty  */
@@ -1804,7 +1797,7 @@ yyreduce:
           {
 	    (yyval.Meridian) = MER24;
 	  }
-#line 1808 "getdate.c"
+#line 1801 "getdate.c"
     break;
 
   case 51: /* o_merid: tMERIDIAN  */
@@ -1812,11 +1805,11 @@ yyreduce:
           {
 	    (yyval.Meridian) = (yyvsp[0].Meridian);
 	  }
-#line 1816 "getdate.c"
+#line 1809 "getdate.c"
     break;
 
 
-#line 1820 "getdate.c"
+#line 1813 "getdate.c"
 
       default: break;
     }
@@ -1898,6 +1891,7 @@ yyerrorlab:
      label yyerrorlab therefore never appears in user code.  */
   if (0)
     YYERROR;
+  ++yynerrs;
 
   /* Do not reclaim the symbols of the rule whose action triggered
      this YYERROR.  */
@@ -1958,7 +1952,7 @@ yyerrlab1:
 `-------------------------------------*/
 yyacceptlab:
   yyresult = 0;
-  goto yyreturn;
+  goto yyreturnlab;
 
 
 /*-----------------------------------.
@@ -1966,24 +1960,22 @@ yyacceptlab:
 `-----------------------------------*/
 yyabortlab:
   yyresult = 1;
-  goto yyreturn;
+  goto yyreturnlab;
 
 
-#if !defined yyoverflow
-/*-------------------------------------------------.
-| yyexhaustedlab -- memory exhaustion comes here.  |
-`-------------------------------------------------*/
+/*-----------------------------------------------------------.
+| yyexhaustedlab -- YYNOMEM (memory exhaustion) comes here.  |
+`-----------------------------------------------------------*/
 yyexhaustedlab:
   yyerror (YY_("memory exhausted"));
   yyresult = 2;
-  goto yyreturn;
-#endif
+  goto yyreturnlab;
 
 
-/*-------------------------------------------------------.
-| yyreturn -- parsing is finished, clean up and return.  |
-`-------------------------------------------------------*/
-yyreturn:
+/*----------------------------------------------------------.
+| yyreturnlab -- parsing is finished, clean up and return.  |
+`----------------------------------------------------------*/
+yyreturnlab:
   if (yychar != YYEMPTY)
     {
       /* Make sure we have latest lookahead translation.  See comments at

@@ -385,7 +385,7 @@ add_dummy_auth(NTP_AuthMode auth_mode, uint32_t key_id, NTP_Packet *packet, NTP_
 void
 test_unit(void)
 {
-  char source_line[] = "127.0.0.1 maxdelaydevratio 1e6";
+  char source_line[] = "127.0.0.1 maxdelaydevratio 1e6 noselect";
   char conf[][100] = {
     "allow",
     "port 0",
@@ -411,6 +411,7 @@ test_unit(void)
   NCR_Initialise();
   REF_Initialise();
   KEY_Initialise();
+  CLG_Initialise();
 
   CNF_SetupAccessRestrictions();
 
@@ -422,6 +423,9 @@ test_unit(void)
     source.params.version = random() % 4 + 1;
 
     UTI_ZeroTimespec(&current_time);
+#if HAVE_LONG_TIME_T
+    advance_time(NTP_ERA_SPLIT);
+#endif
     advance_time(TST_GetRandomDouble(1.0, 1e9));
 
     TST_GetRandomAddress(&remote_addr.ip_addr, IPADDR_UNSPEC, -1);
@@ -492,7 +496,10 @@ test_unit(void)
 
       send_request(inst1);
       process_request(&remote_addr);
-      proc_response(inst1, 1, 1, 1, 0);
+      proc_response(inst1,
+                    !source.params.interleaved || source.params.version != 4 ||
+                      inst1->mode == MODE_ACTIVE || j != 2,
+                    1, 1, 0);
       advance_time(1 << inst1->local_poll);
     }
 
@@ -595,6 +602,7 @@ test_unit(void)
   TEST_CHECK(info.auth.mac.length == 72);
   TEST_CHECK(info.auth.mac.key_id == 300);
 
+  CLG_Finalise();
   KEY_Finalise();
   REF_Finalise();
   NCR_Finalise();
