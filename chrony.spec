@@ -1,5 +1,6 @@
 %global _hardened_build 1
-%global clknetsim_ver 470b5e
+%global prerelease -pre1
+%global clknetsim_ver f00531
 %bcond_without debug
 %bcond_without nts
 
@@ -8,7 +9,7 @@
 %endif
 
 Name:           chrony
-Version:        4.2
+Version:        4.3
 Release:        7%{?dist}
 Summary:        An NTP client/server
 
@@ -25,8 +26,6 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add distribution-specific bits to DHCP dispatcher
 Patch1:         chrony-nm-dispatcher-dhcp.patch
-# update seccomp filter for latest glibc
-Patch2:         chrony-seccomp.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
@@ -58,7 +57,6 @@ service to other computers in the network.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .nm-dispatcher-dhcp
-%patch2 -p1 -b .seccomp
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -68,7 +66,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         2d01b94bc1a7b7fb70cbee831488d121  examples/chrony.conf.example2
         96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
-        5d0c4758207a89a9a19471177b1107b9  examples/chrony.nm-dispatcher.dhcp
+        c3992e2f985550739cd1cd95f98c9548  examples/chrony.nm-dispatcher.dhcp
         2b81c60c020626165ac655b2633608eb  examples/chrony.nm-dispatcher.onoffline
         677ad16d6439daa369da44a1b75d1772  examples/chronyd.service
 EOF
