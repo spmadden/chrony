@@ -4,14 +4,16 @@ Forwarded: no
 Last-Update: 2020-09-16
 ---
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
---- a/examples/chrony.nm-dispatcher.dhcp
-+++ b/examples/chrony.nm-dispatcher.dhcp
-@@ -11,7 +11,7 @@ action=$2
+Index: chrony/examples/chrony.nm-dispatcher.dhcp
+===================================================================
+--- chrony.orig/examples/chrony.nm-dispatcher.dhcp
++++ chrony/examples/chrony.nm-dispatcher.dhcp
+@@ -10,7 +10,7 @@ action=$2
  
  chronyc=/usr/bin/chronyc
- default_server_options=iburst
+ server_options=iburst
 -server_dir=/var/run/chrony-dhcp
 +server_dir=/run/chrony-dhcp
  
  dhcp_server_file=$server_dir/$interface.sources
- # DHCP4_NTP_SERVERS is passed from DHCP options by NetworkManager.
+ dhcp_ntp_servers="$DHCP4_NTP_SERVERS $DHCP6_DHCP6_NTP_SERVERS"

@@ -2,12 +2,12 @@
 .\"     Title: chronyc
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2021-12-16
+.\"      Date: 2022-08-11
 .\"    Manual: User manual
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYC" "1" "2021-12-16" "chrony @CHRONY_VERSION@" "User manual"
+.TH "CHRONYC" "1" "2022-08-11" "chrony @CHRONY_VERSION@" "User manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -115,12 +115,15 @@ interpreted as a whole command.
 .sp
 \fB\-h\fP \fIhost\fP
 .RS 4
-This option allows the user to specify which host (or comma\-separated list of
-addresses) running the \fBchronyd\fP program is to be contacted. This allows for
-remote monitoring, without having to connect over SSH to the other host first.
+This option specifies the host to be contacted by \fBchronyc\fP. It can be
+specified with a hostname, IP address, or path to the local Unix domain socket.
+Multiple values can be specified as a comma\-separated list to provide a
+fallback.
 .sp
-The default is to contact \fBchronyd\fP running on the same host where
-\fBchronyc\fP is being run.
+The default value is \fI@CHRONYRUNDIR@/chronyd.sock,127.0.0.1,::1\fP, i.e. the host
+where \fBchronyc\fP is being run. First, it tries to connect to the Unix domain
+socket and if that fails (e.g. due to running under a non\-root user), it
+will try to connect to 127.0.0.1 and then ::1.
 .RE
 .sp
 \fB\-p\fP \fIport\fP
@@ -672,6 +675,17 @@ synchronisation:
 .  IP \(bu 2.3
 .\}
 \fIN\fP \- has the \fBnoselect\fP option.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIs\fP \- is not synchronised.
 .RE
 .sp
 .RS 4
@@ -1382,7 +1396,8 @@ from the source back.
 \fBNTP tests\fP
 .RS 4
 Results of RFC 5905 tests 1 through 3, 5 through 7, and tests for maximum
-delay, delay ratio, delay dev ratio, and synchronisation loop.
+delay, delay ratio, delay dev ratio (or delay quantile), and synchronisation
+loop.
 .RE
 .sp
 \fBInterleaved\fP

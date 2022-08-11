@@ -68,6 +68,7 @@ struct SelectInfo {
 typedef enum {
   SRC_OK,               /* OK so far, not a final status! */
   SRC_UNSELECTABLE,     /* Has noselect option set */
+  SRC_UNSYNCHRONISED,   /* Provides samples but not unsynchronised */
   SRC_BAD_STATS,        /* Doesn't have valid stats data */
   SRC_BAD_DISTANCE,     /* Has root distance longer than allowed maximum */
   SRC_JITTERY,          /* Had std dev larger than allowed maximum */
@@ -177,6 +178,8 @@ static double reselect_distance;
 static double stratum_weight;
 static double combine_limit;
 
+static LOG_FileID logfileid;
+
 /* Identifier of the dump file */
 #define DUMP_IDENTIFIER "SRC0\n"
 
@@ -188,6 +191,7 @@ static void slew_sources(struct timespec *raw, struct timespec *cooked, double d
                          double doffset, LCL_ChangeType change_type, void *anything);
 static void add_dispersion(double dispersion, void *anything);
 static char *source_to_string(SRC_Instance inst);
+static char get_status_char(SRC_Status status);
 
 /* ================================================== */
 /* Initialisation function */
@@ -207,6 +211,10 @@ void SRC_Initialise(void) {
 
   LCL_AddParameterChangeHandler(slew_sources, NULL);
   LCL_AddDispersionNotifyHandler(add_dispersion, NULL);
+
+  logfileid = CNF_GetLogSelection() ? LOG_FileOpen("selection",
+              "   Date (UTC) Time     IP Address   S EOpts Reach Score Last sample  Low end   High end")
+              : -1;
 }
 
 /* ================================================== */
@@ -639,13 +647,33 @@ source_to_string(SRC_Instance inst)
 static void
 mark_source(SRC_Instance inst, SRC_Status status)
 {
+  struct timespec now;
+
   inst->status = status;
 
-  DEBUG_LOG("%s status=%d options=%x reach=%o/%d updates=%d distant=%d leap=%d vote=%d lo=%f hi=%f",
-            source_to_string(inst), (int)inst->status, (unsigned int)inst->sel_options,
-            (unsigned int)inst->reachability, inst->reachability_size, inst->updates,
+  DEBUG_LOG("%s status=%c options=%x reach=%o/%d updates=%d distant=%d leap=%d vote=%d lo=%f hi=%f",
+            source_to_string(inst), get_status_char(inst->status),
+            (unsigned int)inst->sel_options, (unsigned int)inst->reachability,
+            inst->reachability_size, inst->updates,
             inst->distant, (int)inst->leap, inst->leap_vote,
             inst->sel_info.lo_limit, inst->sel_info.hi_limit);
+
+  if (logfileid == -1)
+    return;
+
+  SCH_GetLastEventTime(&now, NULL, NULL);
+
+  LOG_FileWrite(logfileid,
+                "%s %-15s %c -%c%c%c%c %4o %5.2f %10.3e %10.3e %10.3e",
+                UTI_TimeToLogForm(now.tv_sec), source_to_string(inst),
+                get_status_char(inst->status),
+                inst->sel_options & SRC_SELECT_NOSELECT ? 'N' : '-',
+                inst->sel_options & SRC_SELECT_PREFER ? 'P' : '-',
+                inst->sel_options & SRC_SELECT_TRUST ? 'T' : '-',
+                inst->sel_options & SRC_SELECT_REQUIRE ? 'R' : '-',
+                (unsigned int)inst->reachability, inst->sel_score,
+                inst->sel_info.last_sample_ago,
+                inst->sel_info.lo_limit, inst->sel_info.hi_limit);
 }
 
 /* ================================================== */
@@ -722,8 +750,8 @@ combine_sources(int n_sel_sources, struct timespec *ref_time, double *offset,
     offset_weight = 1.0 / sources[index]->sel_info.root_distance;
     frequency_weight = 1.0 / SQUARE(src_frequency_sd);
 
-    DEBUG_LOG("combining index=%d oweight=%e offset=%e osd=%e fweight=%e freq=%e fsd=%e skew=%e",
-              index, offset_weight, src_offset, src_offset_sd,
+    DEBUG_LOG("combining %s oweight=%e offset=%e osd=%e fweight=%e freq=%e fsd=%e skew=%e",
+              source_to_string(sources[index]), offset_weight, src_offset, src_offset_sd,
               frequency_weight, src_frequency, src_frequency_sd, src_skew);
 
     sum_offset_weight += offset_weight;
@@ -812,6 +840,12 @@ SRC_SelectSource(SRC_Instance updated_inst)
     /* Ignore sources which were added with the noselect option */
     if (sources[i]->sel_options & SRC_SELECT_NOSELECT) {
       mark_source(sources[i], SRC_UNSELECTABLE);
+      continue;
+    }
+
+    /* Ignore sources which are not synchronised */
+    if (sources[i]->leap == LEAP_Unsynchronised) {
+      mark_source(sources[i], SRC_UNSYNCHRONISED);
       continue;
     }
 
@@ -1642,6 +1676,8 @@ get_status_char(SRC_Status status)
   switch (status) {
     case SRC_UNSELECTABLE:
       return 'N';
+    case SRC_UNSYNCHRONISED:
+      return 's';
     case SRC_BAD_STATS:
       return 'M';
     case SRC_BAD_DISTANCE:

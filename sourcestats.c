@@ -211,8 +211,8 @@ SST_CreateInstance(uint32_t refid, IPAddr *addr, int min_samples, int max_sample
   SST_Stats inst;
   inst = MallocNew(struct SST_Stats_Record);
 
-  inst->min_samples = min_samples;
-  inst->max_samples = max_samples;
+  inst->max_samples = max_samples > 0 ? CLAMP(1, max_samples, MAX_SAMPLES) : MAX_SAMPLES;
+  inst->min_samples = CLAMP(1, min_samples, inst->max_samples);
   inst->fixed_min_delay = min_delay;
   inst->fixed_asymmetry = asymmetry;
 
@@ -698,7 +698,8 @@ SST_GetSelectionData(SST_Stats inst, struct timespec *now,
 
   /* If maxsamples is too small to have a successful regression, enable the
      selection as a special case for a fast update/print-once reference mode */
-  if (!*select_ok && inst->n_samples < 3 && inst->n_samples == inst->max_samples) {
+  if (!*select_ok && inst->n_samples < MIN_SAMPLES_FOR_REGRESS &&
+      inst->n_samples == inst->max_samples) {
     *std_dev = CNF_GetMaxJitter();
     *select_ok = 1;
   }
@@ -814,7 +815,7 @@ SST_PredictOffset(SST_Stats inst, struct timespec *when)
 {
   double elapsed;
   
-  if (inst->n_samples < 3) {
+  if (inst->n_samples < MIN_SAMPLES_FOR_REGRESS) {
     /* We don't have any useful statistics, and presumably the poll
        interval is minimal.  We can't do any useful prediction other
        than use the latest sample or zero if we don't have any samples */
@@ -930,6 +931,7 @@ SST_LoadFromFile(SST_Stats inst, FILE *in)
 
     /* Make sure the samples are sane and they are in order */
     if (!UTI_IsTimeOffsetSane(&inst->sample_times[i], -inst->offsets[i]) ||
+        UTI_CompareTimespecs(&now, &inst->sample_times[i]) < 0 ||
         !(fabs(inst->peer_delays[i]) < 1.0e6 && fabs(inst->peer_dispersions[i]) < 1.0e6 &&
           fabs(inst->root_delays[i]) < 1.0e6 && fabs(inst->root_dispersions[i]) < 1.0e6) ||
         (i > 0 && UTI_CompareTimespecs(&inst->sample_times[i],
@@ -981,6 +983,14 @@ int
 SST_Samples(SST_Stats inst)
 {
   return inst->n_samples;
+}
+
+/* ================================================== */
+
+int
+SST_GetMinSamples(SST_Stats inst)
+{
+  return inst->min_samples;
 }
 
 /* ================================================== */
