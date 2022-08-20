@@ -1,3 +1,10 @@
+chrony (4.2-3) unstable; urgency=medium
+
+  * debian/patches/:
+    - Add allow-rseq-in-seccomp-filter.patch. (Closes: #1017790)
+
+ -- Vincent Blut <vincent.debian@free.fr>  Sat, 20 Aug 2022 18:43:50 +0200
+
 chrony (4.2-2) unstable; urgency=medium
 
   * debian/usr.sbin.chronyd:
