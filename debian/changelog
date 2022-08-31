@@ -1,3 +1,17 @@
+chrony (4.3-1) unstable; urgency=medium
+
+  * Import upstream version 4.3:
+    - Please see /usr/share/doc/chrony/NEWS.gz for the release notes.
+
+  * debian/copyright:
+    - Update copyright years.
+
+  [ Bastian Blank ]
+  * debian/chrony.service:
+    - Let systemd handle directories. (MR: !9)
+
+ -- Vincent Blut <vincent.debian@free.fr>  Wed, 31 Aug 2022 13:32:14 +0200
+
 chrony (4.3~pre1-1) experimental; urgency=medium
 
   * Import upstream version 4.3-pre1:

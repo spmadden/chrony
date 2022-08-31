@@ -2,12 +2,12 @@
 .\"     Title: chronyc
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-08-11
+.\"      Date: 2022-08-29
 .\"    Manual: User manual
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYC" "1" "2022-08-11" "chrony @CHRONY_VERSION@" "User manual"
+.TH "CHRONYC" "1" "2022-08-29" "chrony @CHRONY_VERSION@" "User manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -220,15 +220,19 @@ source was processed.
 .sp
 \fBSystem time\fP
 .RS 4
-In normal operation, \fBchronyd\fP by default never steps the system clock, because
-any jump in the time can have adverse consequences for certain application
-programs. Instead, any error in the system clock is corrected by slightly
-speeding up or slowing down the system clock until the error has been removed,
-and then returning to the system clock\(cqs normal speed. A consequence of this is
-that there will be a period when the system clock (as read by other programs)
-will be different from \fBchronyd\fP\(aqs estimate of the current true time (which it
-reports to NTP clients when it is operating as a server). The value reported
-on this line is the difference due to this effect.
+This is the current offset between the NTP clock and system clock. The NTP
+clock is a software (virtual) clock maintained by \fBchronyd\fP, which is
+synchronised to the configured time sources and provides time to NTP clients.
+The system clock is synchronised to the NTP clock. To avoid steps in the
+system time, which might have adverse consequences for certain applications,
+the system clock is normally corrected only by speeding up or slowing down (up
+to the rate configured by the \fBmaxslewrate\fP
+directive). If the offset is too large, this correction will take a very long
+time. A step can be forced by the \fBmakestep\fP command, or the
+\fBmakestep\fP directive in the configuration file.
+.sp
+Note that all other offsets reported by \fBchronyc\fP and most offsets in the log
+files are relative to the NTP clock, not the system clock.
 .RE
 .sp
 \fBLast offset\fP
@@ -1346,6 +1350,7 @@ RX timestamping : Kernel
 Total TX        : 24
 Total RX        : 24
 Total valid RX  : 24
+Total good RX   : 22
 .fam
 .fi
 .if n .RE
@@ -1433,7 +1438,13 @@ The number of all packets received from the source.
 .sp
 \fBTotal valid RX\fP
 .RS 4
-The number of valid packets received from the source.
+The number of packets which passed the first two groups of NTP tests.
+.RE
+.sp
+\fBTotal good RX\fP
+.RS 4
+The number of packets which passed all three groups of NTP tests, i.e. the NTP
+measurement was accepted.
 .RE
 .RE
 .sp
