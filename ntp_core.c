@@ -3,7 +3,7 @@
 
  **********************************************************************
  * Copyright (C) Richard P. Curnow  1997-2003
- * Copyright (C) Miroslav Lichvar  2009-2021
+ * Copyright (C) Miroslav Lichvar  2009-2022
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -556,6 +556,16 @@ take_offline(NCR_Instance inst)
 
 /* ================================================== */
 
+static void
+reset_report(NCR_Instance inst)
+{
+  memset(&inst->report, 0, sizeof (inst->report));
+  inst->report.remote_addr = inst->remote_addr.ip_addr;
+  inst->report.remote_port = inst->remote_addr.port;
+}
+
+/* ================================================== */
+
 NCR_Instance
 NCR_CreateInstance(NTP_Remote_Address *remote_addr, NTP_Source_Type type,
                    SourceParameters *params, const char *name)
@@ -672,11 +682,12 @@ NCR_CreateInstance(NTP_Remote_Address *remote_addr, NTP_Source_Type type,
   zero_local_timestamp(&result->local_tx);
   result->burst_good_samples_to_go = 0;
   result->burst_total_samples_to_go = 0;
-  memset(&result->report, 0, sizeof (result->report));
   
   NCR_ResetInstance(result);
 
   set_connectivity(result, params->connectivity);
+
+  reset_report(result);
 
   return result;
 }
@@ -777,7 +788,6 @@ NCR_ResetPoll(NCR_Instance instance)
 void
 NCR_ChangeRemoteAddress(NCR_Instance inst, NTP_Remote_Address *remote_addr, int ntp_only)
 {
-  memset(&inst->report, 0, sizeof (inst->report));
   NCR_ResetInstance(inst);
 
   if (!ntp_only)
@@ -798,6 +808,8 @@ NCR_ChangeRemoteAddress(NCR_Instance inst, NTP_Remote_Address *remote_addr, int 
   SRC_SetRefid(inst->source, UTI_IPToRefid(&remote_addr->ip_addr),
                &inst->remote_addr.ip_addr);
   SRC_ResetInstance(inst->source);
+
+  reset_report(inst);
 }
 
 /* ================================================== */
@@ -2179,9 +2191,7 @@ process_response(NCR_Instance inst, NTP_Local_Address *local_addr,
     }
 
     /* Update the NTP report */
-    inst->report.remote_addr = inst->remote_addr.ip_addr;
     inst->report.local_addr = inst->local_addr.ip_addr;
-    inst->report.remote_port = inst->remote_addr.port;
     inst->report.leap = pkt_leap;
     inst->report.version = pkt_version;
     inst->report.mode = NTP_LVM_TO_MODE(message->lvm);
@@ -2206,6 +2216,8 @@ process_response(NCR_Instance inst, NTP_Local_Address *local_addr,
     inst->report.rx_tss_char = tss_chars[local_receive.source];
 
     inst->report.total_valid_count++;
+    if (good_packet)
+      inst->report.total_good_count++;
   }
 
   /* Do measurement logging */

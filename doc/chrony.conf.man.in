@@ -2,12 +2,12 @@
 .\"     Title: chrony.conf
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-08-11
+.\"      Date: 2022-08-29
 .\"    Manual: Configuration Files
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONY.CONF" "5" "2022-08-11" "chrony @CHRONY_VERSION@" "Configuration Files"
+.TH "CHRONY.CONF" "5" "2022-08-29" "chrony @CHRONY_VERSION@" "Configuration Files"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -65,10 +65,22 @@ source. The client\-server relationship is strictly hierarchical: a client might
 synchronise its system time to that of the server, but the server\(cqs system time
 will never be influenced by that of a client.
 .sp
+The server can be specified by its hostname or IP address. If the hostname cannot
+be resolved on start, \fBchronyd\fP will try it again in increasing intervals, and
+also when the \fBonline\fP command is issued in \fBchronyc\fP.
+.sp
+The DNS record can change over time. The used address will be replaced with a
+newly resolved address when the server becomes unreachable (i.e. no valid
+response to last 8 requests), unsynchronised, a falseticker (i.e. does not
+agree with a majority of other sources), or the root distance is too large (the
+limit can be configured by the \fBmaxdistance\fP directive). The
+automatic replacement happens at most once per 30 minutes. It can also be
+triggered manually for all sources by the \fBrefresh\fP
+command in \fBchronyc\fP.
+.sp
 This directive can be used multiple times to specify multiple servers.
 .sp
-The directive is immediately followed by either the name of the
-server, or its IP address. It supports the following options:
+The directive supports the following options:
 .sp
 \fBminpoll\fP \fIpoll\fP
 .RS 4
@@ -449,15 +461,6 @@ This option sets the desired number of sources to be used from the pool.
 \fBchronyd\fP will repeatedly try to resolve the name until it gets this number of
 sources responding to requests. The default value is 4 and the maximum value is
 16.
-.RE
-.RE
-.sp
-
-.RS 4
-When an NTP source is unreachable,
-marked as a falseticker, or has a distance larger than the limit set by the
-\fBmaxdistance\fP directive, \fBchronyd\fP will try to replace the
-source with a newly resolved address of the name.
 .sp
 An example of the \fBpool\fP directive is
 .sp
@@ -468,6 +471,7 @@ pool pool.ntp.org iburst maxsources 3
 .fam
 .fi
 .if n .RE
+.RE
 .RE
 .sp
 \fBpeer\fP \fIhostname\fP [\fIoption\fP]...
