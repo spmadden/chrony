@@ -3,7 +3,6 @@ chrony (4.3-1ubuntu1) lunar; urgency=medium
   * Merge with Debian unstable (LP: #1993389). Remaining changes:
     - d/chrony.conf: use ubuntu ntp pool and server
       (LP #1744664, #1754358)
-UBUNTU-only
     - Set -x as default if unable to set time (e.g. in containers) (LP #1589780)
       Chrony is a single service which acts as both NTP client (i.e. syncing the
       local clock) and NTP server (i.e. providing NTP services to the network),
@@ -14,24 +13,18 @@ UBUNTU-only
       which complained in syslog but still provided NTP server service in those
       cases.
       + debian/chrony.service: allow the service to run without CAP_SYS_TIME
-UBUNTU-only
       + debian/control: add new dependency libcap2-bin for
         capsh (usually installed anyway, but make them explicit to be sure).
-UBUNTU-only
       + debian/chrony.default: new option SYNC_IN_CONTAINER to not fall
         back (Default off)
-UBUNTU-only
       + debian/chronyd-starter.sh: wrapper to handle special cases in
         containers and if CAP_SYS_TIME is missing. Effectively allows
         running the NTP server in containers on a default installation
         and avoid failing to sync time (or if allowed to sync, avoid
         multiple containers fighting over it by accident).
-UBUNTU-only
       + debian/install: make chrony-starter.sh available on install.
-UBUNTU-only
       + debian/docs, debian/README.container: provide documentation
         about the handling of this case.
-UBUNTU-only
   * Dropped:
     - d/patches/add-rseq.patch: Add "rseq" to list of acceptable syscalls to fix
       tests with glibc 2.35.
