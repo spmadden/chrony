@@ -12,7 +12,7 @@ Version:        4.3
 Release:        2%{?dist}
 Summary:        An NTP client/server
 
-License:        GPLv2
+License:        GPL-2.0-only
 URL:            https://chrony.tuxfamily.org
 Source0:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
 Source1:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}-tar-gz-asc.txt
