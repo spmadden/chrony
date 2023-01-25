@@ -25,6 +25,8 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 
 # add distribution-specific bits to DHCP dispatcher
 Patch1:         chrony-nm-dispatcher-dhcp.patch
+# add chronyd-restricted service
+Patch2:         chrony-restricted.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
@@ -56,6 +58,7 @@ service to other computers in the network.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .nm-dispatcher-dhcp
+%patch2 -p1 -b .restricted
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -68,6 +71,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         c3992e2f985550739cd1cd95f98c9548  examples/chrony.nm-dispatcher.dhcp
         2b81c60c020626165ac655b2633608eb  examples/chrony.nm-dispatcher.onoffline
         677ad16d6439daa369da44a1b75d1772  examples/chronyd.service
+        f092f965dc61f691ca838958eeeb3377  examples/chronyd-restricted.service
 EOF
 
 # don't allow packaging without vendor zone
@@ -130,6 +134,8 @@ install -m 644 -p examples/chrony.logrotate \
 
 install -m 644 -p examples/chronyd.service \
         $RPM_BUILD_ROOT%{_unitdir}/chronyd.service
+install -m 644 -p examples/chronyd-restricted.service \
+        $RPM_BUILD_ROOT%{_unitdir}/chronyd-restricted.service
 install -m 755 -p examples/chrony.nm-dispatcher.onoffline \
         $RPM_BUILD_ROOT%{_prefix}/lib/NetworkManager/dispatcher.d/20-chrony-onoffline
 install -m 755 -p examples/chrony.nm-dispatcher.dhcp \
@@ -169,13 +175,13 @@ if test -a %{_libexecdir}/chrony-helper; then
                 sed 's|.*|server &|' < $f > /run/chrony-dhcp/"${f##*servers.}.sources"
         done 2> /dev/null
 fi
-%systemd_post chronyd.service chrony-wait.service
+%systemd_post chronyd.service chronyd-restricted.service chrony-wait.service
 
 %preun
-%systemd_preun chronyd.service chrony-wait.service
+%systemd_preun chronyd.service chronyd-restricted.service chrony-wait.service
 
 %postun
-%systemd_postun_with_restart chronyd.service
+%systemd_postun_with_restart chronyd.service chronyd-restricted.service
 
 %files
 %{!?_licensedir:%global license %%doc}
