@@ -27,6 +27,8 @@ Source10:       https://github.com/mlichvar/clknetsim/archive/%{clknetsim_ver}/c
 Patch1:         chrony-nm-dispatcher-dhcp.patch
 # add chronyd-restricted service
 Patch2:         chrony-restricted.patch
+# warn if keys are world-accessible or chronyd doesn't have read-only access
+Patch3:         chrony-keyaccess.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
@@ -59,6 +61,7 @@ service to other computers in the network.
 %{?gitpatch:%patch0 -p1}
 %patch1 -p1 -b .nm-dispatcher-dhcp
 %patch2 -p1 -b .restricted
+%patch3 -p1 -b .keyaccess
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -66,7 +69,6 @@ service to other computers in the network.
 md5sum -c <<-EOF | (! grep -v 'OK$')
         b40117b4aac846d31e4ad196dc44cda3  examples/chrony-wait.service
         2d01b94bc1a7b7fb70cbee831488d121  examples/chrony.conf.example2
-        96999221eeef476bd49fe97b97503126  examples/chrony.keys.example
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         c3992e2f985550739cd1cd95f98c9548  examples/chrony.nm-dispatcher.dhcp
         2b81c60c020626165ac655b2633608eb  examples/chrony.nm-dispatcher.onoffline
@@ -80,11 +82,9 @@ test -n "%{vendorzone}"
 # use example chrony.conf as the default config with some modifications:
 # - use our vendor zone (2.*pool.ntp.org names include IPv6 addresses)
 # - enable leapsectz to get TAI-UTC offset and leap seconds from tzdata
-# - enable keyfile
 # - use NTP servers from DHCP
 sed -e 's|^\(pool \)\(pool.ntp.org\)|\12.%{vendorzone}\2|' \
     -e 's|#\(leapsectz\)|\1|' \
-    -e 's|#\(keyfile\)|\1|' \
     -e 's|^pool.*pool.ntp.org.*|&\n\n# Use NTP servers from DHCP.\nsourcedir /run/chrony-dhcp|' \
         < examples/chrony.conf.example2 > chrony.conf
 
@@ -125,8 +125,6 @@ mkdir -p $RPM_BUILD_ROOT{%{_unitdir},%{_prefix}/lib/systemd/ntp-units.d}
 
 install -m 644 -p chrony.conf $RPM_BUILD_ROOT%{_sysconfdir}/chrony.conf
 
-install -m 640 -p examples/chrony.keys.example \
-        $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
 install -m 755 -p %{SOURCE3} \
         $RPM_BUILD_ROOT%{_sysconfdir}/dhcp/dhclient.d/chrony.sh
 install -m 644 -p examples/chrony.logrotate \
@@ -150,6 +148,7 @@ cat > $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/chronyd <<EOF
 OPTIONS="%{?with_seccomp:-F 2}"
 EOF
 
+touch $RPM_BUILD_ROOT%{_sysconfdir}/chrony.keys
 touch $RPM_BUILD_ROOT%{_localstatedir}/lib/chrony/{drift,rtc}
 
 echo 'chronyd.service' > \
@@ -186,9 +185,9 @@ fi
 %files
 %{!?_licensedir:%global license %%doc}
 %license COPYING
-%doc FAQ NEWS README
+%doc FAQ NEWS README examples/chrony.keys.example
 %config(noreplace) %{_sysconfdir}/chrony.conf
-%config(noreplace) %verify(not md5 size mtime) %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
+%ghost %config %attr(640,root,chrony) %{_sysconfdir}/chrony.keys
 %config(noreplace) %{_sysconfdir}/logrotate.d/chrony
 %config(noreplace) %{_sysconfdir}/sysconfig/chronyd
 %{_sysconfdir}/dhcp/dhclient.d/chrony.sh
