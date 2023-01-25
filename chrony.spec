@@ -9,7 +9,7 @@
 
 Name:           chrony
 Version:        4.3
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        An NTP client/server
 
 License:        GPL-2.0-only
@@ -204,6 +204,11 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Jan 25 2023 Miroslav Lichvar <mlichvar@redhat.com> 4.3-3
+- drop default chrony.keys config (#2104918)
+- add chronyd-restricted service for minimal NTP client configurations
+- convert license tag to SPDX
+
 * Wed Jan 18 2023 Fedora Release Engineering <releng@fedoraproject.org> - 4.3-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_38_Mass_Rebuild
 
