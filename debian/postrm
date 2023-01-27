@@ -32,7 +32,7 @@ case "$1" in
             deluser --quiet --system _chrony > /dev/null 2>&1 || true
         fi
 
-        for d in /var/lib/chrony /var/log/chrony; do
+        for d in /var/lib/chrony /var/log/chrony /etc/chrony/chrony.keys; do
             if dpkg-statoverride --list "$d" >/dev/null; then
                 dpkg-statoverride --remove "$d"
             fi
