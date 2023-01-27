@@ -35,7 +35,7 @@ prepare_clknetsim() {
 }
 
 run_test() {
-    cd "$testdir" && ./run -i 20 -m 2
+    cd "$testdir" && ./run
 }
 
 prepare_clknetsim && run_test

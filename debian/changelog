@@ -1,3 +1,37 @@
+chrony (4.3-2) unstable; urgency=medium
+
+  * debian/control:
+    - Bump Standards-Version to 4.6.2 (no changes needed).
+
+  * debian/copyright:
+    - Update copyright year for debian/*.
+
+  * debian/.gitlab-ci.yml:
+    - Use the recommended syntax to skip a job.
+
+  * debian/install:
+    - Install the chrony-wait.service systemd unit.
+
+  * debian/postinst:
+    - Ensure that chronyd can read the /etc/chrony/chrony.keys file after
+    dropping root privileges.
+
+  * debian/postrm:
+    - Remove the override for /etc/chrony/chrony.keys when purging chrony.
+
+  * debian/rules:
+    - Do not enable nor start chrony-wait.service for the time being.
+
+  * debian/tests/upstream-simulation-test-suite:
+    - Run each test only once. Running several iterations is no longer
+    relevant since we use a hard coded seed.
+
+  [ Taylor Stearns ]
+  * debian/chrony.conf:
+    - Replace U+2019 with ASCII quote. (MR: !10)
+
+ -- Vincent Blut <vincent.debian@free.fr>  Fri, 27 Jan 2023 22:51:17 +0100
+
 chrony (4.3-1) unstable; urgency=medium
 
   * Import upstream version 4.3:

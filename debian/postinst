@@ -32,10 +32,17 @@ case "$1" in
         # Change the user and group ownership of "/var/l{ib,og}/chrony" iif
         # the chronyd's configuration does not contain the "user" directive.
         # Also, update these directories' mode bits to 0750 to follow upstream.
+        #
+        # We must also ensure that chronyd can read /etc/chrony/chrony.keys
+        # after dropping root privileges.
         if ! chronyd -p | grep -q "^user"; then
-            for d in /var/lib/chrony /var/log/chrony; do
+            for d in /var/lib/chrony /var/log/chrony /etc/chrony/chrony.keys; do
                 if ! dpkg-statoverride --list "$d" >/dev/null; then
-                    dpkg-statoverride --update --add _chrony _chrony 0750 "$d"
+                    if [ "$d" = "/etc/chrony/chrony.keys" ]; then
+                        dpkg-statoverride --update --add root _chrony 0640 "$d"
+                    else
+                        dpkg-statoverride --update --add _chrony _chrony 0750 "$d"
+                    fi
                 fi
             done
         fi
