@@ -1,3 +1,9 @@
+chrony (4.3-1ubuntu2) lunar; urgency=medium
+
+  * No-change rebuild for glibc 2.37
+
+ -- Bryce Harrington <bryce@canonical.com>  Thu, 09 Feb 2023 07:26:02 +0000
+
 chrony (4.3-1ubuntu1) lunar; urgency=medium
 
   * Merge with Debian unstable (LP: #1993389). Remaining changes:
