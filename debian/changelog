@@ -1,3 +1,10 @@
+chrony (4.3-1ubuntu4) lunar; urgency=medium
+
+  * Let upstream-simulation-test-suite depend on tzdata-legacy as well
+    (LP: #2008076)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 15 Mar 2023 15:42:10 +0100
+
 chrony (4.3-1ubuntu3) lunar; urgency=medium
 
   * Depend on tzdata-legacy for reading leapsectz from
