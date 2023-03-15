@@ -1,3 +1,10 @@
+chrony (4.3-1ubuntu3) lunar; urgency=medium
+
+  * Depend on tzdata-legacy for reading leapsectz from
+    /usr/share/zoneinfo/right/UTC (LP: #2008076)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 15 Mar 2023 09:26:25 +0100
+
 chrony (4.3-1ubuntu2) lunar; urgency=medium
 
   * No-change rebuild for glibc 2.37
