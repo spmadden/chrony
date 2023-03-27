@@ -3,7 +3,9 @@ include:
     - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/salsa-ci.yml
     - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/pipeline-jobs.yml
 
-# Skip the reprotest job as long as it is run as root due to problems with
-# chrony system tests.
 variables:
+    # chrony now depends on tzdata-legacy which is only available in experimental
+    RELEASE: 'experimental'
+    # Skip the reprotest job as long as it is run as root due to problems with
+    # chrony system tests.
     SALSA_CI_DISABLE_REPROTEST: 1
