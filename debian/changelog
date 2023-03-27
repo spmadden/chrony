@@ -1,3 +1,20 @@
+chrony (4.3-3) experimental; urgency=medium
+
+  * debian/control:
+    - Depend on tzdata-legacy. right/* timezones have been split into a
+    separate tzdata-legacy package. Since chronyd reads
+    '/usr/share/zoneinfo/right/UTC' to determine when will the next leap second
+    occur we have to depend on this new package. (LP: #2008076)
+
+  * debian/.gitlab-ci.yml:
+    - Run CI on experimental. This is necessary as long as tzdata-legacy is
+    available in experimental only.
+
+  * debian/tests/control:
+    - Let upstream-simulation-test-suite depend on tzdata-legacy.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Mon, 27 Mar 2023 19:57:20 +0200
+
 chrony (4.3-2) unstable; urgency=medium
 
   * debian/control:
