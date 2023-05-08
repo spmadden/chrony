@@ -1,3 +1,13 @@
+chrony (4.3-2+deb12u1) unstable; urgency=medium
+
+  * debian/usr.sbin.chronyd:
+    - Modify the AppArmor profile to allow more gpsd socket names. This will
+    avoid the need for users to override the profile to let chronyd consume PPS
+    samples or serial time supplied by gpsd over a Unix-domain socket.
+    Thanks to Ryan Govostes for the report. (Closes: #1034519)
+
+ -- Vincent Blut <vincent.debian@free.fr>  Mon, 08 May 2023 22:05:00 +0200
+
 chrony (4.3-2) unstable; urgency=medium
 
   * debian/control:
