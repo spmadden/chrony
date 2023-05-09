@@ -1,5 +1,5 @@
 Tests: upstream-simulation-test-suite
-Depends: @builddeps@, build-essential, ca-certificates, wget
+Depends: @builddeps@, build-essential, ca-certificates, tzdata-legacy, wget
 Restrictions: isolation-container, build-needed, skippable, needs-root, needs-internet
 
 Tests: time-sources-from-dhcp-servers
