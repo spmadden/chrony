@@ -1,3 +1,36 @@
+chrony (4.3-2ubuntu1) mantic; urgency=medium
+
+  * Merge with Debian unstable (LP: #2018062). Remaining changes:
+    - d/chrony.conf: use ubuntu ntp pool and server
+      (LP #1744664, #1754358)
+    - Set -x as default if unable to set time (e.g. in containers) (LP #1589780)
+      Chrony is a single service which acts as both NTP client (i.e. syncing the
+      local clock) and NTP server (i.e. providing NTP services to the network),
+      and that is both desired and expected in the vast majority of cases.
+      But in containers syncing the local clock is usually impossible, but this
+      shall not break the providing of NTP services to the network.
+      To some extent this makes chrony's default config more similar to 'ntpd',
+      which complained in syslog but still provided NTP server service in those
+      cases.
+      + debian/chrony.service: allow the service to run without CAP_SYS_TIME
+      + d/control: add new dependency libcap2-bin for capsh (usually
+        installed anyway, but make them explicit to be sure).
+      + d/chrony.default: new option SYNC_IN_CONTAINER to not fall
+        back (Default off)
+      + d/chronyd-starter.sh: wrapper to handle special cases in
+        containers and if CAP_SYS_TIME is missing. Effectively allows
+        running the NTP server in containers on a default installation
+        and avoid failing to sync time (or if allowed to sync, avoid
+        multiple containers fighting over it by accident).
+      + d/install: make chrony-starter.sh available on install.
+      + d/docs, d/README.container: provide documentation about the
+        handling of this case.
+    - Depend on tzdata-legacy for reading leapsectz from
+      /usr/share/zoneinfo/right/UTC
+      (LP #2008076)
+
+ -- Bryce Harrington <bryce@canonical.com>  Mon, 08 May 2023 22:15:26 -0700
+
 chrony (4.3-2) unstable; urgency=medium
 
   * debian/control:
