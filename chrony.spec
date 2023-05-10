@@ -10,7 +10,7 @@
 
 Name:           chrony
 Version:        4.4
-Release:        3%{?dist}
+Release:        0.1.pre1%{?dist}
 Summary:        An NTP client/server
 
 License:        GPL-2.0-only
@@ -199,6 +199,10 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed May 10 2023 Miroslav Lichvar <mlichvar@redhat.com> 4.4-0.1.pre1
+- update to 4.4-pre1
+- switch from patchX to patch -P X
+
 * Wed Jan 25 2023 Miroslav Lichvar <mlichvar@redhat.com> 4.3-3
 - drop default chrony.keys config (#2104918)
 - add chronyd-restricted service for minimal NTP client configurations
