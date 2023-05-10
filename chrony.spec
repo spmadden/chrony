@@ -55,8 +55,8 @@ service to other computers in the network.
 %prep
 %{gpgverify} --keyring=%{SOURCE2} --signature=%{SOURCE1} --data=%{SOURCE0}
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
-%{?gitpatch:%patch0 -p1}
-%patch1 -p1 -b .nm-dispatcher-dhcp
+%{?gitpatch:%patch -P 0 -p1}
+%patch -P 1 -p1 -b .nm-dispatcher-dhcp
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
