@@ -47,31 +47,33 @@
 
 #define SERVER_TIMEOUT 2.0
 
-#define SERVER_COOKIE_SIV AEAD_AES_SIV_CMAC_256
-#define SERVER_COOKIE_NONCE_LENGTH 16
+#define MAX_COOKIE_NONCE_LENGTH 16
 
 #define KEY_ID_INDEX_BITS 2
 #define MAX_SERVER_KEYS (1U << KEY_ID_INDEX_BITS)
 #define FUTURE_KEYS 1
 
 #define DUMP_FILENAME "ntskeys"
-#define DUMP_IDENTIFIER "NKS0\n"
+#define DUMP_IDENTIFIER "NKS1\n"
+#define OLD_DUMP_IDENTIFIER "NKS0\n"
 
 #define INVALID_SOCK_FD (-7)
 
 typedef struct {
   uint32_t key_id;
-  unsigned char nonce[SERVER_COOKIE_NONCE_LENGTH];
 } ServerCookieHeader;
 
 typedef struct {
   uint32_t id;
   unsigned char key[SIV_MAX_KEY_LENGTH];
+  SIV_Algorithm siv_algorithm;
   SIV_Instance siv;
+  int nonce_length;
 } ServerKey;
 
 typedef struct {
   uint32_t key_id;
+  uint32_t siv_algorithm;
   unsigned char key[SIV_MAX_KEY_LENGTH];
   IPAddr client_addr;
   uint16_t client_port;
@@ -149,11 +151,29 @@ handle_client(int sock_fd, IPSockAddr *addr)
 /* ================================================== */
 
 static void
+update_key_siv(ServerKey *key, SIV_Algorithm algorithm)
+{
+  if (!key->siv || key->siv_algorithm != algorithm) {
+    if (key->siv)
+      SIV_DestroyInstance(key->siv);
+    key->siv_algorithm = algorithm;
+    key->siv = SIV_CreateInstance(algorithm);
+    key->nonce_length = MIN(SIV_GetMaxNonceLength(key->siv), MAX_COOKIE_NONCE_LENGTH);
+  }
+
+  if (!key->siv || !SIV_SetKey(key->siv, key->key, SIV_GetKeyLength(key->siv_algorithm)))
+    LOG_FATAL("Could not set SIV key");
+}
+
+/* ================================================== */
+
+static void
 handle_helper_request(int fd, int event, void *arg)
 {
   SCK_Message *message;
   HelperRequest *req;
   IPSockAddr client_addr;
+  ServerKey *key;
   int sock_fd;
 
   /* Receive the helper request with the NTS-KE session socket.
@@ -181,16 +201,14 @@ handle_helper_request(int fd, int event, void *arg)
   req = message->data;
 
   /* Extract the current server key and client address from the request */
-  server_keys[current_server_key].id = ntohl(req->key_id);
-  assert(sizeof (server_keys[current_server_key].key) == sizeof (req->key));
-  memcpy(server_keys[current_server_key].key, req->key,
-         sizeof (server_keys[current_server_key].key));
+  key = &server_keys[current_server_key];
+  key->id = ntohl(req->key_id);
+  assert(sizeof (key->key) == sizeof (req->key));
+  memcpy(key->key, req->key, sizeof (key->key));
   UTI_IPNetworkToHost(&req->client_addr, &client_addr.ip_addr);
   client_addr.port = ntohs(req->client_port);
 
-  if (!SIV_SetKey(server_keys[current_server_key].siv, server_keys[current_server_key].key,
-                  SIV_GetKeyLength(SERVER_COOKIE_SIV)))
-    LOG_FATAL("Could not set SIV key");
+  update_key_siv(key, ntohl(req->siv_algorithm));
 
   if (!handle_client(sock_fd, &client_addr)) {
     SCK_CloseSocket(sock_fd);
@@ -240,6 +258,7 @@ accept_connection(int listening_fd, int event, void *arg)
 
     /* Include the current server key and client address in the request */
     req.key_id = htonl(server_keys[current_server_key].id);
+    req.siv_algorithm = htonl(server_keys[current_server_key].siv_algorithm);
     assert(sizeof (req.key) == sizeof (server_keys[current_server_key].key));
     memcpy(req.key, server_keys[current_server_key].key, sizeof (req.key));
     UTI_IPHostToNetwork(&addr.ip_addr, &req.client_addr);
@@ -427,8 +446,9 @@ process_request(NKSN_Instance session)
 
         for (i = 0; i < MIN(length, sizeof (data)) / 2; i++) {
           aead_algorithm_values++;
-          if (ntohs(data[i]) == AEAD_AES_SIV_CMAC_256)
-            aead_algorithm = AEAD_AES_SIV_CMAC_256;
+          /* Use the first supported algorithm */
+          if (aead_algorithm < 0 && SIV_GetKeyLength(ntohs(data[i])) > 0)
+            aead_algorithm = ntohs(data[i]);;
         }
         break;
       case NKE_RECORD_ERROR:
@@ -470,28 +490,37 @@ handle_message(void *arg)
 static void
 generate_key(int index)
 {
+  SIV_Algorithm algorithm;
+  ServerKey *key;
   int key_length;
 
   if (index < 0 || index >= MAX_SERVER_KEYS)
     assert(0);
 
-  key_length = SIV_GetKeyLength(SERVER_COOKIE_SIV);
-  if (key_length > sizeof (server_keys[index].key))
+  /* Prefer AES-128-GCM-SIV if available.  Note that if older keys loaded
+     from ntsdumpdir use a different algorithm, responding to NTP requests
+     with cookies encrypted with those keys will not work if the new algorithm
+     produces longer cookies (i.e. response would be longer than request).
+     Switching from AES-SIV-CMAC-256 to AES-128-GCM-SIV is ok. */
+  algorithm = SIV_GetKeyLength(AEAD_AES_128_GCM_SIV) > 0 ?
+              AEAD_AES_128_GCM_SIV : AEAD_AES_SIV_CMAC_256;
+
+  key = &server_keys[index];
+
+  key_length = SIV_GetKeyLength(algorithm);
+  if (key_length > sizeof (key->key))
     assert(0);
 
-  UTI_GetRandomBytesUrandom(server_keys[index].key, key_length);
-
-  if (!server_keys[index].siv ||
-      !SIV_SetKey(server_keys[index].siv, server_keys[index].key, key_length))
-    LOG_FATAL("Could not set SIV key");
-
-  UTI_GetRandomBytes(&server_keys[index].id, sizeof (server_keys[index].id));
+  UTI_GetRandomBytesUrandom(key->key, key_length);
+  UTI_GetRandomBytes(&key->id, sizeof (key->id));
 
   /* Encode the index in the lowest bits of the ID */
-  server_keys[index].id &= -1U << KEY_ID_INDEX_BITS;
-  server_keys[index].id |= index;
+  key->id &= -1U << KEY_ID_INDEX_BITS;
+  key->id |= index;
 
-  DEBUG_LOG("Generated server key %"PRIX32, server_keys[index].id);
+  update_key_siv(key, algorithm);
+
+  DEBUG_LOG("Generated key %08"PRIX32" (%d)", key->id, (int)key->siv_algorithm);
 
   last_server_key_ts = SCH_GetLastEventMonoTime();
 }
@@ -519,18 +548,19 @@ save_keys(void)
   if (!f)
     return;
 
-  key_length = SIV_GetKeyLength(SERVER_COOKIE_SIV);
   last_key_age = SCH_GetLastEventMonoTime() - last_server_key_ts;
 
-  if (fprintf(f, "%s%d %.1f\n", DUMP_IDENTIFIER, SERVER_COOKIE_SIV, last_key_age) < 0)
+  if (fprintf(f, "%s%.1f\n", DUMP_IDENTIFIER, last_key_age) < 0)
     goto error;
 
   for (i = 0; i < MAX_SERVER_KEYS; i++) {
     index = (current_server_key + i + 1 + FUTURE_KEYS) % MAX_SERVER_KEYS;
+    key_length = SIV_GetKeyLength(server_keys[index].siv_algorithm);
 
     if (key_length > sizeof (server_keys[index].key) ||
         !UTI_BytesToHex(server_keys[index].key, key_length, buf, sizeof (buf)) ||
-        fprintf(f, "%08"PRIX32" %s\n", server_keys[index].id, buf) < 0)
+        fprintf(f, "%08"PRIX32" %s %d\n", server_keys[index].id, buf,
+                (int)server_keys[index].siv_algorithm) < 0)
       goto error;
   }
 
@@ -545,7 +575,7 @@ save_keys(void)
   return;
 
 error:
-  DEBUG_LOG("Could not %s server keys", "save");
+  LOG(LOGS_ERR, "Could not %s %s", "save", "server NTS keys");
   fclose(f);
 
   if (!UTI_RemoveFile(dump_dir, DUMP_FILENAME, NULL))
@@ -554,17 +584,16 @@ error:
 
 /* ================================================== */
 
-#define MAX_WORDS 2
+#define MAX_WORDS 3
 
 static int
 load_keys(void)
 {
+  int i, index, key_length, algorithm = 0, old_ver;
   char *dump_dir, line[1024], *words[MAX_WORDS];
-  unsigned char key[SIV_MAX_KEY_LENGTH];
-  int i, index, key_length, algorithm;
+  ServerKey new_keys[MAX_SERVER_KEYS];
   double key_age;
   FILE *f;
-  uint32_t id;
 
   dump_dir = CNF_GetNtsDumpDir();
   if (!dump_dir)
@@ -574,43 +603,57 @@ load_keys(void)
   if (!f)
     return 0;
 
-  if (!fgets(line, sizeof (line), f) || strcmp(line, DUMP_IDENTIFIER) != 0 ||
-      !fgets(line, sizeof (line), f) || UTI_SplitString(line, words, MAX_WORDS) != 2 ||
-        sscanf(words[0], "%d", &algorithm) != 1 || algorithm != SERVER_COOKIE_SIV ||
-        sscanf(words[1], "%lf", &key_age) != 1)
+  if (!fgets(line, sizeof (line), f) ||
+      (strcmp(line, DUMP_IDENTIFIER) != 0 && strcmp(line, OLD_DUMP_IDENTIFIER) != 0))
     goto error;
 
-  key_length = SIV_GetKeyLength(SERVER_COOKIE_SIV);
-  last_server_key_ts = SCH_GetLastEventMonoTime() - MAX(key_age, 0.0);
+  old_ver = strcmp(line, DUMP_IDENTIFIER) != 0;
+
+  if (!fgets(line, sizeof (line), f) ||
+      UTI_SplitString(line, words, MAX_WORDS) != (old_ver ? 2 : 1) ||
+      (old_ver && sscanf(words[0], "%d", &algorithm) != 1) ||
+      sscanf(words[old_ver ? 1 : 0], "%lf", &key_age) != 1)
+    goto error;
 
   for (i = 0; i < MAX_SERVER_KEYS && fgets(line, sizeof (line), f); i++) {
-    if (UTI_SplitString(line, words, MAX_WORDS) != 2 ||
-        sscanf(words[0], "%"PRIX32, &id) != 1)
+    if (UTI_SplitString(line, words, MAX_WORDS) != (old_ver ? 2 : 3) ||
+        sscanf(words[0], "%"PRIX32, &new_keys[i].id) != 1 ||
+        (!old_ver && sscanf(words[2], "%d", &algorithm) != 1))
       goto error;
 
-    if (UTI_HexToBytes(words[1], key, sizeof (key)) != key_length)
+    new_keys[i].siv_algorithm = algorithm;
+    key_length = SIV_GetKeyLength(algorithm);
+
+    if ((i > 0 && (new_keys[i].id - new_keys[i - 1].id) % MAX_SERVER_KEYS != 1) ||
+        key_length <= 0 ||
+        UTI_HexToBytes(words[1], new_keys[i].key, sizeof (new_keys[i].key)) != key_length)
       goto error;
-
-    index = id % MAX_SERVER_KEYS;
-
-    server_keys[index].id = id;
-    assert(sizeof (server_keys[index].key) == sizeof (key));
-    memcpy(server_keys[index].key, key, key_length);
-
-    if (!SIV_SetKey(server_keys[index].siv, server_keys[index].key, key_length))
-      LOG_FATAL("Could not set SIV key");
-
-    DEBUG_LOG("Loaded key %"PRIX32, id);
-
-    current_server_key = (index + MAX_SERVER_KEYS - FUTURE_KEYS) % MAX_SERVER_KEYS;
   }
+
+  if (i < MAX_SERVER_KEYS)
+    goto error;
+
+  for (i = 0; i < MAX_SERVER_KEYS; i++) {
+    index = new_keys[i].id % MAX_SERVER_KEYS;
+    server_keys[index].id = new_keys[i].id;
+    memcpy(server_keys[index].key, new_keys[i].key, sizeof (server_keys[index].key));
+
+    update_key_siv(&server_keys[index], new_keys[i].siv_algorithm);
+
+    DEBUG_LOG("Loaded key %08"PRIX32" (%d)",
+              server_keys[index].id, (int)server_keys[index].siv_algorithm);
+  }
+
+  current_server_key = (index + MAX_SERVER_KEYS - FUTURE_KEYS) % MAX_SERVER_KEYS;
+  last_server_key_ts = SCH_GetLastEventMonoTime() - MAX(key_age, 0.0);
 
   fclose(f);
 
+  LOG(LOGS_ERR, "Loaded %s", "server NTS keys");
   return 1;
 
 error:
-  DEBUG_LOG("Could not %s server keys", "load");
+  LOG(LOGS_ERR, "Could not %s %s", "load", "server NTS keys");
   fclose(f);
 
   return 0;
@@ -759,7 +802,7 @@ NKS_Initialise(void)
   /* Generate random keys, even if they will be replaced by reloaded keys,
      or unused (in the helper) */
   for (i = 0; i < MAX_SERVER_KEYS; i++) {
-    server_keys[i].siv = SIV_CreateInstance(SERVER_COOKIE_SIV);
+    server_keys[i].siv = NULL;
     generate_key(i);
   }
 
@@ -779,6 +822,11 @@ NKS_Initialise(void)
       key_delay = key_rotation_interval - (SCH_GetLastEventMonoTime() - last_server_key_ts);
       SCH_AddTimeoutByDelay(MAX(key_delay, 0.0), key_timeout, NULL);
     }
+
+    /* Warn if keys are not saved, which can cause a flood of requests
+       after server restart */
+    if (!CNF_GetNtsDumpDir())
+      LOG(LOGS_WARN, "No ntsdumpdir to save server keys");
   }
 
   initialised = 1;
@@ -852,7 +900,7 @@ NKS_ReloadKeys(void)
 int
 NKS_GenerateCookie(NKE_Context *context, NKE_Cookie *cookie)
 {
-  unsigned char plaintext[2 * NKE_MAX_KEY_LENGTH], *ciphertext;
+  unsigned char *nonce, plaintext[2 * NKE_MAX_KEY_LENGTH], *ciphertext;
   int plaintext_length, tag_length;
   ServerCookieHeader *header;
   ServerKey *key;
@@ -862,14 +910,12 @@ NKS_GenerateCookie(NKE_Context *context, NKE_Cookie *cookie)
     return 0;
   }
 
-  /* The algorithm is hardcoded for now */
-  if (context->algorithm != AEAD_AES_SIV_CMAC_256) {
-    DEBUG_LOG("Unexpected SIV algorithm");
-    return 0;
-  }
+  /* The AEAD ID is not encoded in the cookie.  It is implied from the key
+     length (as long as only algorithms with different key lengths are
+     supported). */
 
   if (context->c2s.length < 0 || context->c2s.length > NKE_MAX_KEY_LENGTH ||
-      context->s2c.length < 0 || context->s2c.length > NKE_MAX_KEY_LENGTH) {
+      context->s2c.length != context->c2s.length) {
     DEBUG_LOG("Invalid key length");
     return 0;
   }
@@ -879,7 +925,11 @@ NKS_GenerateCookie(NKE_Context *context, NKE_Cookie *cookie)
   header = (ServerCookieHeader *)cookie->cookie;
 
   header->key_id = htonl(key->id);
-  UTI_GetRandomBytes(header->nonce, sizeof (header->nonce));
+
+  nonce = cookie->cookie + sizeof (*header);
+  if (key->nonce_length > sizeof (cookie->cookie) - sizeof (*header))
+    assert(0);
+  UTI_GetRandomBytes(nonce, key->nonce_length);
 
   plaintext_length = context->c2s.length + context->s2c.length;
   assert(plaintext_length <= sizeof (plaintext));
@@ -887,11 +937,11 @@ NKS_GenerateCookie(NKE_Context *context, NKE_Cookie *cookie)
   memcpy(plaintext + context->c2s.length, context->s2c.key, context->s2c.length);
 
   tag_length = SIV_GetTagLength(key->siv);
-  cookie->length = sizeof (*header) + plaintext_length + tag_length;
+  cookie->length = sizeof (*header) + key->nonce_length + plaintext_length + tag_length;
   assert(cookie->length <= sizeof (cookie->cookie));
-  ciphertext = cookie->cookie + sizeof (*header);
+  ciphertext = cookie->cookie + sizeof (*header) + key->nonce_length;
 
-  if (!SIV_Encrypt(key->siv, header->nonce, sizeof (header->nonce),
+  if (!SIV_Encrypt(key->siv, nonce, key->nonce_length,
                    "", 0,
                    plaintext, plaintext_length,
                    ciphertext, plaintext_length + tag_length)) {
@@ -907,7 +957,7 @@ NKS_GenerateCookie(NKE_Context *context, NKE_Cookie *cookie)
 int
 NKS_DecodeCookie(NKE_Cookie *cookie, NKE_Context *context)
 {
-  unsigned char plaintext[2 * NKE_MAX_KEY_LENGTH], *ciphertext;
+  unsigned char *nonce, plaintext[2 * NKE_MAX_KEY_LENGTH], *ciphertext;
   int ciphertext_length, plaintext_length, tag_length;
   ServerCookieHeader *header;
   ServerKey *key;
@@ -924,8 +974,6 @@ NKS_DecodeCookie(NKE_Cookie *cookie, NKE_Context *context)
   }
 
   header = (ServerCookieHeader *)cookie->cookie;
-  ciphertext = cookie->cookie + sizeof (*header);
-  ciphertext_length = cookie->length - sizeof (*header);
 
   key_id = ntohl(header->key_id);
   key = &server_keys[key_id % MAX_SERVER_KEYS];
@@ -935,18 +983,23 @@ NKS_DecodeCookie(NKE_Cookie *cookie, NKE_Context *context)
   }
 
   tag_length = SIV_GetTagLength(key->siv);
-  if (tag_length >= ciphertext_length) {
+
+  if (cookie->length <= (int)sizeof (*header) + key->nonce_length + tag_length) {
     DEBUG_LOG("Invalid cookie length");
     return 0;
   }
 
+  nonce = cookie->cookie + sizeof (*header);
+  ciphertext = cookie->cookie + sizeof (*header) + key->nonce_length;
+  ciphertext_length = cookie->length - sizeof (*header) - key->nonce_length;
   plaintext_length = ciphertext_length - tag_length;
+
   if (plaintext_length > sizeof (plaintext) || plaintext_length % 2 != 0) {
     DEBUG_LOG("Invalid cookie length");
     return 0;
   }
 
-  if (!SIV_Decrypt(key->siv, header->nonce, sizeof (header->nonce),
+  if (!SIV_Decrypt(key->siv, nonce, key->nonce_length,
                    "", 0,
                    ciphertext, ciphertext_length,
                    plaintext, plaintext_length)) {
@@ -954,7 +1007,19 @@ NKS_DecodeCookie(NKE_Cookie *cookie, NKE_Context *context)
     return 0;
   }
 
-  context->algorithm = AEAD_AES_SIV_CMAC_256;
+  /* Select a supported algorithm corresponding to the key length, avoiding
+     potentially slow SIV_GetKeyLength() */
+  switch (plaintext_length / 2) {
+    case 16:
+      context->algorithm = AEAD_AES_128_GCM_SIV;
+      break;
+    case 32:
+      context->algorithm = AEAD_AES_SIV_CMAC_256;
+      break;
+    default:
+      DEBUG_LOG("Unknown key length");
+      return 0;
+  }
 
   context->c2s.length = plaintext_length / 2;
   context->s2c.length = plaintext_length / 2;

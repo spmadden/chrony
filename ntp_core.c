@@ -64,6 +64,17 @@ typedef enum {
   MD_BURST_WAS_ONLINE,          /* Burst sampling, return to online afterwards */
 } OperatingMode;
 
+/* Structure holding a response and other data waiting to be processed when
+   a late HW transmit timestamp of the request is available, or a timeout is
+   reached */
+struct SavedResponse {
+  NTP_Local_Address local_addr;
+  NTP_Local_Timestamp rx_ts;
+  NTP_Packet message;
+  NTP_PacketInfo info;
+  SCH_TimeoutID timeout_id;
+};
+
 /* ================================================== */
 /* Structure used for holding a single peer/server's
    protocol machine */
@@ -204,6 +215,12 @@ struct NCR_Instance_Record {
   SPF_Instance filter;
   int filter_count;
 
+  /* Flag indicating HW transmit timestamps are expected */
+  int had_hw_tx_timestamp;
+
+  /* Response waiting for a HW transmit timestamp of the request */
+  struct SavedResponse *saved_response;
+
   int burst_good_samples_to_go;
   int burst_total_samples_to_go;
 
@@ -324,10 +341,15 @@ static const char tss_chars[3] = {'D', 'K', 'H'};
 /* Forward prototypes */
 
 static void transmit_timeout(void *arg);
-static double get_transmit_delay(NCR_Instance inst, int on_tx, double last_tx);
+static double get_transmit_delay(NCR_Instance inst, int on_tx);
 static double get_separation(int poll);
 static int parse_packet(NTP_Packet *packet, int length, NTP_PacketInfo *info);
 static void process_sample(NCR_Instance inst, NTP_Sample *sample);
+static int has_saved_response(NCR_Instance inst);
+static void process_saved_response(NCR_Instance inst);
+static int process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
+                            NTP_Local_Timestamp *rx_ts, NTP_Packet *message,
+                            NTP_PacketInfo *info);
 static void set_connectivity(NCR_Instance inst, SRC_Connectivity connectivity);
 
 /* ================================================== */
@@ -490,8 +512,7 @@ restart_timeout(NCR_Instance inst, double delay)
 static void
 start_initial_timeout(NCR_Instance inst)
 {
-  double delay, last_tx;
-  struct timespec now;
+  double delay;
 
   if (!inst->tx_timeout_id) {
     /* This will be the first transmission after mode change */
@@ -504,11 +525,7 @@ start_initial_timeout(NCR_Instance inst)
      the interval between packets at least as long as the current polling
      interval */
   if (!UTI_IsZeroTimespec(&inst->local_tx.ts)) {
-    SCH_GetLastEventTime(&now, NULL, NULL);
-    last_tx = UTI_DiffTimespecsToDouble(&now, &inst->local_tx.ts);
-    if (last_tx < 0.0)
-      last_tx = 0.0;
-    delay = get_transmit_delay(inst, 0, 0.0) - last_tx;
+    delay = get_transmit_delay(inst, 0);
   } else {
     delay = 0.0;
   }
@@ -531,6 +548,11 @@ close_client_socket(NCR_Instance inst)
 
   SCH_RemoveTimeout(inst->rx_timeout_id);
   inst->rx_timeout_id = 0;
+
+  if (has_saved_response(inst)) {
+    SCH_RemoveTimeout(inst->saved_response->timeout_id);
+    inst->saved_response->timeout_id = 0;
+  }
 }
 
 /* ================================================== */
@@ -673,6 +695,8 @@ NCR_CreateInstance(NTP_Remote_Address *remote_addr, NTP_Source_Type type,
   else
     result->filter = NULL;
 
+  result->saved_response = NULL;
+
   result->rx_timeout_id = 0;
   result->tx_timeout_id = 0;
   result->tx_suspended = 1;
@@ -708,6 +732,9 @@ NCR_DestroyInstance(NCR_Instance instance)
     QNT_DestroyInstance(instance->delay_quant);
   if (instance->filter)
     SPF_DestroyInstance(instance->filter);
+
+  if (instance->saved_response)
+    Free(instance->saved_response);
 
   NAU_DestroyInstance(instance->auth);
 
@@ -767,6 +794,8 @@ NCR_ResetInstance(NCR_Instance instance)
   if (instance->filter)
     SPF_DropSamples(instance->filter);
   instance->filter_count = 0;
+
+  instance->had_hw_tx_timestamp = 0;
 }
 
 /* ================================================== */
@@ -779,7 +808,7 @@ NCR_ResetPoll(NCR_Instance instance)
 
     /* The timer was set with a longer poll interval, restart it */
     if (instance->tx_timeout_id)
-      restart_timeout(instance, get_transmit_delay(instance, 0, 0.0));
+      restart_timeout(instance, get_transmit_delay(instance, 0));
   }
 }
 
@@ -900,10 +929,19 @@ get_transmit_poll(NCR_Instance inst)
 /* ================================================== */
 
 static double
-get_transmit_delay(NCR_Instance inst, int on_tx, double last_tx)
+get_transmit_delay(NCR_Instance inst, int on_tx)
 {
   int poll_to_use, stratum_diff;
-  double delay_time;
+  double delay_time, last_tx;
+  struct timespec now;
+
+  /* Calculate the interval since last transmission if known */
+  if (!on_tx && !UTI_IsZeroTimespec(&inst->local_tx.ts)) {
+    SCH_GetLastEventTime(&now, NULL, NULL);
+    last_tx = UTI_DiffTimespecsToDouble(&now, &inst->local_tx.ts);
+  } else {
+    last_tx = 0;
+  }
 
   /* If we're in burst mode, queue for immediate dispatch.
 
@@ -943,12 +981,6 @@ get_transmit_delay(NCR_Instance inst, int on_tx, double last_tx)
                last_tx / delay_time > PEER_SAMPLING_ADJ - 0.5))
             delay_time *= PEER_SAMPLING_ADJ;
 
-          /* Substract the already spend time */
-          if (last_tx > 0.0)
-            delay_time -= last_tx;
-          if (delay_time < 0.0)
-            delay_time = 0.0;
-
           break;
         default:
           assert(0);
@@ -965,6 +997,12 @@ get_transmit_delay(NCR_Instance inst, int on_tx, double last_tx)
       assert(0);
       break;
   }
+
+  /* Subtract elapsed time */
+  if (last_tx > 0.0)
+    delay_time -= last_tx;
+  if (delay_time < 0.0)
+    delay_time = 0.0;
 
   return delay_time;
 }
@@ -1278,6 +1316,15 @@ transmit_timeout(void *arg)
 
   inst->tx_timeout_id = 0;
 
+  if (has_saved_response(inst)) {
+    process_saved_response(inst);
+
+    /* Wait for the new transmission timeout (if the response was still
+       valid and it did not cause switch to offline) */
+    if (inst->tx_timeout_id != 0)
+      return;
+  }
+
   switch (inst->opmode) {
     case MD_BURST_WAS_ONLINE:
       /* With online burst switch to online before last packet */
@@ -1309,11 +1356,10 @@ transmit_timeout(void *arg)
 
   /* Prepare authentication */
   if (!NAU_PrepareRequestAuth(inst->auth)) {
-    if (inst->burst_total_samples_to_go > 0)
-      inst->burst_total_samples_to_go--;
-    adjust_poll(inst, 0.25);
     SRC_UpdateReachability(inst->source, 0);
-    restart_timeout(inst, get_transmit_delay(inst, 1, 0.0));
+    restart_timeout(inst, get_transmit_delay(inst, 1));
+    /* Count missing samples for the sample filter */
+    process_sample(inst, NULL);
     return;
   }
 
@@ -1416,7 +1462,7 @@ transmit_timeout(void *arg)
   }
 
   /* Restart timer for this message */
-  restart_timeout(inst, get_transmit_delay(inst, 1, 0.0));
+  restart_timeout(inst, get_transmit_delay(inst, 1));
 
   /* If a client packet was just sent, schedule a timeout to close the socket
      at the time when all server replies would fail the delay test, so the
@@ -1729,7 +1775,69 @@ process_sample(NCR_Instance inst, NTP_Sample *sample)
 /* ================================================== */
 
 static int
-process_response(NCR_Instance inst, NTP_Local_Address *local_addr,
+has_saved_response(NCR_Instance inst)
+{
+  return inst->saved_response && inst->saved_response->timeout_id > 0;
+}
+
+/* ================================================== */
+
+static void
+process_saved_response(NCR_Instance inst)
+{
+  SCH_RemoveTimeout(inst->saved_response->timeout_id);
+  inst->saved_response->timeout_id = 0;
+
+  DEBUG_LOG("Processing saved response from %s", UTI_IPToString(&inst->remote_addr.ip_addr));
+  process_response(inst, 1, &inst->saved_response->local_addr, &inst->saved_response->rx_ts,
+                   &inst->saved_response->message, &inst->saved_response->info);
+}
+
+/* ================================================== */
+
+static void
+saved_response_timeout(void *arg)
+{
+  NCR_Instance inst = arg;
+
+  inst->saved_response->timeout_id = 0;
+  process_saved_response(inst);
+}
+
+/* ================================================== */
+
+static int
+save_response(NCR_Instance inst, NTP_Local_Address *local_addr,
+              NTP_Local_Timestamp *rx_ts, NTP_Packet *message, NTP_PacketInfo *info)
+{
+  double timeout = CNF_GetHwTsTimeout();
+
+  if (timeout <= 0.0)
+    return 0;
+
+  /* If another message is already saved, process both immediately */
+  if (has_saved_response(inst)) {
+    process_saved_response(inst);
+    return 0;
+  }
+
+  if (!inst->saved_response)
+    inst->saved_response = MallocNew(struct SavedResponse);
+  inst->saved_response->local_addr = *local_addr;
+  inst->saved_response->rx_ts = *rx_ts;
+  inst->saved_response->message = *message;
+  inst->saved_response->info = *info;
+  inst->saved_response->timeout_id = SCH_AddTimeoutByDelay(timeout, saved_response_timeout,
+                                                           inst);
+  DEBUG_LOG("Saved valid response for later processing");
+
+  return 1;
+}
+
+/* ================================================== */
+
+static int
+process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
                  NTP_Local_Timestamp *rx_ts, NTP_Packet *message, NTP_PacketInfo *info)
 {
   NTP_Sample sample;
@@ -1823,8 +1931,10 @@ process_response(NCR_Instance inst, NTP_Local_Address *local_addr,
   /* Test 4 would check for denied access.  It would always pass as this
      function is called only for known sources. */
 
-  /* Test 5 checks for authentication failure */
-  test5 = NAU_CheckResponseAuth(inst->auth, message, info);
+  /* Test 5 checks for authentication failure.  If it is a saved message,
+     which had to pass all these tests before, avoid authenticating it for
+     the second time (that is not allowed in the NTS code). */
+  test5 = saved || NAU_CheckResponseAuth(inst->auth, message, info);
 
   /* Test 6 checks for unsynchronised server */
   test6 = pkt_leap != LEAP_Unsynchronised &&
@@ -1839,6 +1949,20 @@ process_response(NCR_Instance inst, NTP_Local_Address *local_addr,
      can be used for synchronisation if the tests 6 and 7 passed too. */
   valid_packet = test1 && test2 && test3 && test5;
   synced_packet = valid_packet && test6 && test7;
+
+  /* If the server is very close and/or the NIC hardware/driver is slow, it
+     is possible that a response from the server is received before the HW
+     transmit timestamp of the request.  To avoid getting a less accurate
+     offset or failing one of the later tests, save the response and wait for
+     the transmit timestamp or timeout.  Allow this only for the first valid
+     response to the request, when at least one good response has already been
+     accepted to avoid incorrectly confirming a tentative source. */
+  if (valid_packet && synced_packet && !saved && !inst->valid_rx &&
+      inst->had_hw_tx_timestamp && inst->local_tx.source != NTP_TS_HARDWARE &&
+      inst->report.total_good_count > 0) {
+    if (save_response(inst, local_addr, rx_ts, message, info))
+      return 1;
+  }
 
   /* Check for Kiss-o'-Death codes */
   kod_rate = 0;
@@ -2170,8 +2294,7 @@ process_response(NCR_Instance inst, NTP_Local_Address *local_addr,
 
     /* And now, requeue the timer */
     if (inst->opmode != MD_OFFLINE) {
-      delay_time = get_transmit_delay(inst, 0,
-                     UTI_DiffTimespecsToDouble(&inst->local_rx.ts, &inst->local_tx.ts));
+      delay_time = get_transmit_delay(inst, 0);
 
       if (kod_rate) {
         LOG(LOGS_WARN, "Received KoD RATE from %s",
@@ -2186,7 +2309,8 @@ process_response(NCR_Instance inst, NTP_Local_Address *local_addr,
       }
 
       /* Get rid of old timeout and start a new one */
-      assert(inst->tx_timeout_id);
+      if (!saved)
+        assert(inst->tx_timeout_id);
       restart_timeout(inst, delay_time);
     }
 
@@ -2331,8 +2455,8 @@ NCR_ProcessRxKnown(NCR_Instance inst, NTP_Local_Address *local_addr,
          client mode operation.
 
          This copes with the case for an isolated network where one
-         machine is set by eye and is used as the master, with the
-         other machines pointed at it.  If the master goes down, we
+         machine is set by eye and is used as the primary server, with
+         the other machines pointed at it.  If the server goes down, we
          want to be able to reset its time at startup by relying on
          one of the secondaries to flywheel it. The behaviour coded here
          is required in the secondaries to make this possible. */
@@ -2375,7 +2499,7 @@ NCR_ProcessRxKnown(NCR_Instance inst, NTP_Local_Address *local_addr,
       return 0;
     }
 
-    return process_response(inst, local_addr, rx_ts, message, &info);
+    return process_response(inst, 0, local_addr, rx_ts, message, &info);
   } else if (proc_as_unknown) {
     NCR_ProcessRxUnknown(&inst->remote_addr, local_addr, rx_ts, message, length);
     /* It's not a reply to our request, don't return success */
@@ -2456,8 +2580,6 @@ NCR_ProcessRxUnknown(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_a
     /* Don't respond unless a non-zero KoD was returned */
     if (kod == 0)
       return;
-  } else if (info.auth.mode != NTP_AUTH_NONE && info.auth.mode != NTP_AUTH_MSSNTP) {
-    CLG_LogAuthNtpRequest();
   }
 
   local_ntp_rx = NULL;
@@ -2478,12 +2600,17 @@ NCR_ProcessRxUnknown(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_a
     ntp_rx = message->originate_ts;
     local_ntp_rx = &ntp_rx;
     UTI_ZeroTimespec(&local_tx.ts);
-    interleaved = CLG_GetNtpTxTimestamp(&ntp_rx, &local_tx.ts);
+    local_tx.source = NTP_TS_DAEMON;
+    interleaved = CLG_GetNtpTxTimestamp(&ntp_rx, &local_tx.ts, &local_tx.source);
 
     tx_ts = &local_tx;
     if (interleaved)
       CLG_DisableNtpTimestamps(&ntp_rx);
   }
+
+  CLG_UpdateNtpStats(kod != 0 && info.auth.mode != NTP_AUTH_NONE &&
+                     info.auth.mode != NTP_AUTH_MSSNTP,
+                     rx_ts->source, interleaved ? tx_ts->source : NTP_TS_DAEMON);
 
   /* Suggest the client to increase its polling interval if it indicates
      the interval is shorter than the rate limiting interval */
@@ -2501,7 +2628,7 @@ NCR_ProcessRxUnknown(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_a
     return;
 
   if (local_ntp_rx)
-    CLG_SaveNtpTimestamps(local_ntp_rx, tx_ts ? &tx_ts->ts : NULL);
+    CLG_SaveNtpTimestamps(local_ntp_rx, &tx_ts->ts, tx_ts->source);
 }
 
 /* ================================================== */
@@ -2555,6 +2682,13 @@ NCR_ProcessTxKnown(NCR_Instance inst, NTP_Local_Address *local_addr,
 
   update_tx_timestamp(&inst->local_tx, tx_ts, &inst->local_ntp_rx, &inst->local_ntp_tx,
                       message);
+
+  if (tx_ts->source == NTP_TS_HARDWARE) {
+    inst->had_hw_tx_timestamp = 1;
+
+    if (has_saved_response(inst))
+      process_saved_response(inst);
+  }
 }
 
 /* ================================================== */
@@ -2579,7 +2713,7 @@ NCR_ProcessTxUnknown(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_a
   local_ntp_rx = &message->receive_ts;
   new_tx = *tx_ts;
 
-  if (!CLG_GetNtpTxTimestamp(local_ntp_rx, &old_tx.ts))
+  if (!CLG_GetNtpTxTimestamp(local_ntp_rx, &old_tx.ts, &old_tx.source))
     return;
 
   /* Undo a clock adjustment between the RX and TX timestamps to minimise error
@@ -2588,7 +2722,7 @@ NCR_ProcessTxUnknown(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_a
 
   update_tx_timestamp(&old_tx, &new_tx, local_ntp_rx, NULL, message);
 
-  CLG_UpdateNtpTxTimestamp(local_ntp_rx, &new_tx.ts);
+  CLG_UpdateNtpTxTimestamp(local_ntp_rx, &new_tx.ts, new_tx.source);
 }
 
 /* ================================================== */
@@ -2611,6 +2745,10 @@ NCR_SlewTimes(NCR_Instance inst, struct timespec *when, double dfreq, double dof
 
   if (inst->filter)
     SPF_SlewSamples(inst->filter, when, dfreq, doffset);
+
+  if (has_saved_response(inst))
+    UTI_AdjustTimespec(&inst->saved_response->rx_ts.ts, when, &inst->saved_response->rx_ts.ts,
+                       &delta, dfreq, doffset);
 }
 
 /* ================================================== */
@@ -2855,6 +2993,10 @@ NCR_AddAccessRestriction(IPAddr *ip_addr, int subnet_bits, int allow, int all)
 
   if (status != ADF_SUCCESS)
     return 0;
+
+  LOG(LOG_GetContextSeverity(LOGC_Command), "%s%s %s access from %s",
+      allow ? "Allowed" : "Denied", all ? " all" : "", "NTP",
+      UTI_IPSubnetToString(ip_addr, subnet_bits));
 
   /* Keep server sockets open only when an address allowed */
   if (allow) {

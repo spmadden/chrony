@@ -129,6 +129,7 @@ static const struct request_length request_lengths[] = {
   REQ_LENGTH_ENTRY(select_data, select_data),   /* SELECT_DATA */
   REQ_LENGTH_ENTRY(null, null),                 /* RELOAD_SOURCES */
   REQ_LENGTH_ENTRY(doffset, null),              /* DOFFSET2 */
+  REQ_LENGTH_ENTRY(modify_select_opts, null),   /* MODIFY_SELECTOPTS */
 };
 
 static const uint16_t reply_lengths[] = {
@@ -156,7 +157,8 @@ static const uint16_t reply_lengths[] = {
   RPY_LENGTH_ENTRY(client_accesses_by_index),   /* CLIENT_ACCESSES_BY_INDEX3 */
   0,                                            /* SERVER_STATS2 - not supported */
   RPY_LENGTH_ENTRY(select_data),                /* SELECT_DATA */
-  RPY_LENGTH_ENTRY(server_stats),               /* SERVER_STATS3 */
+  0,                                            /* SERVER_STATS3 - not supported */
+  RPY_LENGTH_ENTRY(server_stats),               /* SERVER_STATS4 */
 };
 
 /* ================================================== */

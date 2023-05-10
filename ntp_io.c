@@ -126,8 +126,14 @@ open_socket(int family, int local_port, int client_only, IPSockAddr *remote_addr
   dscp = CNF_GetNtpDscp();
   if (dscp > 0 && dscp < 64) {
 #ifdef IP_TOS
-    if (!SCK_SetIntOption(sock_fd, IPPROTO_IP, IP_TOS, dscp << 2))
-      ;
+    if (family == IPADDR_INET4)
+      if (!SCK_SetIntOption(sock_fd, IPPROTO_IP, IP_TOS, dscp << 2))
+        ;
+#endif
+#if defined(FEAT_IPV6) && defined(IPV6_TCLASS)
+    if (family == IPADDR_INET6)
+      if (!SCK_SetIntOption(sock_fd, IPPROTO_IPV6, IPV6_TCLASS, dscp << 2))
+        ;
 #endif
   }
 
@@ -163,9 +169,6 @@ close_socket(int sock_fd)
   if (sock_fd == INVALID_SOCK_FD)
     return;
 
-#ifdef HAVE_LINUX_TIMESTAMPING
-  NIO_Linux_NotifySocketClosing(sock_fd);
-#endif
   SCH_RemoveFileHandler(sock_fd);
   SCK_CloseSocket(sock_fd);
 }
@@ -461,11 +464,6 @@ read_from_socket(int sock_fd, int event, void *anything)
   SCK_Message *messages;
   int i, received, flags = 0;
 
-#ifdef HAVE_LINUX_TIMESTAMPING
-  if (NIO_Linux_ProcessEvent(sock_fd, event))
-    return;
-#endif
-
   if (event == SCH_FILE_EXCEPTION) {
 #ifdef HAVE_LINUX_TIMESTAMPING
     flags |= SCK_FLAG_MSG_ERRQUEUE;
@@ -522,6 +520,8 @@ NIO_UnwrapMessage(SCK_Message *message, int sock_fd)
 static int
 wrap_message(SCK_Message *message, int sock_fd)
 {
+  static uint16_t sequence_id = 0;
+
   assert(PTP_NTP_PREFIX_LENGTH == 48);
 
   if (!is_ptp_socket(sock_fd))
@@ -542,6 +542,7 @@ wrap_message(SCK_Message *message, int sock_fd)
   ptp_message->header.length = htons(PTP_NTP_PREFIX_LENGTH + message->length);
   ptp_message->header.domain = PTP_DOMAIN_NTP;
   ptp_message->header.flags = htons(PTP_FLAG_UNICAST);
+  ptp_message->header.sequence_id = htons(sequence_id++);
   ptp_message->tlv_header.type = htons(PTP_TLV_NTP);
   ptp_message->tlv_header.length = htons(message->length);
   memcpy((char *)ptp_message + PTP_NTP_PREFIX_LENGTH, message->data, message->length);

@@ -120,6 +120,8 @@ extern int UTI_CompareIPs(const IPAddr *a, const IPAddr *b, const IPAddr *mask);
 
 extern char *UTI_IPSockAddrToString(const IPSockAddr *sa);
 
+extern char *UTI_IPSubnetToString(IPAddr *subnet, int bits);
+
 extern char *UTI_TimeToLogForm(time_t t);
 
 /* Adjust time following a frequency/offset change */
@@ -170,6 +172,9 @@ extern double UTI_Log2ToDouble(int l);
 extern void UTI_TimespecNetworkToHost(const Timespec *src, struct timespec *dest);
 extern void UTI_TimespecHostToNetwork(const struct timespec *src, Timespec *dest);
 
+uint64_t UTI_Integer64NetworkToHost(Integer64 i);
+Integer64 UTI_Integer64HostToNetwork(uint64_t i);
+
 extern double UTI_FloatNetworkToHost(Float x);
 extern Float UTI_FloatHostToNetwork(double x);
 
@@ -193,6 +198,14 @@ extern int UTI_CreateDirAndParents(const char *path, mode_t mode, uid_t uid, gid
 /* Check if a directory is secure.  It must not have other than the specified
    permissions and its uid/gid must match the specified values. */
 extern int UTI_CheckDirPermissions(const char *path, mode_t perm, uid_t uid, gid_t gid);
+
+/* Check and log a warning message if a file has more permissions than
+   specified.  It does not return error if it is not an accessible file. */
+extern int UTI_CheckFilePermissions(const char *path, mode_t perm);
+
+/* Log a warning message if not having read access or having write access
+   to a file/directory */
+extern void UTI_CheckReadOnlyAccess(const char *path);
 
 /* Open a file.  The full path of the file is constructed from the basedir
    (may be NULL), '/' (if basedir is not NULL), name, and suffix (may be NULL).

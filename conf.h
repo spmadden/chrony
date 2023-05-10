@@ -44,6 +44,8 @@ extern void CNF_ParseLine(const char *filename, int number, char *line);
 
 extern void CNF_CreateDirs(uid_t uid, gid_t gid);
 
+extern void CNF_CheckReadOnlyAccess(void);
+
 extern void CNF_AddInitSources(void);
 extern void CNF_AddSources(void);
 extern void CNF_AddBroadcasts(void);
@@ -142,6 +144,7 @@ typedef enum {
 typedef struct {
   char *name;
   int minpoll;
+  int maxpoll;
   int min_samples;
   int max_samples;
   int nocrossts;
@@ -152,6 +155,7 @@ typedef struct {
 } CNF_HwTsInterface;
 
 extern int CNF_GetHwTsInterface(unsigned int index, CNF_HwTsInterface **iface);
+extern double CNF_GetHwTsTimeout(void);
 
 extern int CNF_GetPtpPort(void);
 

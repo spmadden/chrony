@@ -140,6 +140,10 @@ struct SRC_Instance_Record {
 
   /* Flag indicating the source has a leap second vote */
   int leap_vote;
+
+  /* Flag indicating the source was already reported as
+     a falseticker since the last selection change */
+  int reported_falseticker;
 };
 
 /* ================================================== */
@@ -165,6 +169,8 @@ static int max_n_sources; /* Capacity of the table */
 static int selected_source_index; /* Which source index is currently
                                      selected (set to INVALID_SOURCE
                                      if no current valid reference) */
+static int reported_no_majority;  /* Flag to avoid repeated log message
+                                     about no majority */
 
 /* Score needed to replace the currently selected source */
 #define SCORE_LIMIT 10.0
@@ -296,6 +302,9 @@ void SRC_DestroyInstance(SRC_Instance instance)
   int dead_index, i;
 
   assert(initialised);
+  if (instance->index < 0 || instance->index >= n_sources ||
+      instance != sources[instance->index])
+    assert(0);
 
   SST_DeleteInstance(instance->stats);
   dead_index = instance->index;
@@ -329,6 +338,7 @@ SRC_ResetInstance(SRC_Instance instance)
   instance->stratum = 0;
   instance->leap = LEAP_Unsynchronised;
   instance->leap_vote = 0;
+  instance->reported_falseticker = 0;
 
   memset(&instance->sel_info, 0, sizeof (instance->sel_info));
 
@@ -580,17 +590,17 @@ update_sel_options(void)
 /* ================================================== */
 
 static void
-log_selection_message(const char *format, const char *arg)
+log_selection_message(LOG_Severity severity, const char *format, const char *arg)
 {
   if (REF_GetMode() != REF_ModeNormal)
     return;
-  LOG(LOGS_INFO, format, arg);
+  LOG(severity, format, arg);
 }
 
 /* ================================================== */
 
 static void
-log_selection_source(const char *format, SRC_Instance inst)
+log_selection_source(LOG_Severity severity, const char *format, SRC_Instance inst)
 {
   char buf[320], *name, *ntp_name;
 
@@ -602,7 +612,7 @@ log_selection_source(const char *format, SRC_Instance inst)
   else
     snprintf(buf, sizeof (buf), "%s", name);
 
-  log_selection_message(format, buf);
+  log_selection_message(severity, format, buf);
 }
 
 /* ================================================== */
@@ -807,7 +817,7 @@ SRC_SelectSource(SRC_Instance updated_inst)
   if (n_sources == 0) {
     /* In this case, we clearly cannot synchronise to anything */
     if (selected_source_index != INVALID_SOURCE) {
-      log_selection_message("Can't synchronise: no sources", NULL);
+      log_selection_message(LOGS_INFO, "Can't synchronise: no sources", NULL);
       selected_source_index = INVALID_SOURCE;
     }
     return;
@@ -1000,7 +1010,7 @@ SRC_SelectSource(SRC_Instance updated_inst)
   if (n_endpoints == 0) {
     /* No sources provided valid endpoints */
     if (selected_source_index != INVALID_SOURCE) {
-      log_selection_message("Can't synchronise: no selectable sources", NULL);
+      log_selection_message(LOGS_INFO, "Can't synchronise: no selectable sources", NULL);
       selected_source_index = INVALID_SOURCE;
     }
     return;
@@ -1080,8 +1090,12 @@ SRC_SelectSource(SRC_Instance updated_inst)
       (best_trust_depth > 0 && best_trust_depth <= n_sel_trust_sources / 2)) {
     /* Could not even get half the reachable (trusted) sources to agree */
 
+    if (!reported_no_majority) {
+      log_selection_message(LOGS_WARN, "Can't synchronise: no majority", NULL);
+      reported_no_majority = 1;
+    }
+
     if (selected_source_index != INVALID_SOURCE) {
-      log_selection_message("Can't synchronise: no majority", NULL);
       REF_SetUnsynchronised();
       selected_source_index = INVALID_SOURCE;
     }
@@ -1127,12 +1141,16 @@ SRC_SelectSource(SRC_Instance updated_inst)
         sel_req_source = 0;
     } else {
       mark_source(sources[i], SRC_FALSETICKER);
+      if (!sources[i]->reported_falseticker) {
+        log_selection_source(LOGS_WARN, "Detected falseticker %s", sources[i]);
+        sources[i]->reported_falseticker = 1;
+      }
     }
   }
 
   if (!n_sel_sources || sel_req_source || n_sel_sources < CNF_GetMinSources()) {
     if (selected_source_index != INVALID_SOURCE) {
-      log_selection_message("Can't synchronise: %s selectable sources",
+      log_selection_message(LOGS_INFO, "Can't synchronise: %s selectable sources",
                             !n_sel_sources ? "no" :
                             sel_req_source ? "no required source in" : "not enough");
       selected_source_index = INVALID_SOURCE;
@@ -1249,13 +1267,16 @@ SRC_SelectSource(SRC_Instance updated_inst)
     }
 
     selected_source_index = max_score_index;
-    log_selection_source("Selected source %s", sources[selected_source_index]);
+    log_selection_source(LOGS_INFO, "Selected source %s", sources[selected_source_index]);
 
     /* New source has been selected, reset all scores */
     for (i = 0; i < n_sources; i++) {
       sources[i]->sel_score = 1.0;
       sources[i]->distant = 0;
+      sources[i]->reported_falseticker = 0;
     }
+
+    reported_no_majority = 0;
   }
 
   mark_source(sources[selected_source_index], SRC_SELECTED);
@@ -1546,6 +1567,8 @@ SRC_ResetSources(void)
 
   for (i = 0; i < n_sources; i++)
     SRC_ResetInstance(sources[i]);
+
+  LOG(LOGS_INFO, "Reset all sources");
 }
 
 /* ================================================== */
@@ -1589,6 +1612,46 @@ SRC_ActiveSources(void)
       r++;
 
   return r;
+}
+
+/* ================================================== */
+
+static SRC_Instance
+find_source(IPAddr *ip, uint32_t ref_id)
+{
+  int i;
+
+  for (i = 0; i < n_sources; i++) {
+    if ((ip->family != IPADDR_UNSPEC && sources[i]->type == SRC_NTP &&
+         UTI_CompareIPs(ip, sources[i]->ip_addr, NULL) == 0) ||
+        (ip->family == IPADDR_UNSPEC && sources[i]->type == SRC_REFCLOCK &&
+         ref_id == sources[i]->ref_id))
+      return sources[i];
+  }
+
+  return NULL;
+}
+
+/* ================================================== */
+
+int
+SRC_ModifySelectOptions(IPAddr *ip, uint32_t ref_id, int options, int mask)
+{
+  SRC_Instance inst;
+
+  inst = find_source(ip, ref_id);
+  if (!inst)
+    return 0;
+
+  if ((inst->conf_sel_options & mask) == options)
+    return 1;
+
+  inst->conf_sel_options = (inst->conf_sel_options & ~mask) | options;
+  LOG(LOGS_INFO, "Source %s selection options modified", source_to_string(inst));
+
+  update_sel_options();
+
+  return 1;
 }
 
 /* ================================================== */

@@ -182,6 +182,9 @@ KEY_Reload(void)
   if (!key_file)
     return;
 
+  if (!UTI_CheckFilePermissions(key_file, 0771))
+    ;
+
   in = UTI_OpenFile(NULL, key_file, NULL, 'r', 0);
   if (!in) {
     LOG(LOGS_WARN, "Could not open keyfile %s", key_file);
@@ -254,6 +257,8 @@ KEY_Reload(void)
      arbitrary which one we use later - the user should have been
      more careful! */
   qsort(ARR_GetElements(keys), ARR_GetSize(keys), sizeof (Key), compare_keys_by_id);
+
+  LOG(LOGS_INFO, "Loaded %u symmetric keys", ARR_GetSize(keys));
 
   /* Check for duplicates */
   for (i = 1; i < ARR_GetSize(keys); i++) {
