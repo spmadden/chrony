@@ -2010,9 +2010,9 @@ yyreturnlab:
    the same signature as the function definition does. */
 #include "getdate.h"
 
-extern struct tm	*gmtime ();
-extern struct tm	*localtime ();
-extern time_t		mktime ();
+extern struct tm	*gmtime (const time_t *timep);
+extern struct tm	*localtime (const time_t *timep);
+extern time_t		mktime (struct tm *tm);
 
 /* Month and day table. */
 static TABLE const MonthDayTable[] = {
@@ -2203,16 +2203,13 @@ static TABLE const MilitaryTable[] = {
 
 /* ARGSUSED */
 static int
-yyerror (s)
-     char *s ATTRIBUTE_UNUSED;
+yyerror (char *s ATTRIBUTE_UNUSED)
 {
   return 0;
 }
 
 static int
-ToHour (Hours, Meridian)
-     int Hours;
-     MERIDIAN Meridian;
+ToHour (int Hours, MERIDIAN Meridian)
 {
   switch (Meridian)
     {
@@ -2239,8 +2236,7 @@ ToHour (Hours, Meridian)
 }
 
 static int
-ToYear (Year)
-     int Year;
+ToYear (int Year)
 {
   if (Year < 0)
     Year = -Year;
@@ -2256,8 +2252,7 @@ ToYear (Year)
 }
 
 static int
-LookupWord (buff)
-     char *buff;
+LookupWord (char *buff)
 {
   register char *p;
   register char *q;

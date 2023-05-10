@@ -552,6 +552,26 @@ UTI_IPSockAddrToString(const IPSockAddr *sa)
 /* ================================================== */
 
 char *
+UTI_IPSubnetToString(IPAddr *subnet, int bits)
+{
+  char *result;
+
+  result = NEXT_BUFFER;
+
+  if (subnet->family == IPADDR_UNSPEC)
+    snprintf(result, BUFFER_LENGTH, "%s", "any address");
+  else if ((subnet->family == IPADDR_INET4 && bits == 32) ||
+           (subnet->family == IPADDR_INET6 && bits == 128))
+    snprintf(result, BUFFER_LENGTH, "%s", UTI_IPToString(subnet));
+  else
+    snprintf(result, BUFFER_LENGTH, "%s/%d", UTI_IPToString(subnet), bits);
+
+  return result;
+}
+
+/* ================================================== */
+
+char *
 UTI_TimeToLogForm(time_t t)
 {
   struct tm *stm;
@@ -885,6 +905,25 @@ UTI_TimespecHostToNetwork(const struct timespec *src, Timespec *dest)
   dest->tv_sec_high = htonl(TV_NOHIGHSEC);
 #endif
   dest->tv_sec_low = htonl(src->tv_sec);
+}
+
+/* ================================================== */
+
+uint64_t
+UTI_Integer64NetworkToHost(Integer64 i)
+{
+  return (uint64_t)ntohl(i.high) << 32 | ntohl(i.low);
+}
+
+/* ================================================== */
+
+Integer64
+UTI_Integer64HostToNetwork(uint64_t i)
+{
+  Integer64 r;
+  r.high = htonl(i >> 32);
+  r.low = htonl(i);
+  return r;
 }
 
 /* ================================================== */
@@ -1224,6 +1263,40 @@ UTI_CheckDirPermissions(const char *path, mode_t perm, uid_t uid, gid_t gid)
   }
 
   return 1;
+}
+
+/* ================================================== */
+
+int
+UTI_CheckFilePermissions(const char *path, mode_t perm)
+{
+  mode_t extra_perm;
+  struct stat buf;
+
+  if (stat(path, &buf) < 0 || !S_ISREG(buf.st_mode)) {
+    /* Not considered an error */
+    return 1;
+  }
+
+  extra_perm = (buf.st_mode & 0777) & ~perm;
+  if (extra_perm != 0) {
+    LOG(LOGS_WARN, "%s permissions on %s", extra_perm & 0006 ?
+        (extra_perm & 0004 ? "World-readable" : "World-writable") : "Wrong", path);
+    return 0;
+  }
+
+  return 1;
+}
+
+/* ================================================== */
+
+void
+UTI_CheckReadOnlyAccess(const char *path)
+{
+  if (access(path, R_OK) != 0 && errno != ENOENT)
+    LOG(LOGS_WARN, "Missing read access to %s : %s", path, strerror(errno));
+  if (access(path, W_OK) == 0)
+    LOG(LOGS_WARN, "Having write access to %s", path);
 }
 
 /* ================================================== */

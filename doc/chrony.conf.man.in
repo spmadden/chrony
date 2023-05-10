@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: chrony.conf
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-08-29
+.\" Generator: Asciidoctor 2.0.18
+.\"      Date: 2023-05-10
 .\"    Manual: Configuration Files
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONY.CONF" "5" "2022-08-29" "chrony @CHRONY_VERSION@" "Configuration Files"
+.TH "CHRONY.CONF" "5" "2023-05-10" "chrony @CHRONY_VERSION@" "Configuration Files"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -604,9 +604,37 @@ Examples:
 .if n .RS 4
 .nf
 .fam C
-refclock PPS /dev/pps0 lock NMEA refid GPS
-refclock SHM 0 offset 0.5 delay 0.2 refid NMEA noselect
+refclock PPS /dev/pps0 lock NMEA refid GPS1
+refclock SOCK /var/run/chrony.clk.ttyS0.sock offset 0.5 delay 0.2 refid NMEA noselect
 refclock PPS /dev/pps1:clear refid GPS2
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+\fBSOCK\fP
+.RS 4
+Unix domain socket driver. This driver uses a datagram socket to receive
+samples from another application running on the system. The parameter is the
+path to the socket, which \fBchronyd\fP will create on start. The format of the
+messages is described in the \fIrefclock_sock.c\fP file in the chrony source code.
+.sp
+An application which supports the SOCK protocol is the \fBgpsd\fP daemon. It can
+provide accurate measurements using the receiver\(cqs PPS signal, and since
+version 3.25 also (much less accurate) measurements based on the timing of
+serial data (e.g. NMEA), which can be useful when the receiver does not provide
+a PPS signal, or it cannot be connected to the computer. The paths where \fBgpsd\fP
+expects the sockets to be created by \fBchronyd\fP are described in the \fBgpsd(8)\fP
+man page. Note that \fBgpsd\fP needs to be started after \fBchronyd\fP in order to
+connect to the socket.
+.sp
+Examples:
+.sp
+.if n .RS 4
+.nf
+.fam C
+refclock SOCK /var/run/chrony.ttyS0.sock refid GPS1 poll 2 filter 4
+refclock SOCK /var/run/chrony.clk.ttyUSB0.sock refid GPS2 offset 0.2 delay 0.1
 .fam
 .fi
 .if n .RE
@@ -614,10 +642,13 @@ refclock PPS /dev/pps1:clear refid GPS2
 .sp
 \fBSHM\fP
 .RS 4
-NTP shared memory driver. This driver uses a shared memory segment to receive
-samples from another process (e.g. \fBgpsd\fP). The parameter is the number of the
-shared memory segment, typically a small number like 0, 1, 2, or 3. The driver
-supports the following option:
+NTP shared memory driver. This driver implements the protocol of the \fBntpd\fP
+driver type 28. It is functionally similar to the SOCK driver, but uses a
+shared memory segment instead of a socket. The parameter is the unit number,
+typically a small number like 0, 1, 2, or 3, from which is derived the key of
+the memory segment as 0x4e545030 + unit.
+.sp
+The driver supports the following option:
 .sp
 \fBperm\fP=\fImode\fP
 .RS 4
@@ -630,6 +661,16 @@ This option specifies the permissions of the shared memory segment created by
 
 .RS 4
 .sp
+Unlike with the SOCK driver, there is no prescribed order of starting \fBchronyd\fP
+and the program providing measurements. Both are expected to create the memory
+segment if it does not exist. \fBchronyd\fP will attach to an existing segment even
+if it has a different owner than root or different permissions than the
+permissions specified by the \fBperm\fP option. The segment needs to be created
+before untrusted applications or users can execute code to prevent an attacker
+from feeding \fBchronyd\fP with false measurements. The owner and permissions of
+the segment can be verified with the \fBipcs \-m\fP command. For this reason, the
+SHM driver is deprecated in favor of SOCK.
+.sp
 Examples:
 .sp
 .if n .RS 4
@@ -637,29 +678,6 @@ Examples:
 .fam C
 refclock SHM 0 poll 3 refid GPS1
 refclock SHM 1:perm=0644 refid GPS2
-.fam
-.fi
-.if n .RE
-.RE
-.sp
-\fBSOCK\fP
-.RS 4
-Unix domain socket driver. It is similar to the SHM driver, but samples are
-received from a Unix domain socket instead of shared memory and the messages
-have a different format. The parameter is the path to the socket, which
-\fBchronyd\fP creates on start. An advantage over the SHM driver is that SOCK does
-not require polling and it can receive PPS samples with incomplete time. The
-format of the messages is described in the \fIrefclock_sock.c\fP file in the chrony
-source code.
-.sp
-An application which supports the SOCK protocol is the \fBgpsd\fP daemon. The path
-where \fBgpsd\fP expects the socket to be created is described in the \fBgpsd(8)\fP man
-page. For example:
-.sp
-.if n .RS 4
-.nf
-.fam C
-refclock SOCK /var/run/chrony.ttyS0.sock
 .fam
 .fi
 .if n .RE
@@ -840,7 +858,9 @@ noise in the measurements. With each poll about 40 percent of the stored
 samples are discarded and one final sample is calculated as an average of the
 remaining samples. If the length is 4 or more, at least 4 samples have to be
 collected between polls. For lengths below 4, the filter has to be full. The
-default is 64.
+default is 64. With drivers that perform their own polling (PPS, PHC, SHM), the
+maximum value is adjusted to the number of driver polls per source poll, i.e.
+2^(\fIpoll\fP \- \fIdpoll\fP).
 .RE
 .sp
 \fBprefer\fP
@@ -1090,6 +1110,10 @@ This directory is used also by the NTS server to save keys.
 This directive specifies the maximum interval between NTS\-KE handshakes (in
 seconds) in order to refresh the keys authenticating NTP packets. The default
 value is 2419200 (4 weeks) and the maximum value is 2^31\-1 (68 years).
+.sp
+The interval must be longer than polling intervals of all configured NTP
+sources using NTS, otherwise the source with a longer polling interval will
+refresh the keys on each poll and no NTP packets will be exchanged.
 .RE
 .sp
 \fBntstrustedcerts\fP [\fIset\-ID\fP] \fIfile\fP|\fIdirectory\fP
@@ -1235,7 +1259,7 @@ As an example, the following configuration using the default \fBmix\fP mode:
 server foo.example.net nts
 server bar.example.net nts
 server baz.example.net
-refclock SHM 0
+refclock SOCK /var/run/chrony.ttyS0.sock
 .fam
 .fi
 .if n .RE
@@ -1249,7 +1273,7 @@ authselectmode ignore
 server foo.example.net nts require trust
 server bar.example.net nts require trust
 server baz.example.net
-refclock SHM 0 require trust
+refclock /var/run/chrony.ttyS0.sock require trust
 .fam
 .fi
 .if n .RE
@@ -1344,7 +1368,7 @@ The measured value works well in most cases. However, it generally
 overestimates the precision and it can be sensitive to the CPU speed, which can
 change over time to save power. In some cases with a high\-precision clocksource
 (e.g. the Time Stamp Counter of the CPU) and hardware timestamping, setting the
-precision on the server to a smaller value can improve stability of clients\(aq
+precision on the server to a smaller value can improve stability of clients\*(Aq
 NTP measurements. The server\(cqs precision is reported on clients by the
 \fBntpdata\fP command.
 .sp
@@ -1593,7 +1617,7 @@ and can be used with this directive:
 .if n .RS 4
 .nf
 .fam C
-$ TZ=right/UTC date \-d \(aqDec 31 2008 23:59:60\(aq
+$ TZ=right/UTC date \-d \*(AqDec 31 2008 23:59:60\*(Aq
 Wed Dec 31 23:59:60 UTC 2008
 .fam
 .fi
@@ -1684,7 +1708,7 @@ limited by the system driver rather than this directive.
 .sp
 \fBmaxupdateskew\fP \fIskew\-in\-ppm\fP
 .RS 4
-One of \fBchronyd\fP\(aqs tasks is to work out how fast or slow the computer\(cqs clock
+One of \fBchronyd\fP\*(Aqs tasks is to work out how fast or slow the computer\(cqs clock
 runs relative to its reference sources. In addition, it computes an estimate of
 the error bounds around the estimated value.
 .sp
@@ -1703,10 +1727,9 @@ It should be noted that this is not the only means of protection against using
 unreliable estimates. At all times, \fBchronyd\fP keeps track of both the estimated
 gain or loss rate, and the error bound on the estimate. When a new estimate is
 generated following another measurement from one of the sources, a weighted
-combination algorithm is used to update the master estimate. So if \fBchronyd\fP
-has an existing highly\-reliable master estimate and a new estimate is generated
-which has large error bounds, the existing master estimate will dominate in the
-new master estimate.
+combination algorithm is used to update the existing estimate. If it has
+significantly smaller error bounds than the new estimate, the existing estimate
+will dominate in the new combined value.
 .RE
 .sp
 \fBmaxslewrate\fP \fIrate\-in\-ppm\fP
@@ -2097,7 +2120,7 @@ synchronised to it. If that server stops responding, the server with the second
 smallest reference ID will take over when its local reference mode activates
 (root distance reaches the threshold configured by the \fBdistance\fP option).
 .sp
-The \fBorphan\fP mode is compatible with the \fBntpd\fP\(aqs orphan mode (enabled by the
+The \fBorphan\fP mode is compatible with the \fBntpd\fP\*(Aqs orphan mode (enabled by the
 \fBtos orphan\fP command).
 .RE
 .RE
@@ -2242,7 +2265,10 @@ save the keys to the \fIntskeys\fP file and will reload the keys from the file w
 the \fBrekey\fP command is issued in \fBchronyc\fP. The file can
 be periodically copied from another server running \fBchronyd\fP (which does
 not have \fBntsrotate\fP set to 0) in order to have one or more servers dedicated
-to NTS\-KE. The NTS\-KE servers need to be configured with the
+to NTS\-KE. The file includes the subsequent key to which the NTS\-KE server will
+switch on the next rotation, i.e. the process copying and reloading the file
+does not need to be timed precisely (it can be delayed by up to one rotation
+interval). The NTS\-KE servers need to be configured with the
 \fBntsntpserver\fP directive to point the clients to the right NTP
 server.
 .sp
@@ -2549,7 +2575,7 @@ used by the \fBhwclock\fP program on Linux. \fBchronyd\fP parses the file to fin
 if the RTC keeps local time or UTC. It overrides the \fBrtconutc\fP
 directive.
 .sp
-The compiled\-in default value is \(aq\fI@DEFAULT_HWCLOCK_FILE@\fP\(aq.
+The compiled\-in default value is \*(Aq\fI@DEFAULT_HWCLOCK_FILE@\fP\*(Aq.
 .sp
 An example of the directive is:
 .sp
@@ -3412,10 +3438,53 @@ delay, root dispersion).
 .  sp -1
 .  IP " 5." 4.2
 .\}
-Reachability register printed as an octal number. The register has 8 bits and
-is updated on every received or missed packet from the source. A value of 377
-indicates that a valid reply was received for all from the last eight
-transmissions. [377]
+Current effective selection options of the source. which can be different
+from the configured options due to the authentication selection mode
+(configured by the \fBauthselectmode\fP directive). [\-\-\-\-\-]
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIN\fP indicates the \fBnoselect\fP option.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIP\fP indicates the \fBprefer\fP option.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIT\fP indicates the \fBtrust\fP option.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\fIR\fP indicates the \fBrequire\fP option.
+.RE
 .RE
 .sp
 .RS 4
@@ -3426,11 +3495,10 @@ transmissions. [377]
 .  sp -1
 .  IP " 6." 4.2
 .\}
-Current score against the source in the \fI*\fP state. The scoring system avoids
-frequent reselection when multiple sources have a similar root distance. A
-value larger than 1 indicates this source was better than the \fI*\fP source in
-recent selections. If the score reaches 10, the best source will be reselected
-and the scores will be reset to 1. [1.00]
+Reachability register printed as an octal number. The register has 8 bits and
+is updated on every received or missed packet from the source. A value of 377
+indicates that a valid reply was received for all from the last eight
+transmissions. [377]
 .RE
 .sp
 .RS 4
@@ -3441,7 +3509,11 @@ and the scores will be reset to 1. [1.00]
 .  sp -1
 .  IP " 7." 4.2
 .\}
-Interval since the last measurement of the source in seconds. [4.228e+01]
+Current score against the source in the \fI*\fP state. The scoring system avoids
+frequent reselection when multiple sources have a similar root distance. A
+value larger than 1 indicates this source was better than the \fI*\fP source in
+recent selections. If the score reaches 10, the best source will be reselected
+and the scores will be reset to 1. [1.00]
 .RE
 .sp
 .RS 4
@@ -3452,8 +3524,7 @@ Interval since the last measurement of the source in seconds. [4.228e+01]
 .  sp -1
 .  IP " 8." 4.2
 .\}
-Lower endpoint of the interval which was expected to contain the true offset
-of the local clock determined by the root distance of the source. [\-1.575e\-04]
+Interval since the last measurement of the source in seconds. [4.228e+01]
 .RE
 .sp
 .RS 4
@@ -3463,6 +3534,18 @@ of the local clock determined by the root distance of the source. [\-1.575e\-04]
 .el \{\
 .  sp -1
 .  IP " 9." 4.2
+.\}
+Lower endpoint of the interval which was expected to contain the true offset
+of the local clock determined by the root distance of the source. [\-1.575e\-04]
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 10.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 10." 4.2
 .\}
 Upper endpoint of the interval which was expected to contain the true offset
 of the local clock determined by the root distance of the source. [1.239e\-04]
@@ -4164,10 +4247,13 @@ physical clock created by writing to \fI/sys/class/ptp/ptpX/n_vclocks\fP. This
 feature is available on Linux 5.14 and newer.
 .sp
 If the kernel supports software timestamping, it will be enabled for all
-interfaces. The source of timestamps (i.e. hardware, kernel, or daemon) is
-indicated in the \fImeasurements.log\fP file if enabled by the \fBlog
-measurements\fP directive, and the \fBntpdata\fP report in
-\fBchronyc\fP.
+interfaces automatically.
+.sp
+The source of timestamps (i.e. hardware, kernel, or daemon) is indicated on the
+client side in the \fImeasurements.log\fP file (if enabled by the \fBlog\fP
+directive) and the \fBntpdata\fP report. On the server
+side, the number of served timestamps from each source is provided in the
+\fBserverstats\fP report.
 .sp
 This directive can be used multiple times to enable HW timestamping on multiple
 interfaces. If the specified interface is \fI*\fP, \fBchronyd\fP will try to enable HW
@@ -4178,10 +4264,18 @@ The \fBhwtimestamp\fP directive has the following options:
 \fBminpoll\fP \fIpoll\fP
 .RS 4
 This option specifies the minimum interval between readings of the NIC clock.
-It\(cqs defined as a power of two. It should correspond to the minimum polling
+It\(cqs defined as a power of 2. It should correspond to the minimum polling
 interval of all NTP sources and the minimum expected polling interval of NTP
-clients. The default value is 0 (1 second) and the minimum value is \-6 (1/64th
-of a second).
+clients. The default value is 0 (1 second), the minimum value is \-6 (1/64th
+of a second), and the maximum value is 20 (about 12 days).
+.RE
+.sp
+\fBmaxpoll\fP \fIpoll\fP
+.RS 4
+This option specifies the maximum interval between readings of the NIC clock,
+as a power of 2. The default value is \fBminpoll\fP + 1, i.e. 1 (2 seconds) with
+the default \fBminpoll\fP of 0. The minimum and maximum values are the same as with
+the \fBminpoll\fP option.
 .RE
 .sp
 \fBminsamples\fP \fIsamples\fP
@@ -4277,6 +4371,29 @@ hwtimestamp *
 .fam
 .fi
 .if n .RE
+.RE
+.sp
+\fBhwtstimeout\fP \fItimeout\fP
+.RS 4
+If hardware timestamping is used with a close NTP server, or the NIC or its
+driver is slow in providing the transmit timestamp of NTP requests, a response
+from the server can be received before the transmit timestamp of the request.
+To avoid calculating the offset with a less accurate transmit timestamp,
+\fBchronyd\fP can save the response for later processing and wait for the hardware
+transmit timestamp. There is no guarantee that the timestamp will be provided
+(NICs typically have a limited rate of transmit timestamping). This directive
+configures how long should \fBchronyd\fP wait for the timestamp after receiving a
+valid response from the server. If a second valid response is received from the
+server while waiting for the timestamp, they will be both processed
+immediately.
+.sp
+The default value is 0.001 seconds, which should be sufficient with most
+hardware. If you frequently see kernel transmit timestamps in the
+\fImeasurements.log\fP file or \fBntpdata\fP report, and it is
+not a server handling a high rate of requests in the interleaved mode on the
+same interface (which would compete with timestamping of the server\(cqs own
+requests), increasing the timeout to 0.01 or possibly even longer might help.
+Note that the maximum timeout is limited by the NTP polling interval.
 .RE
 .sp
 \fBkeyfile\fP \fIfile\fP
@@ -4625,7 +4742,7 @@ and the script \fI/etc/ppp/ip\-down\fP would include:
 .fi
 .if n .RE
 .sp
-\fBchronyd\fP\(aqs polling of the servers would now only occur whilst the machine is
+\fBchronyd\fP\*(Aqs polling of the servers would now only occur whilst the machine is
 actually connected to the Internet.
 .SS "Isolated networks"
 .sp
@@ -4647,7 +4764,7 @@ in the form of the \fBmanual\fP directive and the
 If the server is rebooted, \fBchronyd\fP can re\-read the drift rate from the drift
 file. However, the server has no accurate estimate of the current time. To get
 around this, the system can be configured so that the server can initially set
-itself to a \(oqmajority\-vote\(cq of selected clients\(aq times; this allows the
+itself to a \(oqmajority\-vote\(cq of selected clients\*(Aq times; this allows the
 clients to \(oqflywheel\(cq the server while it is rebooting.
 .sp
 The \fBsmoothtime\fP directive is useful when the clocks of the
@@ -4760,7 +4877,7 @@ system clock to the best estimate of what its time would have been now, had it
 been left running continuously. The measurement histories for the servers are
 then reloaded.
 .sp
-The next time the computer goes online, the previous sessions\(aq measurements can
+The next time the computer goes online, the previous sessions\*(Aq measurements can
 contribute to the line\-fitting process, which gives a much better estimate of
 the computer\(cqs gain or loss rate.
 .sp
@@ -4835,7 +4952,7 @@ and the relevant part of the \fI/etc/ppp/ip\-down\fP script is:
 .sp
 \fBchronyd\fP is started during the boot sequence with the \fB\-r\fP and \fB\-s\fP options.
 It might need to be started before any software that depends on the system clock
-not jumping or moving backwards, depending on the directives in \fBchronyd\fP\(aqs
+not jumping or moving backwards, depending on the directives in \fBchronyd\fP\*(Aqs
 configuration file.
 .sp
 For the system shutdown, \fBchronyd\fP should receive a SIGTERM several seconds

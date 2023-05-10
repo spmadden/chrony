@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: chronyc
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-08-29
+.\" Generator: Asciidoctor 2.0.18
+.\"      Date: 2023-05-10
 .\"    Manual: User manual
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYC" "1" "2022-08-29" "chrony @CHRONY_VERSION@" "User manual"
+.TH "CHRONYC" "1" "2023-05-10" "chrony @CHRONY_VERSION@" "User manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -35,12 +35,12 @@ chronyc \- command\-line interface for chrony daemon
 .SH "DESCRIPTION"
 .sp
 \fBchronyc\fP is a command\-line interface program which can be used to monitor
-\fBchronyd\fP\(aqs performance and to change various operating parameters whilst it is
+\fBchronyd\fP\*(Aqs performance and to change various operating parameters whilst it is
 running.
 .sp
 If no commands are specified on the command line, \fBchronyc\fP will expect input
 from the user. The prompt \fIchronyc>\fP will be displayed when it is being run
-from a terminal. If \fBchronyc\fP\(aqs input or output are redirected from or to a file,
+from a terminal. If \fBchronyc\fP\*(Aqs input or output are redirected from or to a file,
 the prompt will not be shown.
 .sp
 There are two ways \fBchronyc\fP can access \fBchronyd\fP. One is the Internet
@@ -56,7 +56,7 @@ Only the following monitoring commands, which do not affect the behaviour of
 \fBrtcdata\fP, \fBsmoothing\fP, \fBsourcename\fP, \fBsources\fP, \fBsourcestats\fP, \fBtracking\fP,
 \fBwaitsync\fP. The
 set of hosts from which \fBchronyd\fP will accept these commands can be configured
-with the \fBcmdallow\fP directive in the \fBchronyd\fP\(aqs
+with the \fBcmdallow\fP directive in the \fBchronyd\fP\*(Aqs
 configuration file or the \fBcmdallow\fP command in \fBchronyc\fP. By
 default, the commands are accepted only from localhost (127.0.0.1 or ::1).
 .sp
@@ -65,7 +65,7 @@ over the network, \fBchronyd\fP will respond with a \(oqNot authorised\(cq error
 if it is from localhost.
 .sp
 Having full access to \fBchronyd\fP via \fBchronyc\fP is more or less equivalent to
-being able to modify the \fBchronyd\fP\(aqs configuration file and restart it.
+being able to modify the \fBchronyd\fP\*(Aqs configuration file and restart it.
 .SH "OPTIONS"
 .sp
 \fB\-4\fP
@@ -98,6 +98,12 @@ This option enables printing of reports in a comma\-separated values (CSV)
 format. Reverse DNS lookups will be disabled, time will be printed as number of
 seconds since the epoch, and values in seconds will not be converted to other
 units.
+.RE
+.sp
+\fB\-e\fP
+.RS 4
+With this option each \fBchronyc\fP response will end with a line containing a
+single dot.
 .RE
 .sp
 \fB\-d\fP
@@ -933,8 +939,8 @@ This column displays the configured selection options of the source.
 This column displays the current effective selection options of the source,
 which can be different from the configured options due to the authentication
 selection mode (configured by the
-\fBauthselmode\fP directive). The symbols are the
-same as in the \fBCOpts\fP column.
+\fBauthselectmode\fP directive). The symbols
+are the same as in the \fBCOpts\fP column.
 .RE
 .sp
 \fBLast\fP
@@ -1007,6 +1013,29 @@ This column displays the current leap status of the source.
 \fI?\fP indicates the unknown status (i.e. no valid measurement was made).
 .RE
 .RE
+.RE
+.sp
+\fBselectopts\fP \fIaddress|refid\fP [\fI+|\-option\fP]...
+.RS 4
+The \fBselectopts\fP command modifies the configured selection options of an NTP
+source specified by IP address (or the \fIID#XXXXXXXXXX\fP identifier used for
+unknown addresses), or a reference clock specified by reference ID as a string.
+.sp
+The selection options can be added with the \fB+\fP symbol or removed with the \fB\-\fP
+symbol. The \fBselectdata\fP command can be used to verify the configuration. The
+modified options will be applied in the next source selection, e.g. when a new
+measurement is made, or the \fBreselect\fP command is executed.
+.sp
+An example of using this command is shown below.
+.sp
+.if n .RS 4
+.nf
+.fam C
+selectopts 1.2.3.4 \-noselect +prefer
+selectopts GPS +trust
+.fam
+.fi
+.if n .RE
 .RE
 .sp
 \fBreselect\fP
@@ -1270,6 +1299,17 @@ be reported:
 .  IP \(bu 2.3
 .\}
 15: AEAD\-AES\-SIV\-CMAC\-256
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+30: AEAD\-AES\-128\-GCM\-SIV
 .RE
 .RE
 .sp
@@ -1547,7 +1587,7 @@ obtained.
 .sp
 \fImask\fP
 .RS 4
-This is an IP address with which the IP address of each of \fBchronyd\fP\(aqs
+This is an IP address with which the IP address of each of \fBchronyd\fP\*(Aqs
 sources is to be masked.
 .RE
 .sp
@@ -1937,7 +1977,7 @@ accheck 2001:db8::1
 .sp
 This command can be used to examine the effect of a series of \fBallow\fP, \fBallow
 all\fP, \fBdeny\fP, and \fBdeny all\fP commands specified either via \fBchronyc\fP, or in
-\fBchronyd\fP\(aqs configuration file.
+\fBchronyd\fP\*(Aqs configuration file.
 .RE
 .sp
 \fBclients\fP [\fB\-p\fP \fIpackets\fP] [\fB\-k\fP] [\fB\-r\fP]
@@ -2108,6 +2148,12 @@ Authenticated NTP packets  : 189
 Interleaved NTP packets    : 43
 NTP timestamps held        : 44
 NTP timestamp span         : 120
+NTP daemon RX timestamps   : 0
+NTP daemon TX timestamps   : 1537
+NTP kernel RX timestamps   : 1590
+NTP kernel TX timestamps   : 43
+NTP hardware RX timestamps : 0
+NTP hardware TX timestamps : 0
 .fam
 .fi
 .if n .RE
@@ -2176,13 +2222,42 @@ currently holding in memory for clients using the interleaved mode.
 .RS 4
 The interval (in seconds) covered by the currently held NTP timestamps.
 .RE
+.sp
+\fBNTP daemon RX timestamps\fP
+.RS 4
+The number of NTP responses which included a receive timestamp captured by the
+daemon.
 .RE
 .sp
-
+\fBNTP daemon TX timestamps\fP
 .RS 4
+The number of NTP responses which included a transmit timestamp captured by the
+daemon.
+.RE
 .sp
-Note that the numbers reported by this overflow to zero after 4294967295
-(32\-bit values).
+\fBNTP kernel RX timestamps\fP
+.RS 4
+The number of NTP responses which included a receive timestamp captured by the
+kernel.
+.RE
+.sp
+\fBNTP kernel TX timestamps\fP
+.RS 4
+The number of NTP responses (in the interleaved mode) which included a transmit
+timestamp captured by the kernel.
+.RE
+.sp
+\fBNTP hardware RX timestamps\fP
+.RS 4
+The number of NTP responses which included a receive timestamp captured by the
+NIC.
+.RE
+.sp
+\fBNTP hardware TX timestamps\fP
+.RS 4
+The number of NTP responses (in the interleaved mode) which included a transmit
+timestamp captured by the NIC.
+.RE
 .RE
 .sp
 \fBallow\fP [\fBall\fP] [\fIsubnet\fP]
@@ -2233,8 +2308,8 @@ deny all
 .RS 4
 The \fBlocal\fP command allows \fBchronyd\fP to be told that it is to appear as a
 reference source, even if it is not itself properly synchronised to an external
-source. (This can be used on isolated networks, to allow one computer to be a
-master time server with the other computers slaving to it.)
+source. This can be used on isolated networks, to allow a computer to be the
+primary time server for other computers.
 .sp
 The first form enables the local reference mode on the host. The syntax is
 identical to the \fBlocal\fP directive in the
@@ -2398,7 +2473,7 @@ This is the estimate of how many seconds fast the RTC when it thought
 the time was at the reference time (above). If this value is large, you
 might (or might not) want to use the \fBtrimrtc\fP command to bring the
 RTC into line with the system clock. (Note, a large error will not affect
-\fBchronyd\fP\(aqs operation, unless it becomes so big as to start causing rounding
+\fBchronyd\fP\*(Aqs operation, unless it becomes so big as to start causing rounding
 errors.)
 .RE
 .sp
@@ -2500,7 +2575,7 @@ or SIGTERM signals) or when the \fBtrimrtc\fP command is issued.
 .sp
 \fBcyclelogs\fP
 .RS 4
-The \fBcyclelogs\fP command causes all of \fBchronyd\fP\(aqs open log files to be closed
+The \fBcyclelogs\fP command causes all of \fBchronyd\fP\*(Aqs open log files to be closed
 and re\-opened. This allows them to be renamed so that they can be periodically
 purged. An example of how to do this is shown below.
 .sp

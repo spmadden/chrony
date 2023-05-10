@@ -473,16 +473,41 @@ instead.
 Examples:
 +
 ----
-refclock PPS /dev/pps0 lock NMEA refid GPS
-refclock SHM 0 offset 0.5 delay 0.2 refid NMEA noselect
+refclock PPS /dev/pps0 lock NMEA refid GPS1
+refclock SOCK /var/run/chrony.clk.ttyS0.sock offset 0.5 delay 0.2 refid NMEA noselect
 refclock PPS /dev/pps1:clear refid GPS2
 ----
 +
+*SOCK*:::
+Unix domain socket driver. This driver uses a datagram socket to receive
+samples from another application running on the system. The parameter is the
+path to the socket, which *chronyd* will create on start. The format of the
+messages is described in the _refclock_sock.c_ file in the chrony source code.
++
+An application which supports the SOCK protocol is the *gpsd* daemon. It can
+provide accurate measurements using the receiver's PPS signal, and since
+version 3.25 also (much less accurate) measurements based on the timing of
+serial data (e.g. NMEA), which can be useful when the receiver does not provide
+a PPS signal, or it cannot be connected to the computer. The paths where *gpsd*
+expects the sockets to be created by *chronyd* are described in the *gpsd(8)*
+man page. Note that *gpsd* needs to be started after *chronyd* in order to
+connect to the socket.
++
+Examples:
++
+----
+refclock SOCK /var/run/chrony.ttyS0.sock refid GPS1 poll 2 filter 4
+refclock SOCK /var/run/chrony.clk.ttyUSB0.sock refid GPS2 offset 0.2 delay 0.1
+----
++
 *SHM*:::
-NTP shared memory driver. This driver uses a shared memory segment to receive
-samples from another process (e.g. *gpsd*). The parameter is the number of the
-shared memory segment, typically a small number like 0, 1, 2, or 3. The driver
-supports the following option:
+NTP shared memory driver. This driver implements the protocol of the *ntpd*
+driver type 28. It is functionally similar to the SOCK driver, but uses a
+shared memory segment instead of a socket. The parameter is the unit number,
+typically a small number like 0, 1, 2, or 3, from which is derived the key of
+the memory segment as 0x4e545030 + unit.
++
+The driver supports the following option:
 +
 *perm*=_mode_::::
 This option specifies the permissions of the shared memory segment created by
@@ -490,28 +515,21 @@ This option specifies the permissions of the shared memory segment created by
 (read-write access for owner only).
 {blank}:::
 +
+Unlike with the SOCK driver, there is no prescribed order of starting *chronyd*
+and the program providing measurements. Both are expected to create the memory
+segment if it does not exist. *chronyd* will attach to an existing segment even
+if it has a different owner than root or different permissions than the
+permissions specified by the *perm* option. The segment needs to be created
+before untrusted applications or users can execute code to prevent an attacker
+from feeding *chronyd* with false measurements. The owner and permissions of
+the segment can be verified with the *ipcs -m* command. For this reason, the
+SHM driver is deprecated in favor of SOCK.
++
 Examples:
 +
 ----
 refclock SHM 0 poll 3 refid GPS1
 refclock SHM 1:perm=0644 refid GPS2
-----
-+
-*SOCK*:::
-Unix domain socket driver. It is similar to the SHM driver, but samples are
-received from a Unix domain socket instead of shared memory and the messages
-have a different format. The parameter is the path to the socket, which
-*chronyd* creates on start. An advantage over the SHM driver is that SOCK does
-not require polling and it can receive PPS samples with incomplete time. The
-format of the messages is described in the _refclock_sock.c_ file in the chrony
-source code.
-+
-An application which supports the SOCK protocol is the *gpsd* daemon. The path
-where *gpsd* expects the socket to be created is described in the *gpsd(8)* man
-page. For example:
-+
-----
-refclock SOCK /var/run/chrony.ttyS0.sock
 ----
 +
 *PHC*:::
@@ -624,7 +642,9 @@ noise in the measurements. With each poll about 40 percent of the stored
 samples are discarded and one final sample is calculated as an average of the
 remaining samples. If the length is 4 or more, at least 4 samples have to be
 collected between polls. For lengths below 4, the filter has to be full. The
-default is 64.
+default is 64. With drivers that perform their own polling (PPS, PHC, SHM), the
+maximum value is adjusted to the number of driver polls per source poll, i.e.
+2^(_poll_ - _dpoll_).
 *prefer*:::
 Prefer this source over sources without the prefer option.
 *noselect*:::
@@ -809,6 +829,10 @@ This directory is used also by the <<ntsdumpdir2,NTS server>> to save keys.
 This directive specifies the maximum interval between NTS-KE handshakes (in
 seconds) in order to refresh the keys authenticating NTP packets. The default
 value is 2419200 (4 weeks) and the maximum value is 2^31-1 (68 years).
++
+The interval must be longer than polling intervals of all configured NTP
+sources using NTS, otherwise the source with a longer polling interval will
+refresh the keys on each poll and no NTP packets will be exchanged.
 
 [[ntstrustedcerts]]*ntstrustedcerts* [_set-ID_] _file_|_directory_::
 This directive specifies a file or directory containing certificates (in the
@@ -923,7 +947,7 @@ As an example, the following configuration using the default *mix* mode:
 server foo.example.net nts
 server bar.example.net nts
 server baz.example.net
-refclock SHM 0
+refclock SOCK /var/run/chrony.ttyS0.sock
 ----
 +
 is equivalent to the following configuration using the *ignore* mode:
@@ -933,7 +957,7 @@ authselectmode ignore
 server foo.example.net nts require trust
 server bar.example.net nts require trust
 server baz.example.net
-refclock SHM 0 require trust
+refclock /var/run/chrony.ttyS0.sock require trust
 ----
 
 [[combinelimit]]*combinelimit* _limit_::
@@ -1302,10 +1326,9 @@ It should be noted that this is not the only means of protection against using
 unreliable estimates. At all times, *chronyd* keeps track of both the estimated
 gain or loss rate, and the error bound on the estimate. When a new estimate is
 generated following another measurement from one of the sources, a weighted
-combination algorithm is used to update the master estimate. So if *chronyd*
-has an existing highly-reliable master estimate and a new estimate is generated
-which has large error bounds, the existing master estimate will dominate in the
-new master estimate.
+combination algorithm is used to update the existing estimate. If it has
+significantly smaller error bounds than the new estimate, the existing estimate
+will dominate in the new combined value.
 
 [[maxslewrate]]*maxslewrate* _rate-in-ppm_::
 The *maxslewrate* directive sets the maximum rate at which *chronyd* is allowed
@@ -1735,7 +1758,10 @@ save the keys to the _ntskeys_ file and will reload the keys from the file when
 the <<chronyc.adoc#rekey,*rekey*>> command is issued in *chronyc*. The file can
 be periodically copied from another server running *chronyd* (which does
 not have *ntsrotate* set to 0) in order to have one or more servers dedicated
-to NTS-KE. The NTS-KE servers need to be configured with the
+to NTS-KE. The file includes the subsequent key to which the NTS-KE server will
+switch on the next rotation, i.e. the process copying and reloading the file
+does not need to be timed precisely (it can be delayed by up to one rotation
+interval). The NTS-KE servers need to be configured with the
 <<ntsntpserver,*ntsntpserver*>> directive to point the clients to the right NTP
 server.
 +
@@ -2218,6 +2244,13 @@ Used for synchronisation of the local clock:
 * _+_ - combined with the best source.
 * _*_ - selected as the best source to update the reference data (e.g. root
         delay, root dispersion).
+. Current effective selection options of the source. which can be different
+  from the configured options due to the authentication selection mode
+  (configured by the <<authselectmode,*authselectmode*>> directive). [-----]
+* _N_ indicates the *noselect* option.
+* _P_ indicates the *prefer* option.
+* _T_ indicates the *trust* option.
+* _R_ indicates the *require* option.
 . Reachability register printed as an octal number. The register has 8 bits and
   is updated on every received or missed packet from the source. A value of 377
   indicates that a valid reply was received for all from the last eight
@@ -2503,10 +2536,13 @@ physical clock created by writing to _/sys/class/ptp/ptpX/n_vclocks_. This
 feature is available on Linux 5.14 and newer.
 +
 If the kernel supports software timestamping, it will be enabled for all
-interfaces. The source of timestamps (i.e. hardware, kernel, or daemon) is
-indicated in the _measurements.log_ file if enabled by the <<log,*log
-measurements*>> directive, and the <<chronyc.adoc#ntpdata,*ntpdata*>> report in
-*chronyc*.
+interfaces automatically.
++
+The source of timestamps (i.e. hardware, kernel, or daemon) is indicated on the
+client side in the _measurements.log_ file (if enabled by the <<log,*log*>>
+directive) and the <<chronyc.adoc#ntpdata,*ntpdata*>> report. On the server
+side, the number of served timestamps from each source is provided in the
+<<chronyc.adoc#serverstats,*serverstats*>> report.
 +
 This directive can be used multiple times to enable HW timestamping on multiple
 interfaces. If the specified interface is _*_, *chronyd* will try to enable HW
@@ -2516,10 +2552,15 @@ The *hwtimestamp* directive has the following options:
 +
 *minpoll* _poll_:::
 This option specifies the minimum interval between readings of the NIC clock.
-It's defined as a power of two. It should correspond to the minimum polling
+It's defined as a power of 2. It should correspond to the minimum polling
 interval of all NTP sources and the minimum expected polling interval of NTP
-clients. The default value is 0 (1 second) and the minimum value is -6 (1/64th
-of a second).
+clients. The default value is 0 (1 second), the minimum value is -6 (1/64th
+of a second), and the maximum value is 20 (about 12 days).
+*maxpoll* _poll_:::
+This option specifies the maximum interval between readings of the NIC clock,
+as a power of 2. The default value is *minpoll* + 1, i.e. 1 (2 seconds) with
+the default *minpoll* of 0. The minimum and maximum values are the same as with
+the *minpoll* option.
 *minsamples* _samples_:::
 This option specifies the minimum number of readings kept for tracking of the
 NIC clock. The default value is 2.
@@ -2571,6 +2612,27 @@ hwtimestamp eth0
 hwtimestamp eth1 txcomp 300e-9 rxcomp 645e-9
 hwtimestamp *
 ----
+
+[[hwtstimeout]]*hwtstimeout* _timeout_::
+If hardware timestamping is used with a close NTP server, or the NIC or its
+driver is slow in providing the transmit timestamp of NTP requests, a response
+from the server can be received before the transmit timestamp of the request.
+To avoid calculating the offset with a less accurate transmit timestamp,
+*chronyd* can save the response for later processing and wait for the hardware
+transmit timestamp. There is no guarantee that the timestamp will be provided
+(NICs typically have a limited rate of transmit timestamping). This directive
+configures how long should *chronyd* wait for the timestamp after receiving a
+valid response from the server. If a second valid response is received from the
+server while waiting for the timestamp, they will be both processed
+immediately.
++
+The default value is 0.001 seconds, which should be sufficient with most
+hardware. If you frequently see kernel transmit timestamps in the
+_measurements.log_ file or <<chronyc.adoc#ntpdata,*ntpdata*>> report, and it is
+not a server handling a high rate of requests in the interleaved mode on the
+same interface (which would compete with timestamping of the server's own
+requests), increasing the timeout to 0.01 or possibly even longer might help.
+Note that the maximum timeout is limited by the NTP polling interval.
 
 [[keyfile]]*keyfile* _file_::
 This directive is used to specify the location of the file containing symmetric

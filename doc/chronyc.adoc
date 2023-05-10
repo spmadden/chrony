@@ -89,6 +89,10 @@ format. Reverse DNS lookups will be disabled, time will be printed as number of
 seconds since the epoch, and values in seconds will not be converted to other
 units.
 
+*-e*::
+With this option each *chronyc* response will end with a line containing a
+single dot.
+
 *-d*::
 This option enables printing of debugging messages if *chronyc* was compiled
 with debugging support.
@@ -500,8 +504,8 @@ This column displays the configured selection options of the source.
 This column displays the current effective selection options of the source,
 which can be different from the configured options due to the authentication
 selection mode (configured by the
-<<chrony.conf.adoc#authselmode,*authselmode*>> directive). The symbols are the
-same as in the *COpts* column.
+<<chrony.conf.adoc#authselectmode,*authselectmode*>> directive). The symbols
+are the same as in the *COpts* column.
 *Last*:::
 This column displays how long ago was the last measurement of the source made
 when the selection was performed.
@@ -521,6 +525,23 @@ This column displays the current leap status of the source.
 * _+_ indicates that a leap second will be inserted at the end of the month.
 * _-_ indicates that a leap second will be deleted at the end of the month.
 * _?_ indicates the unknown status (i.e. no valid measurement was made).
+
+[[selectopts]]*selectopts* _address|refid_ [_+|-option_]...::
+The *selectopts* command modifies the configured selection options of an NTP
+source specified by IP address (or the _ID#XXXXXXXXXX_ identifier used for
+unknown addresses), or a reference clock specified by reference ID as a string.
++
+The selection options can be added with the *+* symbol or removed with the *-*
+symbol. The *selectdata* command can be used to verify the configuration. The
+modified options will be applied in the next source selection, e.g. when a new
+measurement is made, or the *reselect* command is executed.
++
+An example of using this command is shown below.
++
+----
+selectopts 1.2.3.4 -noselect +prefer
+selectopts GPS +trust
+----
 
 [[reselect]]*reselect*::
 To avoid excessive switching between sources, *chronyd* can stay synchronised
@@ -610,6 +631,7 @@ be reported:
 * 13: AES128
 * 14: AES256
 * 15: AEAD-AES-SIV-CMAC-256
+* 30: AEAD-AES-128-GCM-SIV
 *KLen*:::
 This column shows the length of the key in bits.
 *Last*:::
@@ -1136,6 +1158,12 @@ Authenticated NTP packets  : 189
 Interleaved NTP packets    : 43
 NTP timestamps held        : 44
 NTP timestamp span         : 120
+NTP daemon RX timestamps   : 0
+NTP daemon TX timestamps   : 1537
+NTP kernel RX timestamps   : 1590
+NTP kernel TX timestamps   : 43
+NTP hardware RX timestamps : 0
+NTP hardware TX timestamps : 0
 ----
 +
 The fields have the following meaning:
@@ -1170,10 +1198,24 @@ The number of pairs of receive and transmit timestamps that the server is
 currently holding in memory for clients using the interleaved mode.
 *NTP timestamp span*:::
 The interval (in seconds) covered by the currently held NTP timestamps.
-{blank}::
-+
-Note that the numbers reported by this overflow to zero after 4294967295
-(32-bit values).
+*NTP daemon RX timestamps*:::
+The number of NTP responses which included a receive timestamp captured by the
+daemon.
+*NTP daemon TX timestamps*:::
+The number of NTP responses which included a transmit timestamp captured by the
+daemon.
+*NTP kernel RX timestamps*:::
+The number of NTP responses which included a receive timestamp captured by the
+kernel.
+*NTP kernel TX timestamps*:::
+The number of NTP responses (in the interleaved mode) which included a transmit
+timestamp captured by the kernel.
+*NTP hardware RX timestamps*:::
+The number of NTP responses which included a receive timestamp captured by the
+NIC.
+*NTP hardware TX timestamps*:::
+The number of NTP responses (in the interleaved mode) which included a transmit
+timestamp captured by the NIC.
 
 [[allow]]*allow* [*all*] [_subnet_]::
 The effect of the allow command is identical to the
@@ -1212,8 +1254,8 @@ deny all
 *local* *off*::
 The *local* command allows *chronyd* to be told that it is to appear as a
 reference source, even if it is not itself properly synchronised to an external
-source. (This can be used on isolated networks, to allow one computer to be a
-master time server with the other computers slaving to it.)
+source. This can be used on isolated networks, to allow a computer to be the
+primary time server for other computers.
 +
 The first form enables the local reference mode on the host. The syntax is
 identical to the <<chrony.conf.adoc#local,*local*>> directive in the

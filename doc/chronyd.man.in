@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: chronyd
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.15
-.\"      Date: 2022-08-29
+.\" Generator: Asciidoctor 2.0.18
+.\"      Date: 2023-05-10
 .\"    Manual: System Administration
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYD" "8" "2022-08-29" "chrony @CHRONY_VERSION@" "System Administration"
+.TH "CHRONYD" "8" "2023-05-10" "chrony @CHRONY_VERSION@" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -109,8 +109,10 @@ will not detach from the terminal.
 \fB\-Q\fP
 .RS 4
 This option is similar to the \fB\-q\fP option, except it only prints the offset
-without making any corrections of the clock and it allows \fBchronyd\fP to be
-started without root privileges.
+without making any corrections of the clock and disables server ports to allow
+\fBchronyd\fP to be started without root privileges, assuming the configuration
+does not have any directives which would require them (e.g. \fBrefclock\fP,
+\fBhwtimestamp\fP, \fBrtcfile\fP, etc).
 .RE
 .sp
 \fB\-r\fP
@@ -122,7 +124,7 @@ files are expected to be in the directory specified by the
 directive in the configuration file. This option is useful if you want to stop
 and restart \fBchronyd\fP briefly for any reason, e.g. to install a new version.
 However, it should be used only on systems where the kernel can maintain clock
-compensation whilst not under \fBchronyd\fP\(aqs control (i.e. Linux, FreeBSD, NetBSD,
+compensation whilst not under \fBchronyd\fP\*(Aqs control (i.e. Linux, FreeBSD, NetBSD,
 illumos, and macOS 10.13 or later).
 .RE
 .sp

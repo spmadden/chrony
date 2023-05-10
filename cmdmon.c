@@ -144,6 +144,7 @@ static const char permissions[] = {
   PERMIT_AUTH, /* SELECT_DATA */
   PERMIT_AUTH, /* RELOAD_SOURCES */
   PERMIT_AUTH, /* DOFFSET2 */
+  PERMIT_AUTH, /* MODIFY_SELECTOPTS */
 };
 
 /* ================================================== */
@@ -703,6 +704,17 @@ handle_cmdaccheck(CMD_Request *rx_message, CMD_Reply *tx_message)
 
 /* ================================================== */
 
+static int
+convert_addsrc_select_options(int flags)
+{
+    return (flags & REQ_ADDSRC_PREFER ? SRC_SELECT_PREFER : 0) |
+           (flags & REQ_ADDSRC_NOSELECT ? SRC_SELECT_NOSELECT : 0) |
+           (flags & REQ_ADDSRC_TRUST ? SRC_SELECT_TRUST : 0) |
+           (flags & REQ_ADDSRC_REQUIRE ? SRC_SELECT_REQUIRE : 0);
+}
+
+/* ================================================== */
+
 static void
 handle_add_source(CMD_Request *rx_message, CMD_Reply *tx_message)
 {
@@ -773,11 +785,7 @@ handle_add_source(CMD_Request *rx_message, CMD_Reply *tx_message)
   params.copy = ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_COPY ? 1 : 0;
   params.ext_fields =
     ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_EF_EXP1 ? NTP_EF_FLAG_EXP1 : 0;
-  params.sel_options =
-    (ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_PREFER ? SRC_SELECT_PREFER : 0) |
-    (ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_NOSELECT ? SRC_SELECT_NOSELECT : 0) |
-    (ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_TRUST ? SRC_SELECT_TRUST : 0) |
-    (ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_REQUIRE ? SRC_SELECT_REQUIRE : 0);
+  params.sel_options = convert_addsrc_select_options(ntohl(rx_message->data.ntp_source.flags));
 
   status = NSR_AddSourceByName(name, port, pool, type, &params, NULL);
   switch (status) {
@@ -1169,18 +1177,36 @@ handle_server_stats(CMD_Request *rx_message, CMD_Reply *tx_message)
   RPT_ServerStatsReport report;
 
   CLG_GetServerStatsReport(&report);
-  tx_message->reply = htons(RPY_SERVER_STATS3);
-  tx_message->data.server_stats.ntp_hits = htonl(report.ntp_hits);
-  tx_message->data.server_stats.nke_hits = htonl(report.nke_hits);
-  tx_message->data.server_stats.cmd_hits = htonl(report.cmd_hits);
-  tx_message->data.server_stats.ntp_drops = htonl(report.ntp_drops);
-  tx_message->data.server_stats.nke_drops = htonl(report.nke_drops);
-  tx_message->data.server_stats.cmd_drops = htonl(report.cmd_drops);
-  tx_message->data.server_stats.log_drops = htonl(report.log_drops);
-  tx_message->data.server_stats.ntp_auth_hits = htonl(report.ntp_auth_hits);
-  tx_message->data.server_stats.ntp_interleaved_hits = htonl(report.ntp_interleaved_hits);
-  tx_message->data.server_stats.ntp_timestamps = htonl(report.ntp_timestamps);
-  tx_message->data.server_stats.ntp_span_seconds = htonl(report.ntp_span_seconds);
+  tx_message->reply = htons(RPY_SERVER_STATS4);
+  tx_message->data.server_stats.ntp_hits = UTI_Integer64HostToNetwork(report.ntp_hits);
+  tx_message->data.server_stats.nke_hits = UTI_Integer64HostToNetwork(report.nke_hits);
+  tx_message->data.server_stats.cmd_hits = UTI_Integer64HostToNetwork(report.cmd_hits);
+  tx_message->data.server_stats.ntp_drops = UTI_Integer64HostToNetwork(report.ntp_drops);
+  tx_message->data.server_stats.nke_drops = UTI_Integer64HostToNetwork(report.nke_drops);
+  tx_message->data.server_stats.cmd_drops = UTI_Integer64HostToNetwork(report.cmd_drops);
+  tx_message->data.server_stats.log_drops = UTI_Integer64HostToNetwork(report.log_drops);
+  tx_message->data.server_stats.ntp_auth_hits =
+    UTI_Integer64HostToNetwork(report.ntp_auth_hits);
+  tx_message->data.server_stats.ntp_interleaved_hits =
+    UTI_Integer64HostToNetwork(report.ntp_interleaved_hits);
+  tx_message->data.server_stats.ntp_timestamps =
+    UTI_Integer64HostToNetwork(report.ntp_timestamps);
+  tx_message->data.server_stats.ntp_span_seconds =
+    UTI_Integer64HostToNetwork(report.ntp_span_seconds);
+  tx_message->data.server_stats.ntp_daemon_rx_timestamps =
+    UTI_Integer64HostToNetwork(report.ntp_daemon_rx_timestamps);
+  tx_message->data.server_stats.ntp_daemon_tx_timestamps =
+    UTI_Integer64HostToNetwork(report.ntp_daemon_tx_timestamps);
+  tx_message->data.server_stats.ntp_kernel_rx_timestamps =
+    UTI_Integer64HostToNetwork(report.ntp_kernel_rx_timestamps);
+  tx_message->data.server_stats.ntp_kernel_tx_timestamps =
+    UTI_Integer64HostToNetwork(report.ntp_kernel_tx_timestamps);
+  tx_message->data.server_stats.ntp_hw_rx_timestamps =
+    UTI_Integer64HostToNetwork(report.ntp_hw_rx_timestamps);
+  tx_message->data.server_stats.ntp_hw_tx_timestamps =
+    UTI_Integer64HostToNetwork(report.ntp_hw_tx_timestamps);
+  memset(tx_message->data.server_stats.reserved, 0xff,
+         sizeof (tx_message->data.server_stats.reserved));
 }
 
 /* ================================================== */
@@ -1328,7 +1354,7 @@ handle_auth_data(CMD_Request *rx_message, CMD_Reply *tx_message)
 /* ================================================== */
 
 static uint16_t
-convert_select_options(int options)
+convert_sd_sel_options(int options)
 {
   return (options & SRC_SELECT_PREFER ? RPY_SD_OPTION_PREFER : 0) |
          (options & SRC_SELECT_NOSELECT ? RPY_SD_OPTION_NOSELECT : 0) |
@@ -1355,12 +1381,30 @@ handle_select_data(CMD_Request *rx_message, CMD_Reply *tx_message)
   tx_message->data.select_data.state_char = report.state_char;
   tx_message->data.select_data.authentication = report.authentication;
   tx_message->data.select_data.leap = report.leap;
-  tx_message->data.select_data.conf_options = htons(convert_select_options(report.conf_options));
-  tx_message->data.select_data.eff_options = htons(convert_select_options(report.eff_options));
+  tx_message->data.select_data.conf_options = htons(convert_sd_sel_options(report.conf_options));
+  tx_message->data.select_data.eff_options = htons(convert_sd_sel_options(report.eff_options));
   tx_message->data.select_data.last_sample_ago = htonl(report.last_sample_ago);
   tx_message->data.select_data.score = UTI_FloatHostToNetwork(report.score);
   tx_message->data.select_data.hi_limit = UTI_FloatHostToNetwork(report.hi_limit);
   tx_message->data.select_data.lo_limit = UTI_FloatHostToNetwork(report.lo_limit);
+}
+
+/* ================================================== */
+
+static void
+handle_modify_selectopts(CMD_Request *rx_message, CMD_Reply *tx_message)
+{
+  int mask, options;
+  uint32_t ref_id;
+  IPAddr ip_addr;
+
+  UTI_IPNetworkToHost(&rx_message->data.modify_select_opts.address, &ip_addr);
+  ref_id = ntohl(rx_message->data.modify_select_opts.ref_id);
+  mask = ntohl(rx_message->data.modify_select_opts.mask);
+  options = convert_addsrc_select_options(ntohl(rx_message->data.modify_select_opts.options));
+
+  if (!SRC_ModifySelectOptions(&ip_addr, ref_id, options, mask))
+    tx_message->status = htons(STT_NOSUCHSOURCE);
 }
 
 /* ================================================== */
@@ -1515,6 +1559,8 @@ read_from_cmd_socket(int sock_fd, int event, void *anything)
     }
 
     if (allowed) {
+      LOG_SetContext(LOGC_Command);
+
       switch(rx_command) {
         case REQ_NULL:
           /* Do nothing */
@@ -1757,11 +1803,17 @@ read_from_cmd_socket(int sock_fd, int event, void *anything)
           handle_reload_sources(&rx_message, &tx_message);
           break;
 
+        case REQ_MODIFY_SELECTOPTS:
+          handle_modify_selectopts(&rx_message, &tx_message);
+          break;
+
         default:
           DEBUG_LOG("Unhandled command %d", rx_command);
           tx_message.status = htons(STT_FAILED);
           break;
       }
+
+      LOG_UnsetContext(LOGC_Command);
     } else {
       tx_message.status = htons(STT_UNAUTH);
     }
@@ -1795,6 +1847,9 @@ CAM_AddAccessRestriction(IPAddr *ip_addr, int subnet_bits, int allow, int all)
   if (status == ADF_BADSUBNET) {
     return 0;
   } else if (status == ADF_SUCCESS) {
+    LOG(LOG_GetContextSeverity(LOGC_Command), "%s%s %s access from %s",
+        allow ? "Allowed" : "Denied", all ? " all" : "", "command",
+        UTI_IPSubnetToString(ip_addr, subnet_bits));
     return 1;
   } else {
     return 0;
