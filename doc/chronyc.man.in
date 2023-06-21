@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: chronyc
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.18
-.\"      Date: 2023-05-10
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-06-21
 .\"    Manual: User manual
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYC" "1" "2023-05-10" "chrony @CHRONY_VERSION@" "User manual"
+.TH "CHRONYC" "1" "2023-06-21" "chrony @CHRONY_VERSION@" "User manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -1784,12 +1784,17 @@ current set of sources. It is equivalent to the \fBpolltarget\fP option in the
 \fBrefresh\fP
 .RS 4
 The \fBrefresh\fP command can be used to force \fBchronyd\fP to resolve the names of
-configured sources to IP addresses again, e.g. after suspending and resuming
-the machine in a different network.
+configured NTP sources to IP addresses again and replace any addresses missing
+in the list of resolved addresses.
 .sp
-Sources that stop responding will be replaced with newly resolved addresses
-automatically after 8 polling intervals, but this command can still be useful
-to replace them immediately and not wait until they are marked as unreachable.
+Sources that stop responding are replaced with newly resolved addresses
+automatically after 8 polling intervals. This command can be used to replace
+them immediately, e.g. after suspending and resuming the machine in a different
+network.
+.sp
+Note that with pools which have more than 16 addresses, or not all IPv4 or IPv6
+addresses are included in a single DNS response (e.g. pool.ntp.org), this
+command might replace the addresses even if they are still in the pool.
 .RE
 .sp
 \fBreload\fP \fBsources\fP

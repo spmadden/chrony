@@ -647,7 +647,7 @@ NCR_CreateInstance(NTP_Remote_Address *remote_addr, NTP_Source_Type type,
   result->auto_burst = params->burst;
   result->auto_offline = params->auto_offline;
   result->copy = params->copy && result->mode == MODE_CLIENT;
-  result->poll_target = params->poll_target;
+  result->poll_target = MAX(1, params->poll_target);
   result->ext_field_flags = params->ext_fields;
 
   if (params->nts) {
@@ -803,6 +803,8 @@ NCR_ResetInstance(NCR_Instance instance)
 void
 NCR_ResetPoll(NCR_Instance instance)
 {
+  instance->poll_score = 0.0;
+
   if (instance->local_poll != instance->minpoll) {
     instance->local_poll = instance->minpoll;
 
@@ -832,6 +834,12 @@ NCR_ChangeRemoteAddress(NCR_Instance inst, NTP_Remote_Address *remote_addr, int 
     inst->local_addr.if_index = INVALID_IF_INDEX;
     inst->local_addr.sock_fd = NIO_OpenServerSocket(remote_addr);
   }
+
+  /* Reset the polling interval only if the source wasn't unreachable to
+     avoid increasing server/network load in case that is what caused
+     the source to be unreachable */
+  if (SRC_IsReachable(inst->source))
+    NCR_ResetPoll(inst);
 
   /* Update the reference ID and reset the source/sourcestats instances */
   SRC_SetRefid(inst->source, UTI_IPToRefid(&remote_addr->ip_addr),
@@ -2894,7 +2902,7 @@ NCR_ModifyMinstratum(NCR_Instance inst, int new_min_stratum)
 void
 NCR_ModifyPolltarget(NCR_Instance inst, int new_poll_target)
 {
-  inst->poll_target = new_poll_target;
+  inst->poll_target = MAX(1, new_poll_target);
   LOG(LOGS_INFO, "Source %s new polltarget %d",
       UTI_IPToString(&inst->remote_addr.ip_addr), new_poll_target);
 }

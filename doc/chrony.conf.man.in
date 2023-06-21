@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: chrony.conf
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.18
-.\"      Date: 2023-05-10
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2023-06-21
 .\"    Manual: Configuration Files
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONY.CONF" "5" "2023-05-10" "chrony @CHRONY_VERSION@" "Configuration Files"
+.TH "CHRONY.CONF" "5" "2023-06-21" "chrony @CHRONY_VERSION@" "Configuration Files"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -74,9 +74,7 @@ newly resolved address when the server becomes unreachable (i.e. no valid
 response to last 8 requests), unsynchronised, a falseticker (i.e. does not
 agree with a majority of other sources), or the root distance is too large (the
 limit can be configured by the \fBmaxdistance\fP directive). The
-automatic replacement happens at most once per 30 minutes. It can also be
-triggered manually for all sources by the \fBrefresh\fP
-command in \fBchronyc\fP.
+automatic replacement happens at most once per 30 minutes.
 .sp
 This directive can be used multiple times to specify multiple servers.
 .sp
@@ -1180,6 +1178,21 @@ nocerttimecheck 1
 This would disable the time checks until the clock is updated for the first
 time, assuming the first update corrects the clock and later checks can work
 with correct time.
+.RE
+.sp
+\fBrefresh\fP \fIinterval\fP
+.RS 4
+This directive specifies the interval (in seconds) between refreshing IP
+addresses of NTP sources specified by hostname. If the hostname no longer
+resolves to the currently used address, it will be replaced with one of the new
+addresses to avoid using a server which is no longer intended for service, even
+if it is still responding correctly and would not be replaced as unreachable.
+Only one source is refreshed at a time. The default value is 1209600 (2 weeks)
+and the maximum value is 2^31\-1 (68 years). A value of 0 disables the periodic
+refreshment.
+.sp
+The \fBrefresh\fP command can be used to refresh all
+sources immediately.
 .RE
 .SS "Source selection"
 .sp

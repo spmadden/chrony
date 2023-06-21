@@ -32,6 +32,7 @@
 #include "sysincl.h"
 
 #include "array.h"
+#include "conf.h"
 #include "ntp_sources.h"
 #include "ntp_core.h"
 #include "ntp_io.h"
@@ -64,6 +65,7 @@ typedef struct {
                                    received from the source yet */
   uint32_t conf_id;             /* Configuration ID, which can be shared with
                                    different sources in case of a pool */
+  double last_resolving;        /* Time of last name resolving (monotonic) */
 } SourceRecord;
 
 /* Hash table of SourceRecord, its size is a power of two and it's never
@@ -96,6 +98,9 @@ struct UnresolvedSource {
   char *name;
   /* Flag indicating addresses should be used in a random order */
   int random_order;
+  /* Flag indicating current address should be replaced only if it is
+     no longer returned by the resolver */
+  int refreshment;
   /* Next unresolved source in the list */
   struct UnresolvedSource *next;
 };
@@ -103,7 +108,7 @@ struct UnresolvedSource {
 #define RESOLVE_INTERVAL_UNIT 7
 #define MIN_RESOLVE_INTERVAL 2
 #define MAX_RESOLVE_INTERVAL 9
-#define MIN_REPLACEMENT_INTERVAL 8
+#define MAX_REPLACEMENT_INTERVAL 9
 
 static struct UnresolvedSource *unresolved_sources = NULL;
 static int resolving_interval = 0;
@@ -184,6 +189,7 @@ void
 NSR_Initialise(void)
 {
   n_sources = 0;
+  resolving_id = 0;
   initialised = 1;
 
   records = ARR_CreateInstance(sizeof (SourceRecord));
@@ -206,6 +212,7 @@ NSR_Finalise(void)
   ARR_DestroyInstance(records);
   ARR_DestroyInstance(pools);
 
+  SCH_RemoveTimeout(resolving_id);
   while (unresolved_sources)
     remove_unresolved_source(unresolved_sources);
 
@@ -384,6 +391,7 @@ add_source(NTP_Remote_Address *remote_addr, char *name, NTP_Source_Type type,
       record->pool_id = pool_id;
       record->tentative = 1;
       record->conf_id = conf_id;
+      record->last_resolving = SCH_GetLastEventMonoTime();
 
       record_lock = 0;
 
@@ -516,6 +524,19 @@ process_resolved_name(struct UnresolvedSource *us, IPAddr *ip_addrs, int n_addrs
   SourceRecord *record;
   unsigned short first = 0;
   int i, j;
+
+  /* Keep using the current address if it is being refreshed and it is
+     still included in the resolved addresses */
+  if (us->refreshment) {
+    assert(us->pool_id == INVALID_POOL);
+
+    for (i = 0; i < n_addrs; i++) {
+      if (UTI_CompareIPs(&us->address.ip_addr, &ip_addrs[i], NULL) == 0) {
+        DEBUG_LOG("%s still fresh", UTI_IPToString(&us->address.ip_addr));
+        return;
+      }
+    }
+  }
 
   if (us->random_order)
     UTI_GetRandomBytes(&first, sizeof (first));
@@ -773,6 +794,7 @@ NSR_AddSourceByName(char *name, int port, int pool, NTP_Source_Type type,
   us = MallocNew(struct UnresolvedSource);
   us->name = Strdup(name);
   us->random_order = 0;
+  us->refreshment = 0;
 
   remote_addr.ip_addr.family = IPADDR_ID;
   remote_addr.ip_addr.addr.id = ++last_address_id;
@@ -962,20 +984,23 @@ NSR_RemoveAllSources(void)
 /* ================================================== */
 
 static void
-resolve_source_replacement(SourceRecord *record)
+resolve_source_replacement(SourceRecord *record, int refreshment)
 {
   struct UnresolvedSource *us;
 
-  DEBUG_LOG("trying to replace %s (%s)",
+  DEBUG_LOG("%s %s (%s)", refreshment ? "refreshing" : "trying to replace",
             UTI_IPToString(&record->remote_addr->ip_addr), record->name);
+
+  record->last_resolving = SCH_GetLastEventMonoTime();
 
   us = MallocNew(struct UnresolvedSource);
   us->name = Strdup(record->name);
-  /* If there never was a valid reply from this source (e.g. it was a bad
-     replacement), ignore the order of addresses from the resolver to not get
-     stuck to a pair of addresses if the order doesn't change, or a group of
-     IPv4/IPv6 addresses if the resolver prefers inaccessible IP family */
-  us->random_order = record->tentative;
+  /* Ignore the order of addresses from the resolver to not get
+     stuck with a pair of unreachable or otherwise unusable servers
+     (e.g. falsetickers) in case the order doesn't change, or a group
+     of servers if they are ordered by IP family */
+  us->random_order = 1;
+  us->refreshment = refreshment;
   us->pool_id = INVALID_POOL;
   us->address = *record->remote_addr;
 
@@ -988,11 +1013,11 @@ resolve_source_replacement(SourceRecord *record)
 void
 NSR_HandleBadSource(IPAddr *address)
 {
-  static struct timespec last_replacement;
-  struct timespec now;
+  static double next_replacement = 0.0;
   SourceRecord *record;
   IPAddr ip_addr;
-  double diff;
+  uint32_t rnd;
+  double now;
   int slot;
 
   if (!find_slot(address, &slot))
@@ -1007,15 +1032,56 @@ NSR_HandleBadSource(IPAddr *address)
     return;
 
   /* Don't resolve names too frequently */
-  SCH_GetLastEventTime(NULL, NULL, &now);
-  diff = UTI_DiffTimespecsToDouble(&now, &last_replacement);
-  if (fabs(diff) < RESOLVE_INTERVAL_UNIT * (1 << MIN_REPLACEMENT_INTERVAL)) {
+  now = SCH_GetLastEventMonoTime();
+  if (now < next_replacement) {
     DEBUG_LOG("replacement postponed");
     return;
   }
-  last_replacement = now;
 
-  resolve_source_replacement(record);
+  UTI_GetRandomBytes(&rnd, sizeof (rnd));
+  next_replacement = now + ((double)rnd / (uint32_t)-1) *
+                     (RESOLVE_INTERVAL_UNIT * (1 << MAX_REPLACEMENT_INTERVAL));
+
+  resolve_source_replacement(record, 0);
+}
+
+/* ================================================== */
+
+static void
+maybe_refresh_source(void)
+{
+  static double last_refreshment = 0.0;
+  SourceRecord *record, *oldest_record;
+  int i, min_interval;
+  double now;
+
+  min_interval = CNF_GetRefresh();
+
+  now = SCH_GetLastEventMonoTime();
+  if (min_interval <= 0 || now < last_refreshment + min_interval)
+    return;
+
+  last_refreshment = now;
+
+  for (i = 0, oldest_record = NULL; i < ARR_GetSize(records); i++) {
+    record = get_record(i);
+    if (!record->remote_addr || UTI_IsStringIP(record->name))
+      continue;
+
+    if (!oldest_record || oldest_record->last_resolving > record->last_resolving)
+      oldest_record = record;
+  }
+
+  if (!oldest_record)
+    return;
+
+  /* Check if the name wasn't already resolved in the last interval */
+  if (now < oldest_record->last_resolving + min_interval) {
+    last_refreshment = oldest_record->last_resolving;
+    return;
+  }
+
+  resolve_source_replacement(oldest_record, 1);
 }
 
 /* ================================================== */
@@ -1031,7 +1097,7 @@ NSR_RefreshAddresses(void)
     if (!record->remote_addr)
       continue;
 
-    resolve_source_replacement(record);
+    resolve_source_replacement(record, 1);
   }
 }
 
@@ -1157,6 +1223,8 @@ NSR_ProcessRx(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_addr,
           remove_pool_sources(record->pool_id, 1, 0);
       }
     }
+
+    maybe_refresh_source();
   } else {
     NCR_ProcessRxUnknown(remote_addr, local_addr, rx_ts, message, length);
   }

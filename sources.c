@@ -112,6 +112,9 @@ struct SRC_Instance_Record {
   /* Updates left before allowing combining */
   int distant;
 
+  /* Updates with a status requiring source replacement */
+  int bad;
+
   /* Flag indicating the status of the source */
   SRC_Status status;
 
@@ -178,11 +181,16 @@ static int reported_no_majority;  /* Flag to avoid repeated log message
 /* Number of updates needed to reset the distant status */
 #define DISTANT_PENALTY 32
 
+/* Number of updates needed to trigger handling of bad sources */
+#define BAD_HANDLE_THRESHOLD 4
+
 static double max_distance;
 static double max_jitter;
 static double reselect_distance;
 static double stratum_weight;
 static double combine_limit;
+
+static SRC_Instance last_updated_inst;
 
 static LOG_FileID logfileid;
 
@@ -217,6 +225,8 @@ void SRC_Initialise(void) {
 
   LCL_AddParameterChangeHandler(slew_sources, NULL);
   LCL_AddDispersionNotifyHandler(add_dispersion, NULL);
+
+  last_updated_inst = NULL;
 
   logfileid = CNF_GetLogSelection() ? LOG_FileOpen("selection",
               "   Date (UTC) Time     IP Address   S EOpts Reach Score Last sample  Low end   High end")
@@ -301,6 +311,9 @@ void SRC_DestroyInstance(SRC_Instance instance)
 {
   int dead_index, i;
 
+  if (last_updated_inst == instance)
+    last_updated_inst = NULL;
+
   assert(initialised);
   if (instance->index < 0 || instance->index >= n_sources ||
       instance != sources[instance->index])
@@ -333,6 +346,7 @@ SRC_ResetInstance(SRC_Instance instance)
   instance->reachability = 0;
   instance->reachability_size = 0;
   instance->distant = 0;
+  instance->bad = 0;
   instance->status = SRC_BAD_STATS;
   instance->sel_score = 1.0;
   instance->stratum = 0;
@@ -478,6 +492,19 @@ special_mode_end(void)
     return 1;
 }
 
+/* ================================================== */
+
+static void
+handle_bad_source(SRC_Instance inst)
+{
+  if (inst->type == SRC_NTP) {
+    DEBUG_LOG("Bad source status=%c", get_status_char(inst->status));
+    NSR_HandleBadSource(inst->ip_addr);
+  }
+}
+
+/* ================================================== */
+
 void
 SRC_UpdateReachability(SRC_Instance inst, int reachable)
 {
@@ -498,14 +525,9 @@ SRC_UpdateReachability(SRC_Instance inst, int reachable)
     REF_SetUnsynchronised();
   }
 
-  /* Try to replace NTP sources that are unreachable, falsetickers, or
-     have root distance or jitter larger than the allowed maximums */
-  if (inst->type == SRC_NTP &&
-      ((!inst->reachability && inst->reachability_size == SOURCE_REACH_BITS) ||
-       inst->status == SRC_BAD_DISTANCE || inst->status == SRC_JITTERY ||
-       inst->status == SRC_FALSETICKER)) {
-    NSR_HandleBadSource(inst->ip_addr);
-  }
+  /* Try to replace unreachable NTP sources */
+  if (inst->reachability == 0 && inst->reachability_size == SOURCE_REACH_BITS)
+    handle_bad_source(inst);
 }
 
 /* ================================================== */
@@ -661,11 +683,23 @@ mark_source(SRC_Instance inst, SRC_Status status)
 
   inst->status = status;
 
-  DEBUG_LOG("%s status=%c options=%x reach=%o/%d updates=%d distant=%d leap=%d vote=%d lo=%f hi=%f",
+  /* Try to replace NTP sources that are falsetickers, or have a root
+     distance or jitter larger than the allowed maximums */
+  if (inst == last_updated_inst) {
+    if (inst->bad < INT_MAX &&
+        (status == SRC_FALSETICKER || status == SRC_BAD_DISTANCE || status == SRC_JITTERY))
+      inst->bad++;
+    else
+      inst->bad = 0;
+    if (inst->bad >= BAD_HANDLE_THRESHOLD)
+      handle_bad_source(inst);
+  }
+
+  DEBUG_LOG("%s status=%c options=%x reach=%o/%d updates=%d distant=%d bad=%d leap=%d vote=%d lo=%f hi=%f",
             source_to_string(inst), get_status_char(inst->status),
             (unsigned int)inst->sel_options, (unsigned int)inst->reachability,
             inst->reachability_size, inst->updates,
-            inst->distant, (int)inst->leap, inst->leap_vote,
+            inst->distant, inst->bad, (int)inst->leap, inst->leap_vote,
             inst->sel_info.lo_limit, inst->sel_info.hi_limit);
 
   if (logfileid == -1)
@@ -811,8 +845,10 @@ SRC_SelectSource(SRC_Instance updated_inst)
   double first_sample_ago, max_reach_sample_ago;
   NTP_Leap leap_status;
 
-  if (updated_inst)
+  if (updated_inst) {
     updated_inst->updates++;
+    last_updated_inst = updated_inst;
+  }
 
   if (n_sources == 0) {
     /* In this case, we clearly cannot synchronise to anything */
