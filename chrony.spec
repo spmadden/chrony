@@ -85,6 +85,10 @@ sed -e 's|^\(pool \)\(pool.ntp.org\)|\12.%{vendorzone}\2|' \
 
 touch -r examples/chrony.conf.example2 chrony.conf
 
+# set selinux context in chronyd-restricted service
+sed -i '/^ExecStart/a SELinuxContext=system_u:system_r:chronyd_restricted_t:s0' \
+	examples/chronyd-restricted.service
+
 # regenerate the file from getdate.y
 rm -f getdate.c
 
