@@ -498,6 +498,9 @@ SYS_Linux_EnableSystemCallFilter(int level, SYS_ProcessContext context)
     SCMP_SYS(getrlimit),
     SCMP_SYS(getuid),
     SCMP_SYS(getuid32),
+#ifdef __NR_membarrier
+    SCMP_SYS(membarrier),
+#endif
 #ifdef __NR_rseq
     SCMP_SYS(rseq),
 #endif
@@ -600,6 +603,7 @@ SYS_Linux_EnableSystemCallFilter(int level, SYS_ProcessContext context)
     SCMP_SYS(select),
     SCMP_SYS(set_robust_list),
     SCMP_SYS(write),
+    SCMP_SYS(writev),
 
     /* Miscellaneous */
     SCMP_SYS(getrandom),
@@ -654,7 +658,7 @@ SYS_Linux_EnableSystemCallFilter(int level, SYS_ProcessContext context)
   const static int fcntls[] = { F_GETFD, F_SETFD, F_GETFL, F_SETFL };
 
   const static unsigned long ioctls[] = {
-    FIONREAD, TCGETS,
+    FIONREAD, TCGETS, TIOCGWINSZ,
 #if defined(FEAT_PHC) || defined(HAVE_LINUX_TIMESTAMPING)
     PTP_EXTTS_REQUEST, PTP_SYS_OFFSET,
 #ifdef PTP_PIN_SETFUNC

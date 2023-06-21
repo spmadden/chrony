@@ -1,3 +1,15 @@
+chrony (4.4~pre2-1) experimental; urgency=medium
+
+  * Import upstream version 4.4-pre2:
+    - Please see /usr/share/doc/chrony/NEWS.gz for the release notes.
+
+  * debian/tests/upstream-simulation-test-suite:
+    - Update clknetsim version.
+    - Update clknetsim seed. This prevents the '148-replacement' test from
+    failing.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Wed, 21 Jun 2023 19:12:19 +0200
+
 chrony (4.4~pre1-1) experimental; urgency=medium
 
   * Merge branch 'debian/unstable' into 'debian/latest'.

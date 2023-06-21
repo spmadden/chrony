@@ -448,7 +448,7 @@ process_request(NKSN_Instance session)
           aead_algorithm_values++;
           /* Use the first supported algorithm */
           if (aead_algorithm < 0 && SIV_GetKeyLength(ntohs(data[i])) > 0)
-            aead_algorithm = ntohs(data[i]);;
+            aead_algorithm = ntohs(data[i]);
         }
         break;
       case NKE_RECORD_ERROR:
@@ -512,6 +512,7 @@ generate_key(int index)
     assert(0);
 
   UTI_GetRandomBytesUrandom(key->key, key_length);
+  memset(key->key + key_length, 0, sizeof (key->key) - key_length);
   UTI_GetRandomBytes(&key->id, sizeof (key->id));
 
   /* Encode the index in the lowest bits of the ID */
@@ -628,6 +629,7 @@ load_keys(void)
         key_length <= 0 ||
         UTI_HexToBytes(words[1], new_keys[i].key, sizeof (new_keys[i].key)) != key_length)
       goto error;
+    memset(new_keys[i].key + key_length, 0, sizeof (new_keys[i].key) - key_length);
   }
 
   if (i < MAX_SERVER_KEYS)
