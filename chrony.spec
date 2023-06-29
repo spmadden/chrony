@@ -35,6 +35,9 @@ BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
 %{?systemd_requires}
 %{?sysusers_requires_compat}
 
+# Needed by the leapsectz directive in default chrony.conf
+Requires:       tzdata
+
 # Old NetworkManager expects the dispatcher scripts in a different place
 Conflicts:      NetworkManager < 1.20
 
