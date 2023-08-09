@@ -5,4 +5,5 @@ debian/conf.d etc/chrony
 debian/ntp-units.d/50-chrony.list usr/lib/systemd/ntp-units.d
 debian/sources.d etc/chrony
 debian/usr.sbin.chronyd etc/apparmor.d
+examples/chronyd-restricted.service lib/systemd/system
 examples/chrony-wait.service lib/systemd/system

@@ -1,3 +1,25 @@
+chrony (4.4-1) unstable; urgency=medium
+
+  * Import upstream version 4.4:
+    - Please see /usr/share/doc/chrony/NEWS.gz for the release notes.
+
+  * debian/:
+    - Update links to point to new chrony location.
+
+  * debian/copyright:
+    - Update copyright years.
+
+  * debian/install:
+    - Install the chronyd-restricted systemd unit.
+
+  * debian/patches/:
+    - Add debianize-chronyd-restricted-unit-file.patch.
+
+  * debian/rules:
+    - Do not enable nor start chronyd-restricted.service.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Wed, 09 Aug 2023 17:50:42 +0200
+
 chrony (4.4~pre2-1) experimental; urgency=medium
 
   * Import upstream version 4.4-pre2:

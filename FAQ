@@ -4,6 +4,8 @@ Table of Contents
 
   o 1. chrony compared to other programs
       ? 1.1. How does chrony compare to ntpd?
+      ? 1.2. Should I prefer chrony over timesyncd if I do not need to run a
+        server?
   o 2. Configuration issues
       ? 2.1. What is the minimum recommended configuration for an NTP client?
       ? 2.2. How do I make an NTP server?
@@ -18,11 +20,12 @@ Table of Contents
       ? 2.9. Can chronyd be configured to control the clock like ntpd?
       ? 2.10. Can NTP server be separated from NTP client?
       ? 2.11. Should be a leap smear enabled on NTP server?
-      ? 2.12. How should chronyd be configuration with gpsd?
+      ? 2.12. How should chronyd be configured with gpsd?
       ? 2.13. Does chrony support PTP?
-      ? 2.14. Why are client log records dropped before reaching
+      ? 2.14. How can I avoid using wrong PHC refclock?
+      ? 2.15. Why are client log records dropped before reaching
         clientloglimit?
-      ? 2.15. What happened to the commandkey and generatecommandkey
+      ? 2.16. What happened to the commandkey and generatecommandkey
         directives?
   o 3. Computer is not synchronising
       ? 3.1. Behind a firewall?
@@ -84,6 +87,32 @@ probably work better for you.
 
 For a more detailed comparison of features and performance, see the comparison
 page on the chrony website.
+
+1.2. Should I prefer chrony over timesyncd if I do not need to run a server?
+
+Generally, yes.
+
+systemd-timesyncd is a very simple NTP client included in the systemd suite. It
+lacks almost all features of chrony and other advanced client implementations
+listed on the comparison page. One of its main limitations is that it cannot
+poll multiple servers at the same time and detect servers having incorrect time
+(falsetickers in the NTP terminology). It should be used only with trusted
+reliable servers, ideally in local network.
+
+Using timesyncd with pool.ntp.org is problematic. The pool is very robust as a
+whole, but the individual servers run by volunteers cannot be relied on.
+Occasionally, servers drift away or make a step to distant past or future due
+to misconfiguration, problematic implementation, and other bugs (e.g. in
+firmware of a GPS receiver). The pool monitoring system detects such servers
+and quickly removes them from the pool DNS, but clients like timesyncd cannot
+recover from that. They follow the server as long as it claims to be
+synchronised. They need to be restarted in order to get a new address from the
+pool DNS.
+
+Note that the complexity of NTP and clock synchronisation is on the client
+side. The amount of code in chrony specific to NTP server is very small and it
+is disabled by default. If it was removed, it would not significantly reduce
+the amount of memory or storage needed.
 
 2. Configuration issues
 
@@ -496,7 +525,7 @@ identically configured leap-smearing servers. Note that some clients can get
 leap seconds from other sources (e.g. with the leapsectz directive in chrony)
 and they will not work correctly with a leap smearing server.
 
-2.12. How should chronyd be configuration with gpsd?
+2.12. How should chronyd be configured with gpsd?
 
 A GPS or other GNSS receiver can be used as a reference clock with gpsd. It can
 work as one or two separate time sources for each connected receiver. The first
@@ -578,7 +607,22 @@ transport for NTP messages (NTP over PTP) to enable hardware timestamping on
 hardware which can timestamp PTP packets only. It can be enabled by the ptpport
 directive.
 
-2.14. Why are client log records dropped before reaching clientloglimit?
+2.14. How can I avoid using wrong PHC refclock?
+
+If your system has multiple PHC devices, normally named by udev as /dev/ptp0, /
+dev/ptp1, and so on, their order can change randomly across reboots depending
+on the order of initialisation of their drivers. If a PHC refclock is specified
+by this name, chronyd could be using a wrong refclock after reboot. To prevent
+that, you can configure udev to create a stable symlink for chronyd with a rule
+like this (e.g. written to /etc/udev/rules.d/80-phc.rules):
+
+KERNEL=="ptp[0-9]*", DEVPATH=="/devices/pci0000:00/0000:00:01.2/0000:02:00.0/ptp/*", SYMLINK+="ptp-i350-1"
+
+You can get the full DEVPATH of an existing PHC device with the udevadm info
+command. You will need to execute the udevadm trigger command, or reboot the
+system, for these changes to take effect.
+
+2.15. Why are client log records dropped before reaching clientloglimit?
 
 The number of dropped client log records reported by the serverstats command
 can be increasing before the number of clients reported by the clients command
@@ -599,7 +643,7 @@ than the limit even when the maximum number of records is used.
 The absolute maximum number of client records kept at the same time is
 16777216.
 
-2.15. What happened to the commandkey and generatecommandkey directives?
+2.16. What happened to the commandkey and generatecommandkey directives?
 
 They were removed in version 2.2. Authentication is no longer supported in the
 command protocol. Commands that required authentication are now allowed only
@@ -1048,4 +1092,4 @@ needs to be made to work as a service.
 We have no plans to do this. Anyone is welcome to pick this work up and
 contribute it back to the project.
 
-Last updated 2023-06-21 11:28:54 +0200
+Last updated 2023-08-09 15:20:55 +0200

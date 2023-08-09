@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: chrony
 Upstream-Contact: Miroslav Lichvar <mlichvar@redhat.com>
-Source: https://download.tuxfamily.org/chrony/
+Source: https://chrony-project.org/releases/
 
 Files: *
 Copyright: 2009-2021, Miroslav Lichvar
@@ -56,7 +56,7 @@ Copyright: 2015, Bryan Christianson
 License: GPL-2
 
 Files: test/unit/*
-Copyright: 2016-2022, Miroslav Lichvar
+Copyright: 2016-2023, Miroslav Lichvar
 License: GPL-2
 
 Files: hwclock.?
@@ -64,7 +64,7 @@ Copyright: 2016-2018, 2022, Miroslav Lichvar
 License: GPL-2
 
 Files: ntp_io_linux.?
-Copyright: 2016-2019, 2021-2022 Miroslav Lichvar
+Copyright: 2016-2019, 2021-2023 Miroslav Lichvar
 License: GPL-2
 
 Files: ntp_signd.?
@@ -74,27 +74,27 @@ License: GPL-2
 Files: client.c
 Copyright: 1997-2003, Richard P. Curnow
            2016, Lonnie Abelbeck
-           2009-2022, Miroslav Lichvar
+           2009-2023, Miroslav Lichvar
 License: GPL-2
 
 Files: configure
 Copyright: 1997-2003, Richard P. Curnow
            2016, Bryan Christianson
-           2009, 2012-2021, Miroslav Lichvar
+           2009, 2012-2022, Miroslav Lichvar
            2019, Stefan R. Filipek
 License: GPL-2
 
 Files: doc/chrony.conf.adoc
 Copyright: 1997-2003, Richard P. Curnow
            2016, Stephen Wadeley
-           2009-2022, Miroslav Lichvar
+           2009-2023, Miroslav Lichvar
            2017, Bryan Christianson
 License: GPL-2
 
 Files: doc/chronyc.adoc
 Copyright: 1997-2003, Richard P. Curnow
            2016, Stephen Wadeley
-           2009-2017, 2019-2022, Miroslav Lichvar
+           2009-2017, 2019-2023, Miroslav Lichvar
 License: GPL-2
 
 Files: refclock.c
@@ -102,7 +102,7 @@ Copyright: 2009-2011, 2013-2014, 2016-2019, 2022 Miroslav Lichvar
 License: GPL-2
 
 Files: refclock_phc.c
-Copyright: 2013, 2017, Miroslav Lichvar
+Copyright: 2013, 2017, 2023, Miroslav Lichvar
 License: GPL-2
 
 Files: regress.c
