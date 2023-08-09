@@ -1,6 +1,5 @@
 %global _hardened_build 1
-%global clknetsim_ver 13b0a5
-%global prerelease -pre2
+%global clknetsim_ver ef2a7a
 %bcond_without debug
 %bcond_without nts
 
@@ -14,10 +13,10 @@ Release:        0.4.pre2%{?dist}
 Summary:        An NTP client/server
 
 License:        GPL-2.0-only
-URL:            https://chrony.tuxfamily.org
-Source0:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}.tar.gz
-Source1:        https://download.tuxfamily.org/chrony/chrony-%{version}%{?prerelease}-tar-gz-asc.txt
-Source2:        https://chrony.tuxfamily.org/gpgkey-8F375C7E8D0EE125A3D3BD51537E2B76F7680DAC.asc
+URL:            https://chrony-project.org
+Source0:        https://chrony-project.org/releases/chrony-%{version}%{?prerelease}.tar.gz
+Source1:        https://chrony-project.org/releases/chrony-%{version}%{?prerelease}-tar-gz-asc.txt
+Source2:        https://chrony-project.org/gpgkey-8F375C7E8D0EE125A3D3BD51537E2B76F7680DAC.asc
 Source3:        chrony.dhclient
 Source4:        chrony.sysusers
 # simulator for test suite
