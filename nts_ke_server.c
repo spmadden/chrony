@@ -2,7 +2,7 @@
   chronyd/chronyc - Programs for keeping computer clocks accurate.
 
  **********************************************************************
- * Copyright (C) Miroslav Lichvar  2020
+ * Copyright (C) Miroslav Lichvar  2020, 2022
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -651,7 +651,7 @@ load_keys(void)
 
   fclose(f);
 
-  LOG(LOGS_ERR, "Loaded %s", "server NTS keys");
+  LOG(LOGS_INFO, "Loaded %s", "server NTS keys");
   return 1;
 
 error:

@@ -2,12 +2,12 @@
 .\"     Title: chronyc
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-06-21
+.\"      Date: 2023-08-09
 .\"    Manual: User manual
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYC" "1" "2023-06-21" "chrony @CHRONY_VERSION@" "User manual"
+.TH "CHRONYC" "1" "2023-08-09" "chrony @CHRONY_VERSION@" "User manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -556,9 +556,9 @@ offset. This can be suffixed by \fIns\fP (indicating nanoseconds), \fIus\fP
 (indicating microseconds), \fIms\fP (indicating milliseconds), or \fIs\fP (indicating
 seconds). The number to the left of the square brackets shows the original
 measurement, adjusted to allow for any slews applied to the local clock
-since. The number following the \fI+/\-\fP indicator shows the margin of error in
-the measurement. Positive offsets indicate that the local clock is ahead of
-the source.
+since. Positive offsets indicate that the local clock is ahead of the source.
+The number following the \fI+/\-\fP indicator shows the margin of error in the
+measurement (NTP root distance).
 .RE
 .RE
 .sp
@@ -2746,7 +2746,7 @@ The \fBhelp\fP command displays a summary of the commands and their arguments.
 .SH "BUGS"
 .sp
 For instructions on how to report bugs, please visit
-.URL "https://chrony.tuxfamily.org/" "" "."
+.URL "https://chrony\-project.org/" "" "."
 .SH "AUTHORS"
 .sp
 chrony was written by Richard Curnow, Miroslav Lichvar, and others.

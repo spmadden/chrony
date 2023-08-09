@@ -47,3 +47,4 @@ endif
 override_dh_installsystemd:
 	dh_installsystemd chrony.service
 	dh_installsystemd --no-enable --no-start chrony-wait.service
+	dh_installsystemd --no-enable --no-start chronyd-restricted.service
