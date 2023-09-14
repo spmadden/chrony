@@ -1,3 +1,13 @@
+chrony (4.4-2) unstable; urgency=medium
+
+  * debian/control:
+    - Add version constraint on adduser. (Closes: #1051822)
+
+  * debian/.gitlab-ci.yml:
+    - Run CI on unstable.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Thu, 14 Sep 2023 20:28:27 +0200
+
 chrony (4.4-1) unstable; urgency=medium
 
   * Import upstream version 4.4:
