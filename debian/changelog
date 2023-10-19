@@ -1,3 +1,10 @@
+chrony (4.4-3) unstable; urgency=medium
+
+  * Rely solely on dh_installsystemd to install the systemd units in the
+    correct location. (Closes: #1054222)
+
+ -- Vincent Blut <vincent.debian@free.fr>  Thu, 19 Oct 2023 23:47:52 +0200
+
 chrony (4.4-2) unstable; urgency=medium
 
   * debian/control:
