@@ -2,12 +2,12 @@
 .\"     Title: chrony.conf
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-08-09
+.\"      Date: 2023-11-22
 .\"    Manual: Configuration Files
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONY.CONF" "5" "2023-08-09" "chrony @CHRONY_VERSION@" "Configuration Files"
+.TH "CHRONY.CONF" "5" "2023-11-22" "chrony @CHRONY_VERSION@" "Configuration Files"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -422,17 +422,29 @@ server implementations do not respond to requests containing an unknown
 extension field (\fBchronyd\fP as a server responded to such requests since
 version 2.0).
 .sp
-The following extension field can be enabled by this option:
+This option can be used multiple times to enable multiple extension fields.
+.sp
+The following extension fields are supported:
 .sp
 \fIF323\fP
 .RS 4
-This is an experimental extension field for some improvements that were
+An experimental extension field to enable several improvements that were
 proposed for the next version of the NTP protocol (NTPv5). The field contains
 root delay and dispersion in higher resolution and a monotonic receive
-timestamp, which enables a frequency transfer between the server and client. It
-can significantly improve stability of the synchronization. Generally, it
-should be expected to work only between servers and clients running the same
-version of \fBchronyd\fP.
+timestamp, which enables a frequency transfer between the server and client to
+significantly improve stability of the synchronisation. This field should be
+enabled only for servers known to be running \fBchronyd\fP version 4.2 or later.
+.RE
+.sp
+\fIF324\fP
+.RS 4
+An experimental extension field to enable the use of the Precision Time
+Protocol (PTP) correction field in NTP\-over\-PTP messages updated by one\-step
+end\-to\-end transparent clocks in network switches and routers to significantly
+improve accuracy and stability of the synchronisation. NTP\-over\-PTP can be
+enabled by the \fBptpport\fP directive and setting the \fBport\fP option to
+the PTP port. This field should be enabled only for servers known to be running
+\fBchronyd\fP version 4.5 or later.
 .RE
 .RE
 .sp
@@ -538,7 +550,7 @@ An example of the use of the directive is:
 .if n .RS 4
 .nf
 .fam C
-initstepslew 30 foo.example.net bar.example.net baz.example.net
+initstepslew 30 ntp1.example.net ntp2.example.net ntp3.example.net
 .fam
 .fi
 .if n .RE
@@ -1116,9 +1128,10 @@ refresh the keys on each poll and no NTP packets will be exchanged.
 .sp
 \fBntstrustedcerts\fP [\fIset\-ID\fP] \fIfile\fP|\fIdirectory\fP
 .RS 4
-This directive specifies a file or directory containing certificates (in the
-PEM format) of trusted certificate authorities (CA) which can be used to
-verify certificates of NTS servers.
+This directive specifies a file or directory containing trusted certificates
+(in the PEM format) which are needed to verify certificates of NTS\-KE servers,
+e.g. certificates of trusted certificate authorities (CA) or self\-signed
+certificates of the servers.
 .sp
 The optional \fIset\-ID\fP argument is a number in the range 0 through 2^32\-1, which
 selects the set of certificates where certificates from the specified file
@@ -1140,10 +1153,10 @@ An example is:
 .if n .RS 4
 .nf
 .fam C
-ntstrustedcerts /etc/pki/nts/foo.crt
-ntstrustedcerts 1 /etc/pki/nts/bar.crt
-ntstrustedcerts 1 /etc/pki/nts/baz.crt
-ntstrustedcerts 2 /etc/pki/nts/qux.crt
+ntstrustedcerts /etc/pki/nts/ca1.example.net.crt
+ntstrustedcerts 1 /etc/pki/nts/ca2.example.net.crt
+ntstrustedcerts 1 /etc/pki/nts/ca3.example.net.crt
+ntstrustedcerts 2 /etc/pki/nts/ntp2.example.net.crt
 .fam
 .fi
 .if n .RE
@@ -1269,9 +1282,9 @@ As an example, the following configuration using the default \fBmix\fP mode:
 .if n .RS 4
 .nf
 .fam C
-server foo.example.net nts
-server bar.example.net nts
-server baz.example.net
+server ntp1.example.net nts
+server ntp2.example.net nts
+server ntp3.example.net
 refclock SOCK /var/run/chrony.ttyS0.sock
 .fam
 .fi
@@ -1283,9 +1296,9 @@ is equivalent to the following configuration using the \fBignore\fP mode:
 .nf
 .fam C
 authselectmode ignore
-server foo.example.net nts require trust
-server bar.example.net nts require trust
-server baz.example.net
+server ntp1.example.net nts require trust
+server ntp2.example.net nts require trust
+server ntp3.example.net
 refclock /var/run/chrony.ttyS0.sock require trust
 .fam
 .fi
@@ -2545,8 +2558,9 @@ all\fP directive.
 .RS 4
 The \fBcmdport\fP directive allows the port that is used for run\-time monitoring
 (via the \fBchronyc\fP program) to be altered from its default (323). If set to 0,
-\fBchronyd\fP will not open the port, this is useful to disable \fBchronyc\fP
-access from the Internet. (It does not disable the Unix domain command socket.)
+\fBchronyd\fP will not open the port, which disables remote \fBchronyc\fP access (with
+a non\-default \fBbindcmdaddress\fP) and local access for unprivileged users. It
+does not disable the Unix domain command socket.
 .sp
 An example shows the syntax:
 .sp
@@ -2559,7 +2573,7 @@ cmdport 257
 .if n .RE
 .sp
 This would make \fBchronyd\fP use UDP 257 as its command port. (\fBchronyc\fP would
-need to be run with the \fB\-p 257\fP switch to inter\-operate correctly.)
+need to be run with the \fB\-p 257\fP option to inter\-operate correctly.)
 .RE
 .sp
 \fBcmdratelimit\fP [\fIoption\fP]...
@@ -4511,26 +4525,29 @@ pidfile /run/chronyd.pid
 The \fBptpport\fP directive enables \fBchronyd\fP to send and receive NTP messages
 contained in PTP event messages (NTP\-over\-PTP) to enable hardware timestamping
 on NICs which cannot timestamp NTP packets, but can timestamp unicast PTP
-packets. The port recognized by the NICs is 319 (PTP event port). The default
-value is 0 (disabled).
+packets, and also use corrections provided by PTP one\-step end\-to\-end
+transparent clocks in network switches and routers. The port recognized by the
+NICs and PTP transparent clocks is 319 (PTP event port). The default value is 0
+(disabled).
 .sp
 The NTP\-over\-PTP support is experimental. The protocol and configuration can
-change in future. It should be used only in local networks and expected to work
-only between servers and clients running the same version of \fBchronyd\fP.
+change in future. It should be used only in local networks.
 .sp
 The PTP port will be open even if \fBchronyd\fP is not configured to operate as a
 server or client. The directive does not change the default protocol of
 specified NTP sources. Each NTP source that should use NTP\-over\-PTP needs to
 be specified with the \fBport\fP option set to the PTP port. To actually enable
 hardware timestamping on NICs which can timestamp PTP packets only, the
-\fBrxfilter\fP option of the \fBhwtimestamp\fP directive needs to be set to \fIptp\fP.
+\fBrxfilter\fP option of the \fBhwtimestamp\fP directive needs to be set to \fIptp\fP. The
+extension field \fIF324\fP needs to be enabled to use the corrections provided by
+the PTP transparent clocks.
 .sp
 An example of client configuration is:
 .sp
 .if n .RS 4
 .nf
 .fam C
-server foo.example.net minpoll 0 maxpoll 0 xleave port 319
+server ntp1.example.net minpoll 0 maxpoll 0 xleave port 319 extfield F324
 hwtimestamp * rxfilter ptp
 ptpport 319
 .fam
@@ -4636,15 +4653,15 @@ Use public servers from the \c
 project.
 .RE
 .sp
-Assuming that your NTP servers are called \fIfoo.example.net\fP, \fIbar.example.net\fP
-and \fIbaz.example.net\fP, your \fIchrony.conf\fP file could contain as a minimum:
+Assuming that your NTP servers are called \fIntp1.example.net\fP, \fIntp2.example.net\fP
+and \fIntp3.example.net\fP, your \fIchrony.conf\fP file could contain as a minimum:
 .sp
 .if n .RS 4
 .nf
 .fam C
-server foo.example.net
-server bar.example.net
-server baz.example.net
+server ntp1.example.net
+server ntp2.example.net
+server ntp3.example.net
 .fam
 .fi
 .if n .RE
@@ -4659,9 +4676,9 @@ like:
 .if n .RS 4
 .nf
 .fam C
-server foo.example.net iburst
-server bar.example.net iburst
-server baz.example.net iburst
+server ntp1.example.net iburst
+server ntp2.example.net iburst
+server ntp3.example.net iburst
 driftfile @CHRONYVARDIR@/drift
 makestep 1.0 3
 rtcsync
@@ -4693,9 +4710,9 @@ file could look like:
 .if n .RS 4
 .nf
 .fam C
-server foo.example.net iburst nts
-server bar.example.net iburst nts
-server baz.example.net iburst nts
+server ntp1.example.net iburst nts
+server ntp2.example.net iburst nts
+server ntp3.example.net iburst nts
 driftfile @CHRONYVARDIR@/drift
 makestep 1.0 3
 rtcsync
@@ -4710,16 +4727,16 @@ additional configuration to tell \fBchronyd\fP when the connection goes up and
 down. This saves the program from continuously trying to poll the servers when
 they are inaccessible.
 .sp
-Again, assuming that your NTP servers are called \fIfoo.example.net\fP,
-\fIbar.example.net\fP and \fIbaz.example.net\fP, your \fIchrony.conf\fP file would now
+Again, assuming that your NTP servers are called \fIntp1.example.net\fP,
+\fIntp2.example.net\fP and \fIntp3.example.net\fP, your \fIchrony.conf\fP file would now
 contain:
 .sp
 .if n .RS 4
 .nf
 .fam C
-server foo.example.net offline
-server bar.example.net offline
-server baz.example.net offline
+server ntp1.example.net offline
+server ntp2.example.net offline
+server ntp3.example.net offline
 driftfile @CHRONYVARDIR@/drift
 makestep 1.0 3
 rtcsync
@@ -4925,9 +4942,9 @@ For the \fIchrony.conf\fP file, the following can be used as an example.
 .if n .RS 4
 .nf
 .fam C
-server foo.example.net maxdelay 0.4 offline
-server bar.example.net maxdelay 0.4 offline
-server baz.example.net maxdelay 0.4 offline
+server ntp1.example.net maxdelay 0.4 offline
+server ntp2.example.net maxdelay 0.4 offline
+server ntp3.example.net maxdelay 0.4 offline
 logdir /var/log/chrony
 log statistics measurements tracking
 driftfile @CHRONYVARDIR@/drift
@@ -4998,10 +5015,10 @@ The configuration file could look like:
 .if n .RS 4
 .nf
 .fam C
-server foo.example.net iburst
-server bar.example.net iburst
-server baz.example.net iburst
-server qux.example.net iburst
+server ntp1.example.net iburst
+server ntp2.example.net iburst
+server ntp3.example.net iburst
+server ntp4.example.net iburst
 makestep 1.0 3
 rtcsync
 allow

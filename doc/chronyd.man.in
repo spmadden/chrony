@@ -2,12 +2,12 @@
 .\"     Title: chronyd
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-08-09
+.\"      Date: 2023-11-22
 .\"    Manual: System Administration
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYD" "8" "2023-08-09" "chrony @CHRONY_VERSION@" "System Administration"
+.TH "CHRONYD" "8" "2023-11-22" "chrony @CHRONY_VERSION@" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -87,9 +87,9 @@ terminal.
 \fB\-L\fP \fIlevel\fP
 .RS 4
 This option specifies the minimum severity level of messages to be written to
-the log file, syslog, or terminal. The following levels can be specified:
-0 (informational), 1 (warning), 2 (non\-fatal error), and 3 (fatal error). The
-default value is 0.
+the log file, syslog, or terminal. The following levels can be specified: \-1
+(debug, if compiled with enabled support for debugging), 0 (informational), 1
+(warning), 2 (non\-fatal error), and 3 (fatal error). The default value is 0.
 .RE
 .sp
 \fB\-p\fP
@@ -250,6 +250,18 @@ With this option \fBchronyd\fP will print version number to the terminal and exi
 \fB\-h\fP, \fB\-\-help\fP
 .RS 4
 With this option \fBchronyd\fP will print a help message to the terminal and exit.
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.sp
+\fBLISTEN_FDS\fP
+.RS 4
+On Linux systems, the systemd service manager may pass file descriptors for
+pre\-initialised sockets to \fBchronyd\fP. The service manager allocates and binds
+the file descriptors, and passes a copy to each spawned instance of the
+service. This allows for zero\-downtime service restarts as the sockets buffer
+client requests until the service is able to handle them. The service manager
+sets the LISTEN_FDS environment variable to the number of passed file
+descriptors.
 .RE
 .SH "FILES"
 .sp

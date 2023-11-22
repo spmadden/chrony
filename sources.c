@@ -314,8 +314,12 @@ void SRC_DestroyInstance(SRC_Instance instance)
   if (last_updated_inst == instance)
     last_updated_inst = NULL;
 
+  /* Force reselection if currently selected */
+  SRC_ResetInstance(instance);
+
   assert(initialised);
   if (instance->index < 0 || instance->index >= n_sources ||
+      instance->index == selected_source_index ||
       instance != sources[instance->index])
     assert(0);
 
@@ -330,10 +334,7 @@ void SRC_DestroyInstance(SRC_Instance instance)
 
   update_sel_options();
 
-  /* If this was the previous reference source, we have to reselect! */
-  if (selected_source_index == dead_index)
-    SRC_ReselectSource();
-  else if (selected_source_index > dead_index)
+  if (selected_source_index > dead_index)
     --selected_source_index;
 }
 
@@ -357,6 +358,9 @@ SRC_ResetInstance(SRC_Instance instance)
   memset(&instance->sel_info, 0, sizeof (instance->sel_info));
 
   SST_ResetInstance(instance->stats);
+
+  if (selected_source_index == instance->index)
+    SRC_SelectSource(NULL);
 }
 
 /* ================================================== */
@@ -850,11 +854,9 @@ SRC_SelectSource(SRC_Instance updated_inst)
   }
 
   if (n_sources == 0) {
-    /* In this case, we clearly cannot synchronise to anything */
-    if (selected_source_index != INVALID_SOURCE) {
-      log_selection_message(LOGS_INFO, "Can't synchronise: no sources", NULL);
-      selected_source_index = INVALID_SOURCE;
-    }
+    /* Removed sources are unselected before actual removal */
+    if (selected_source_index != INVALID_SOURCE)
+      assert(0);
     return;
   }
 

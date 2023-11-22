@@ -19,13 +19,15 @@ Table of Contents
       ? 2.8. Does chronyd have an ntpdate mode?
       ? 2.9. Can chronyd be configured to control the clock like ntpd?
       ? 2.10. Can NTP server be separated from NTP client?
-      ? 2.11. Should be a leap smear enabled on NTP server?
-      ? 2.12. How should chronyd be configured with gpsd?
-      ? 2.13. Does chrony support PTP?
-      ? 2.14. How can I avoid using wrong PHC refclock?
-      ? 2.15. Why are client log records dropped before reaching
+      ? 2.11. How can chronyd be configured to minimise downtime during
+        restarts?
+      ? 2.12. Should be a leap smear enabled on NTP server?
+      ? 2.13. How should chronyd be configured with gpsd?
+      ? 2.14. Does chrony support PTP?
+      ? 2.15. How can I avoid using wrong PHC refclock?
+      ? 2.16. Why are client log records dropped before reaching
         clientloglimit?
-      ? 2.16. What happened to the commandkey and generatecommandkey
+      ? 2.17. What happened to the commandkey and generatecommandkey
         directives?
   o 3. Computer is not synchronising
       ? 3.1. Behind a firewall?
@@ -308,11 +310,11 @@ authselectmode directive.
 An example of a client configuration limiting the impact of the attacks could
 be
 
-server foo.example.net iburst nts maxdelay 0.1
-server bar.example.net iburst nts maxdelay 0.2
-server baz.example.net iburst nts maxdelay 0.05
-server qux.example.net iburst nts maxdelay 0.1
-server quux.example.net iburst nts maxdelay 0.1
+server ntp1.example.net iburst nts maxdelay 0.1
+server ntp2.example.net iburst nts maxdelay 0.2
+server ntp3.example.net iburst nts maxdelay 0.05
+server ntp4.example.net iburst nts maxdelay 0.1
+server ntp5.example.net iburst nts maxdelay 0.1
 minsources 3
 maxchange 100 0 0
 makestep 0.001 1
@@ -357,7 +359,7 @@ longer polling interval might work better.
 An example of the directive for an NTP server on the Internet that you are
 allowed to poll frequently could be
 
-server foo.example.net minpoll 4 maxpoll 6 polltarget 16
+server ntp.example.net minpoll 4 maxpoll 6 polltarget 16
 
 An example using shorter polling intervals with a server located in the same
 LAN could be
@@ -511,7 +513,56 @@ bindcmdaddress /var/run/chrony/chronyd-server1.sock
 pidfile /var/run/chronyd-server1.pid
 driftfile /var/lib/chrony/drift-server1
 
-2.11. Should be a leap smear enabled on NTP server?
+2.11. How can chronyd be configured to minimise downtime during restarts?
+
+The dumpdir directive in chrony.conf provides chronyd a location to save a
+measurement history of the sources it uses when the service exits. The -r
+option then enables chronyd to load state from the dump files, reducing the
+synchronisation time after a restart.
+
+Similarly, the ntsdumpdir directive provides a location for chronyd to save NTS
+cookies received from the server to avoid making a NTS-KE request when chronyd
+is started. When operating as an NTS server, chronyd also saves cookies keys to
+this directory to allow clients to continue to use the old keys after a server
+restart for a more seamless experience.
+
+On Linux systems, systemd socket activation provides a mechanism to reuse
+server sockets across chronyd restarts, so that client requests will be
+buffered until the service is again able to handle the requests. This allows
+for zero-downtime service restarts, simplified dependency logic at boot, and
+on-demand service spawning (for instance, for separated server chronyd
+instances run with the -x flag).
+
+Socket activation is supported since chrony version 4.5. The service manager
+(systemd) creates sockets and passes file descriptors to them to the process
+via the LISTEN_FDS environment variable. Before opening new sockets, chronyd
+first checks for and attempts to reuse matching sockets passed from the service
+manager. For instance, if an IPv4 datagram socket bound on bindaddress and port
+is available, it will be used by the NTP server to accept incoming IPv4
+requests.
+
+An example systemd socket unit is below, where chronyd is configured with
+bindaddress 0.0.0.0, bindaddress ::, port 123, and ntsport 4460.
+
+[Unit]
+Description=chronyd server sockets
+
+[Socket]
+Service=chronyd.service
+# IPv4 NTP server
+ListenDatagram=0.0.0.0:123
+# IPv6 NTP server
+ListenDatagram=[::]:123
+# IPv4 NTS-KE server
+ListenStream=0.0.0.0:4460
+# IPv6 NTS-KE server
+ListenStream=[::]:4460
+BindIPv6Only=ipv6-only
+
+[Install]
+WantedBy=sockets.target
+
+2.12. Should be a leap smear enabled on NTP server?
 
 With the smoothtime and leapsecmode directives it is possible to enable a
 server leap smear in order to hide leap seconds from clients and force them to
@@ -525,7 +576,7 @@ identically configured leap-smearing servers. Note that some clients can get
 leap seconds from other sources (e.g. with the leapsectz directive in chrony)
 and they will not work correctly with a leap smearing server.
 
-2.12. How should chronyd be configured with gpsd?
+2.13. How should chronyd be configured with gpsd?
 
 A GPS or other GNSS receiver can be used as a reference clock with gpsd. It can
 work as one or two separate time sources for each connected receiver. The first
@@ -584,7 +635,7 @@ or the SHM equivalent if using gpsd version before 3.25
 
 refclock SHM 0 offset 0.5 delay 0.1 refid GPS
 
-2.13. Does chrony support PTP?
+2.14. Does chrony support PTP?
 
 No, the Precision Time Protocol (PTP) is not supported as a protocol for
 synchronisation of clocks and there are no plans to support it. It is a complex
@@ -605,9 +656,12 @@ The ethtool -T command can be used to verify the timestamping support.
 As an experimental feature added in version 4.2, chrony can use PTP as a
 transport for NTP messages (NTP over PTP) to enable hardware timestamping on
 hardware which can timestamp PTP packets only. It can be enabled by the ptpport
-directive.
+directive. Since version 4.5, chrony can also apply corrections provided by PTP
+one-step end-to-end transparent clocks to reach the accuracy of ordinary PTP
+clocks. The application of PTP corrections can be enabled by the extfield F324
+option.
 
-2.14. How can I avoid using wrong PHC refclock?
+2.15. How can I avoid using wrong PHC refclock?
 
 If your system has multiple PHC devices, normally named by udev as /dev/ptp0, /
 dev/ptp1, and so on, their order can change randomly across reboots depending
@@ -622,7 +676,7 @@ You can get the full DEVPATH of an existing PHC device with the udevadm info
 command. You will need to execute the udevadm trigger command, or reboot the
 system, for these changes to take effect.
 
-2.15. Why are client log records dropped before reaching clientloglimit?
+2.16. Why are client log records dropped before reaching clientloglimit?
 
 The number of dropped client log records reported by the serverstats command
 can be increasing before the number of clients reported by the clients command
@@ -643,7 +697,7 @@ than the limit even when the maximum number of records is used.
 The absolute maximum number of client records kept at the same time is
 16777216.
 
-2.16. What happened to the commandkey and generatecommandkey directives?
+2.17. What happened to the commandkey and generatecommandkey directives?
 
 They were removed in version 2.2. Authentication is no longer supported in the
 command protocol. Commands that required authentication are now allowed only
@@ -671,9 +725,9 @@ command issued few minutes after chronyd start might look like this:
 
 MS Name/IP address         Stratum Poll Reach LastRx Last sample
 ===============================================================================
-^* foo.example.net               2   6   377    34   +484us[ -157us] +/-   30ms
-^- bar.example.net               2   6   377    34    +33ms[  +32ms] +/-   47ms
-^+ baz.example.net               3   6   377    35  -1397us[-2033us] +/-   60ms
+^* ntp1.example.net              2   6   377    34   +484us[ -157us] +/-   30ms
+^- ntp2.example.net              2   6   377    34    +33ms[  +32ms] +/-   47ms
+^+ ntp3.example.net              3   6   377    35  -1397us[-2033us] +/-   60ms
 
 3.2. Are NTP servers specified with the offline option?
 
@@ -733,9 +787,9 @@ Run the authdata command to check whether the key establishment was successful:
 # chronyc -N authdata
 Name/IP address             Mode KeyID Type KLen Last Atmp  NAK Cook CLen
 =========================================================================
-foo.example.net              NTS     1   15  256  33m    0    0    8  100
-bar.example.net              NTS     1   15  256  33m    0    0    8  100
-baz.example.net              NTS     1   15  256  33m    0    0    8  100
+ntp1.example.net             NTS     1   15  256  33m    0    0    8  100
+ntp2.example.net             NTS     1   15  256  33m    0    0    8  100
+ntp3.example.net             NTS     1   15  256  33m    0    0    8  100
 
 The KeyID, Type, and KLen columns should have non-zero values. If they are
 zero, check the system log for error messages from chronyd. One possible cause
@@ -850,7 +904,7 @@ Name/IP Address            NP  NR  Span  Frequency  Freq Skew  Offset  Std Dev
 ==============================================================================
 PPS0                        0   0     0     +0.000   2000.000     +0ns  4000ms
 NMEA                       58  30   231    -96.494     38.406   +504ms  6080us
-foo.example.net             7   3   200     -2.991     16.141   -107us   492us
+ntp1.example.net            7   3   200     -2.991     16.141   -107us   492us
 
 the offset of the NMEA source would need to be increased by about 0.504
 seconds. It does not have to be very accurate. As long as the offset of the
@@ -1092,4 +1146,4 @@ needs to be made to work as a service.
 We have no plans to do this. Anyone is welcome to pick this work up and
 contribute it back to the project.
 
-Last updated 2023-08-09 15:20:55 +0200
+Last updated 2023-11-22 13:53:23 +0100

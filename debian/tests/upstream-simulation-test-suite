@@ -7,7 +7,7 @@
 set -e
 
 testdir="$PWD/test/simulation"
-clknetsim_ver=ef2a7a9
+clknetsim_ver=5d1dc05
 clknetsim_src=https://github.com/mlichvar/clknetsim/archive/"$clknetsim_ver"/clknetsim-"$clknetsim_ver".tar.gz
 clknetsim_archive=$(basename "$clknetsim_src")
 
@@ -22,9 +22,6 @@ DEB_HOST_MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH)
 dpkg-architecture -ilinux-any || exit 77
 
 prepare_clknetsim() {
-    # This symbolic link is necessary to prevent clknetsim from FTBFS.
-    ln -s /usr/include/"$DEB_HOST_MULTIARCH"/sys/time.h /usr/include/sys/
-
     wget -P "$CLKNETSIM_PATH" "$clknetsim_src" 2>&1 || exit 77
     tar -xvzf "$CLKNETSIM_PATH"/"$clknetsim_archive" \
         -C "$CLKNETSIM_PATH" --strip-components=1 2>&1 || exit 77
