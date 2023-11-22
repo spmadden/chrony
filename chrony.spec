@@ -1,5 +1,6 @@
 %global _hardened_build 1
-%global clknetsim_ver ef2a7a
+%global clknetsim_ver 5d1dc0
+%global prerelease -pre1
 %bcond_without debug
 %bcond_without nts
 
@@ -8,7 +9,7 @@
 %endif
 
 Name:           chrony
-Version:        4.4
+Version:        4.5
 Release:        1%{?dist}
 Summary:        An NTP client/server
 
