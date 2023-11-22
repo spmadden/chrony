@@ -145,6 +145,7 @@ void LOG_Message(LOG_Severity severity,
   struct tm *tm;
 
   assert(initialised);
+  severity = CLAMP(LOGS_DEBUG, severity, LOGS_FATAL);
 
   if (!system_log && file_log && severity >= log_min_severity) {
     /* Don't clutter up syslog with timestamps and internal debugging info */
@@ -155,8 +156,13 @@ void LOG_Message(LOG_Severity severity,
       fprintf(file_log, "%s ", buf);
     }
 #if DEBUG > 0
-    if (log_min_severity <= LOGS_DEBUG)
-      fprintf(file_log, "%s%s:%d:(%s) ", debug_prefix, filename, line_number, function_name);
+    if (log_min_severity <= LOGS_DEBUG) {
+      /* Log severity to character mapping (debug, info, warn, err, fatal) */
+      const char severity_chars[LOGS_FATAL - LOGS_DEBUG + 1] = {'D', 'I', 'W', 'E', 'F'};
+
+      fprintf(file_log, "%c:%s%s:%d:(%s) ", severity_chars[severity - LOGS_DEBUG],
+              debug_prefix, filename, line_number, function_name);
+    }
 #endif
   }
 

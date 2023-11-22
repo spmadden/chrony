@@ -162,4 +162,4 @@ tar cvf - . | gzip -9 > chrony.tar.gz
 to build a package. When untarred within the root directory, this will install
 the files to the intended final locations.
 
-Last updated 2023-08-09 15:20:55 +0200
+Last updated 2023-11-22 13:53:23 +0100

@@ -314,6 +314,9 @@ static ARR_Instance broadcasts;
 /* Maximum acceptable change in server mono<->real offset */
 #define MAX_MONO_DOFFSET 16.0
 
+/* Maximum assumed frequency error in network corrections */
+#define MAX_NET_CORRECTION_FREQ 100.0e-6
+
 /* Invalid socket, different from the one in ntp_io.c */
 #define INVALID_SOCK_FD -2
 
@@ -373,6 +376,9 @@ do_size_checks(void)
   assert(offsetof(NTP_Packet, originate_ts)    == 24);
   assert(offsetof(NTP_Packet, receive_ts)      == 32);
   assert(offsetof(NTP_Packet, transmit_ts)     == 40);
+
+  assert(sizeof (NTP_EFExpMonoRoot) == 24);
+  assert(sizeof (NTP_EFExpNetCorrection) == 24);
 }
 
 /* ================================================== */
@@ -418,6 +424,8 @@ zero_local_timestamp(NTP_Local_Timestamp *ts)
   UTI_ZeroTimespec(&ts->ts);
   ts->err = 0.0;
   ts->source = NTP_TS_DAEMON;
+  ts->rx_duration = 0.0;
+  ts->net_correction = 0.0;
 }
 
 /* ================================================== */
@@ -1045,34 +1053,64 @@ receive_timeout(void *arg)
 /* ================================================== */
 
 static int
-add_ext_exp1(NTP_Packet *message, NTP_PacketInfo *info, struct timespec *rx,
-             double root_delay, double root_dispersion)
+add_ef_mono_root(NTP_Packet *message, NTP_PacketInfo *info, struct timespec *rx,
+                 double root_delay, double root_dispersion)
 {
   struct timespec mono_rx;
-  NTP_ExtFieldExp1 exp1;
+  NTP_EFExpMonoRoot ef;
   NTP_int64 ts_fuzz;
 
-  memset(&exp1, 0, sizeof (exp1));
-  exp1.magic = htonl(NTP_EF_EXP1_MAGIC);
+  memset(&ef, 0, sizeof (ef));
+  ef.magic = htonl(NTP_EF_EXP_MONO_ROOT_MAGIC);
 
   if (info->mode != MODE_CLIENT) {
-    exp1.root_delay = UTI_DoubleToNtp32f28(root_delay);
-    exp1.root_dispersion = UTI_DoubleToNtp32f28(root_dispersion);
+    ef.root_delay = UTI_DoubleToNtp32f28(root_delay);
+    ef.root_dispersion = UTI_DoubleToNtp32f28(root_dispersion);
     if (rx)
       UTI_AddDoubleToTimespec(rx, server_mono_offset, &mono_rx);
     else
       UTI_ZeroTimespec(&mono_rx);
     UTI_GetNtp64Fuzz(&ts_fuzz, message->precision);
-    UTI_TimespecToNtp64(&mono_rx, &exp1.mono_receive_ts, &ts_fuzz);
-    exp1.mono_epoch = htonl(server_mono_epoch);
+    UTI_TimespecToNtp64(&mono_rx, &ef.mono_receive_ts, &ts_fuzz);
+    ef.mono_epoch = htonl(server_mono_epoch);
   }
 
-  if (!NEF_AddField(message, info, NTP_EF_EXP1, &exp1, sizeof (exp1))) {
+  if (!NEF_AddField(message, info, NTP_EF_EXP_MONO_ROOT, &ef, sizeof (ef))) {
     DEBUG_LOG("Could not add EF");
     return 0;
   }
 
-  info->ext_field_flags |= NTP_EF_FLAG_EXP1;
+  info->ext_field_flags |= NTP_EF_FLAG_EXP_MONO_ROOT;
+
+  return 1;
+}
+
+/* ================================================== */
+
+static int
+add_ef_net_correction(NTP_Packet *message, NTP_PacketInfo *info,
+                      NTP_Local_Timestamp *local_rx)
+{
+  NTP_EFExpNetCorrection ef;
+
+  if (CNF_GetPtpPort() == 0) {
+    DEBUG_LOG("ptpport disabled");
+    return 1;
+  }
+
+  memset(&ef, 0, sizeof (ef));
+  ef.magic = htonl(NTP_EF_EXP_NET_CORRECTION_MAGIC);
+
+  if (info->mode != MODE_CLIENT && local_rx->net_correction > local_rx->rx_duration) {
+    UTI_DoubleToNtp64(local_rx->net_correction, &ef.correction);
+  }
+
+  if (!NEF_AddField(message, info, NTP_EF_EXP_NET_CORRECTION, &ef, sizeof (ef))) {
+    DEBUG_LOG("Could not add EF");
+    return 0;
+  }
+
+  info->ext_field_flags |= NTP_EF_FLAG_EXP_NET_CORRECTION;
 
   return 1;
 }
@@ -1224,9 +1262,13 @@ transmit_packet(NTP_Mode my_mode, /* The mode this machine wants to be */
     return 0;
 
   if (ext_field_flags) {
-    if (ext_field_flags & NTP_EF_FLAG_EXP1) {
-      if (!add_ext_exp1(&message, &info, smooth_time ? NULL : &local_receive,
-                        our_root_delay, our_root_dispersion))
+    if (ext_field_flags & NTP_EF_FLAG_EXP_MONO_ROOT) {
+      if (!add_ef_mono_root(&message, &info, smooth_time ? NULL : &local_receive,
+                            our_root_delay, our_root_dispersion))
+        return 0;
+    }
+    if (ext_field_flags & NTP_EF_FLAG_EXP_NET_CORRECTION) {
+      if (!add_ef_net_correction(&message, &info, local_rx))
         return 0;
     }
   }
@@ -1297,6 +1339,8 @@ transmit_packet(NTP_Mode my_mode, /* The mode this machine wants to be */
     local_tx->ts = local_transmit;
     local_tx->err = local_transmit_err;
     local_tx->source = NTP_TS_DAEMON;
+    local_tx->rx_duration = 0.0;
+    local_tx->net_correction = 0.0;
   }
 
   if (local_ntp_rx)
@@ -1491,6 +1535,14 @@ is_zero_data(unsigned char *data, int length)
 /* ================================================== */
 
 static int
+is_exp_ef(void *body, int body_length, int expected_body_length, uint32_t magic)
+{
+  return body_length == expected_body_length && *(uint32_t *)body == htonl(magic);
+}
+
+/* ================================================== */
+
+static int
 parse_packet(NTP_Packet *packet, int length, NTP_PacketInfo *info)
 {
   int parsed, remainder, ef_length, ef_type, ef_body_length;
@@ -1576,10 +1628,15 @@ parse_packet(NTP_Packet *packet, int length, NTP_PacketInfo *info)
       case NTP_EF_NTS_AUTH_AND_EEF:
         info->auth.mode = NTP_AUTH_NTS;
         break;
-      case NTP_EF_EXP1:
-        if (ef_body_length == sizeof (NTP_ExtFieldExp1) &&
-            ntohl(((NTP_ExtFieldExp1 *)ef_body)->magic) == NTP_EF_EXP1_MAGIC)
-          info->ext_field_flags |= NTP_EF_FLAG_EXP1;
+      case NTP_EF_EXP_MONO_ROOT:
+        if (is_exp_ef(ef_body, ef_body_length, sizeof (NTP_EFExpMonoRoot),
+                      NTP_EF_EXP_MONO_ROOT_MAGIC))
+          info->ext_field_flags |= NTP_EF_FLAG_EXP_MONO_ROOT;
+        break;
+      case NTP_EF_EXP_NET_CORRECTION:
+        if (is_exp_ef(ef_body, ef_body_length, sizeof (NTP_EFExpNetCorrection),
+                      NTP_EF_EXP_NET_CORRECTION_MAGIC))
+          info->ext_field_flags |= NTP_EF_FLAG_EXP_NET_CORRECTION;
         break;
       default:
         DEBUG_LOG("Unknown extension field type=%x", (unsigned int)ef_type);
@@ -1603,6 +1660,53 @@ parse_packet(NTP_Packet *packet, int length, NTP_PacketInfo *info)
 
   DEBUG_LOG("Invalid format");
   return 0;
+}
+
+/* ================================================== */
+
+static void
+apply_net_correction(NTP_Sample *sample, NTP_Local_Timestamp *rx, NTP_Local_Timestamp *tx,
+                     double precision)
+{
+  double rx_correction, tx_correction, low_delay_correction;
+
+  /* Require some correction from transparent clocks to be present
+     in both directions (not just the local RX timestamp correction) */
+  if (rx->net_correction <= rx->rx_duration || tx->net_correction <= 0.0)
+    return;
+
+  /* With perfect corrections from PTP transparent clocks and short cables
+     the peer delay would be close to zero, or even negative if the server or
+     transparent clocks were running faster than client, which would invert the
+     sample weighting.  Adjust the correction to get a delay corresponding to
+     a direct connection to the server.  For simplicity, assume the TX and RX
+     link speeds are equal.  If not, the reported delay will be wrong, but it
+     will not cause an error in the offset. */
+  rx_correction = rx->net_correction - rx->rx_duration;
+  tx_correction = tx->net_correction - rx->rx_duration;
+
+  /* Use a slightly smaller value in the correction of delay to not overcorrect
+     if the transparent clocks run up to 100 ppm fast and keep a part of the
+     uncorrected delay for the sample weighting */
+  low_delay_correction = (rx_correction + tx_correction) *
+                         (1.0 - MAX_NET_CORRECTION_FREQ);
+
+  /* Make sure the correction is sane.  The values are not authenticated! */
+  if (low_delay_correction < 0.0 || low_delay_correction > sample->peer_delay) {
+    DEBUG_LOG("Invalid correction %.9f peer_delay=%.9f",
+              low_delay_correction, sample->peer_delay);
+    return;
+  }
+
+  /* Correct the offset and peer delay, but not the root delay to not
+     change the estimated maximum error */
+  sample->offset += (rx_correction - tx_correction) / 2.0;
+  sample->peer_delay -= low_delay_correction;
+  if (sample->peer_delay < precision)
+    sample->peer_delay = precision;
+
+  DEBUG_LOG("Applied correction rx=%.9f tx=%.9f dur=%.9f",
+            rx->net_correction, tx->net_correction, rx->rx_duration);
 }
 
 /* ================================================== */
@@ -1868,18 +1972,20 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
   /* Extension fields */
   int parsed, ef_length, ef_type, ef_body_length;
   void *ef_body;
-  NTP_ExtFieldExp1 *ef_exp1;
+  NTP_EFExpMonoRoot *ef_mono_root;
+  NTP_EFExpNetCorrection *ef_net_correction;
 
   NTP_Local_Timestamp local_receive, local_transmit;
   double remote_interval, local_interval, response_time;
-  double delay_time, precision, mono_doffset;
+  double delay_time, precision, mono_doffset, net_correction;
   int updated_timestamps;
 
   /* ==================== */
 
   stats = SRC_GetSourcestats(inst->source);
 
-  ef_exp1 = NULL;
+  ef_mono_root = NULL;
+  ef_net_correction = NULL;
 
   /* Find requested non-authentication extension fields */
   if (inst->ext_field_flags & info->ext_field_flags) {
@@ -1889,11 +1995,17 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
         break;
 
       switch (ef_type) {
-        case NTP_EF_EXP1:
-          if (inst->ext_field_flags & NTP_EF_FLAG_EXP1 &&
-              ef_body_length == sizeof (*ef_exp1) &&
-              ntohl(((NTP_ExtFieldExp1 *)ef_body)->magic) == NTP_EF_EXP1_MAGIC)
-            ef_exp1 = ef_body;
+        case NTP_EF_EXP_MONO_ROOT:
+          if (inst->ext_field_flags & NTP_EF_FLAG_EXP_MONO_ROOT &&
+              is_exp_ef(ef_body, ef_body_length, sizeof (*ef_mono_root),
+                        NTP_EF_EXP_MONO_ROOT_MAGIC))
+            ef_mono_root = ef_body;
+          break;
+        case NTP_EF_EXP_NET_CORRECTION:
+          if (inst->ext_field_flags & NTP_EF_FLAG_EXP_NET_CORRECTION &&
+              is_exp_ef(ef_body, ef_body_length, sizeof (*ef_net_correction),
+                        NTP_EF_EXP_NET_CORRECTION_MAGIC))
+            ef_net_correction = ef_body;
           break;
       }
     }
@@ -1902,9 +2014,9 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
   pkt_leap = NTP_LVM_TO_LEAP(message->lvm);
   pkt_version = NTP_LVM_TO_VERSION(message->lvm);
   pkt_refid = ntohl(message->reference_id);
-  if (ef_exp1) {
-    pkt_root_delay = UTI_Ntp32f28ToDouble(ef_exp1->root_delay);
-    pkt_root_dispersion = UTI_Ntp32f28ToDouble(ef_exp1->root_dispersion);
+  if (ef_mono_root) {
+    pkt_root_delay = UTI_Ntp32f28ToDouble(ef_mono_root->root_delay);
+    pkt_root_dispersion = UTI_Ntp32f28ToDouble(ef_mono_root->root_dispersion);
   } else {
     pkt_root_delay = UTI_Ntp32ToDouble(message->root_delay);
     pkt_root_dispersion = UTI_Ntp32ToDouble(message->root_dispersion);
@@ -1989,16 +2101,22 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
        the new sample.  In the interleaved mode, cancel the correction out in
        remote timestamps of the previous request and response, which were
        captured before the source accumulated the new time corrections. */
-    if (ef_exp1 && inst->remote_mono_epoch == ntohl(ef_exp1->mono_epoch) &&
-        !UTI_IsZeroNtp64(&ef_exp1->mono_receive_ts) &&
+    if (ef_mono_root && inst->remote_mono_epoch == ntohl(ef_mono_root->mono_epoch) &&
+        !UTI_IsZeroNtp64(&ef_mono_root->mono_receive_ts) &&
         !UTI_IsZeroNtp64(&inst->remote_ntp_monorx)) {
       mono_doffset =
-          UTI_DiffNtp64ToDouble(&ef_exp1->mono_receive_ts, &inst->remote_ntp_monorx) -
+          UTI_DiffNtp64ToDouble(&ef_mono_root->mono_receive_ts, &inst->remote_ntp_monorx) -
           UTI_DiffNtp64ToDouble(&message->receive_ts, &inst->remote_ntp_rx);
       if (fabs(mono_doffset) > MAX_MONO_DOFFSET)
         mono_doffset = 0.0;
     } else {
       mono_doffset = 0.0;
+    }
+
+    if (ef_net_correction) {
+      net_correction = UTI_Ntp64ToDouble(&ef_net_correction->correction);
+    } else {
+      net_correction = 0.0;
     }
 
     /* Select remote and local timestamps for the new sample */
@@ -2020,6 +2138,7 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
         UTI_Ntp64ToTimespec(&message->receive_ts, &remote_receive);
         UTI_Ntp64ToTimespec(&inst->remote_ntp_rx, &remote_request_receive);
         local_transmit = inst->local_tx;
+        local_transmit.net_correction = net_correction;
         root_delay = MAX(pkt_root_delay, inst->remote_root_delay);
         root_dispersion = MAX(pkt_root_dispersion, inst->remote_root_dispersion);
       }
@@ -2034,6 +2153,7 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
       remote_request_receive = remote_receive;
       local_receive = *rx_ts;
       local_transmit = inst->local_tx;
+      local_transmit.net_correction = net_correction;
       root_delay = pkt_root_delay;
       root_dispersion = pkt_root_dispersion;
     }
@@ -2077,6 +2197,9 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
                              skew * fabs(local_interval);
     sample.root_delay = root_delay + sample.peer_delay;
     sample.root_dispersion = root_dispersion + sample.peer_dispersion;
+
+    /* Apply corrections from PTP transparent clocks if available and sane */
+    apply_net_correction(&sample, &local_receive, &local_transmit, precision);
     
     /* If the source is an active peer, this is the minimum assumed interval
        between previous two transmissions (if not constrained by minpoll) */
@@ -2085,8 +2208,10 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
 
     /* Additional tests required to pass before accumulating the sample */
 
-    /* Test A requires that the minimum estimate of the peer delay is not
-       larger than the configured maximum, in both client modes that the server
+    /* Test A combines multiple tests to avoid changing the measurements log
+       format and ntpdata report.  It requires that the minimum estimate of the
+       peer delay is not larger than the configured maximum, it is not a
+       response in the 'warm up' exchange, in both client modes that the server
        processing time is sane, in interleaved client/server mode that the
        previous response was not in basic mode (which prevents using timestamps
        that minimise delay error), and in interleaved symmetric mode that the
@@ -2094,6 +2219,7 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
        a missed response */
     testA = sample.peer_delay - sample.peer_dispersion <= inst->max_delay &&
             precision <= inst->max_delay &&
+            inst->presend_done <= 0 &&
             !(inst->mode == MODE_CLIENT && response_time > MAX_SERVER_INTERVAL) &&
             !(inst->mode == MODE_CLIENT && interleaved_packet &&
               UTI_IsZeroTimespec(&inst->prev_local_tx.ts) &&
@@ -2132,6 +2258,7 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
     sample.root_delay = sample.root_dispersion = 0.0;
     sample.time = rx_ts->ts;
     mono_doffset = 0.0;
+    net_correction = 0.0;
     local_receive = *rx_ts;
     local_transmit = inst->local_tx;
     testA = testB = testC = testD = 0;
@@ -2165,9 +2292,9 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
     /* If available, update the monotonic timestamp and accumulate the offset.
        This needs to be done here to not lose changes in remote_ntp_rx in
        symmetric mode when there are multiple responses per request. */
-    if (ef_exp1 && !UTI_IsZeroNtp64(&ef_exp1->mono_receive_ts)) {
-      inst->remote_mono_epoch = ntohl(ef_exp1->mono_epoch);
-      inst->remote_ntp_monorx = ef_exp1->mono_receive_ts;
+    if (ef_mono_root && !UTI_IsZeroNtp64(&ef_mono_root->mono_receive_ts)) {
+      inst->remote_mono_epoch = ntohl(ef_mono_root->mono_epoch);
+      inst->remote_ntp_monorx = ef_mono_root->mono_receive_ts;
       inst->mono_doffset += mono_doffset;
     } else {
       inst->remote_mono_epoch = 0;
@@ -2175,8 +2302,11 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
       inst->mono_doffset = 0.0;
     }
 
-    /* Don't use the same set of timestamps for the next sample */
-    if (interleaved_packet)
+    inst->local_tx.net_correction = net_correction;
+
+    /* Avoid reusing timestamps of an accumulated sample when switching
+       from basic mode to interleaved mode */
+    if (interleaved_packet || !good_packet)
       inst->prev_local_tx = inst->local_tx;
     else
       zero_local_timestamp(&inst->prev_local_tx);
@@ -2195,15 +2325,11 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
   /* Accept at most one response per request.  The NTP specification recommends
      resetting local_ntp_tx to make the following packets fail test2 or test3,
      but that would not allow the code above to make multiple updates of the
-     timestamps in symmetric mode.  Also, ignore presend responses. */
+     timestamps in symmetric mode. */
   if (inst->valid_rx) {
     test2 = test3 = 0;
     valid_packet = synced_packet = good_packet = 0;
   } else if (valid_packet) {
-    if (inst->presend_done) {
-      testA = 0;
-      good_packet = 0;
-    }
     inst->valid_rx = 1;
   }
 
@@ -2602,8 +2728,7 @@ NCR_ProcessRxUnknown(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_a
       UTI_CompareNtp64(&message->receive_ts, &message->transmit_ts) != 0) {
     ntp_rx = message->originate_ts;
     local_ntp_rx = &ntp_rx;
-    UTI_ZeroTimespec(&local_tx.ts);
-    local_tx.source = NTP_TS_DAEMON;
+    zero_local_timestamp(&local_tx);
     interleaved = CLG_GetNtpTxTimestamp(&ntp_rx, &local_tx.ts, &local_tx.source);
 
     tx_ts = &local_tx;
