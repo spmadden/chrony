@@ -2,12 +2,12 @@
 .\"     Title: chrony.conf
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-11-22
+.\"      Date: 2023-12-05
 .\"    Manual: Configuration Files
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONY.CONF" "5" "2023-11-22" "chrony @CHRONY_VERSION@" "Configuration Files"
+.TH "CHRONY.CONF" "5" "2023-12-05" "chrony @CHRONY_VERSION@" "Configuration Files"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -443,8 +443,10 @@ Protocol (PTP) correction field in NTP\-over\-PTP messages updated by one\-step
 end\-to\-end transparent clocks in network switches and routers to significantly
 improve accuracy and stability of the synchronisation. NTP\-over\-PTP can be
 enabled by the \fBptpport\fP directive and setting the \fBport\fP option to
-the PTP port. This field should be enabled only for servers known to be running
-\fBchronyd\fP version 4.5 or later.
+the PTP port. The corrections are applied only to NTP measurements with HW
+timestamps (enabled by the \fBhwtimestamp\fP directive). This
+field should be enabled only for servers known to be running \fBchronyd\fP version
+4.5 or later.
 .RE
 .RE
 .sp

@@ -2,12 +2,12 @@
 .\"     Title: chronyc
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-11-22
+.\"      Date: 2023-12-05
 .\"    Manual: User manual
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYC" "1" "2023-11-22" "chrony @CHRONY_VERSION@" "User manual"
+.TH "CHRONYC" "1" "2023-12-05" "chrony @CHRONY_VERSION@" "User manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -1802,6 +1802,10 @@ command might replace the addresses even if they are still in the pool.
 The \fBreload sources\fP command causes \fBchronyd\fP to re\-read all \fI*.sources\fP files
 from the directories specified by the
 \fBsourcedir\fP directive.
+.sp
+Note that modified sources (e.g. specified with a new option) are not modified
+in memory. They are removed and added again, which causes them to lose old
+measurements and reset the selection state.
 .RE
 .sp
 \fBsourcename\fP \fIaddress\fP
