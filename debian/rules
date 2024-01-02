@@ -47,6 +47,5 @@ endif
 override_dh_installsystemd:
 	dh_installsystemd chrony.service
 	dh_installsystemd --name=chrony-wait --no-enable --no-start chrony-wait.service
-	dh_installsystemd --name=chronyd-restricted --no-enable --no-start chronyd-restricted.service
 	dh_installsystemd --name=chrony-dnssrv@ chrony-dnssrv@.service
 	dh_installsystemd --name=chrony-dnssrv@ --no-enable --no-start chrony-dnssrv@.timer
