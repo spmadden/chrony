@@ -25,9 +25,12 @@ chrony (4.5-1ubuntu1) noble; urgency=medium
       + d/install: Make chrony-starter.sh available on install.
       + d/docs, d/README.container: Provide documentation about the
         handling of this case.
+  * Dropped:
     - Depend on tzdata-legacy for reading leapsectz from
       /usr/share/zoneinfo/right/UTC
       (LP #2008076)
+  * d/rules, d/chrony.examples: Ship restricted service as an example
+    not installed to the system for use.  (See LP #2051028)
 
  -- Bryce Harrington <bryce@canonical.com>  Tue, 02 Jan 2024 00:45:01 -0800
 
