@@ -62,6 +62,8 @@ abi <abi/3.0>,
   @{run}/chrony.*.sock rw,
   # To sign replies to MS-SNTP clients by the smbd daemon
   /var/lib/samba/ntp_signd/socket rw,
+  # Default path of the socket to sync with ptp4l
+  @{run}/refclock.ptp.sock rw,
 
   # rtc
   /etc/adjtime r,
