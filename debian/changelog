@@ -1,3 +1,14 @@
+chrony (4.5-1ubuntu4) noble; urgency=medium
+
+  * d/usr.sbin.chronyd: Fix failure to start timemaster due to lack
+    of rw permissions on chrony socket.
+    (LP: #2032805)
+  * d/usr.sbin.chronyd: Allow the default UNIX domain socket address
+    to be used by the reflock_sock service in the Apport configuration.
+    (ref LP #2032805)
+
+ -- Bryce Harrington <bryce@canonical.com>  Mon, 01 Apr 2024 18:28:32 -0700
+
 chrony (4.5-1ubuntu3) noble; urgency=medium
 
   * No-change rebuild for CVE-2024-3094
