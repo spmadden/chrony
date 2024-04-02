@@ -73,8 +73,11 @@ abi <abi/3.0>,
   /dev/pps[0-9]* rw,
   /dev/ptp[0-9]* rw,
 
-  # Allow reading the chronyd configuration file that timemaster(8) generates
-  @{run}/timemaster/chrony.conf r,
+  # Allow reading the chronyd configuration file that timemaster(8)
+  # generates, along with any other config files and sockets.
+  @{run}/timemaster/* r,
+  # Allow read-write on the default socket path for coodination.
+  @{run}/timemaster/chrony.SOCK0 rw,
 
   # For use with clocks that report via shared memory (e.g. gpsd),
   # you may need to give ntpd access to all of shared memory, though
