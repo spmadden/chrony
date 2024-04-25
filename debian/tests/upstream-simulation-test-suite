@@ -7,16 +7,17 @@
 set -e
 
 testdir="$PWD/test/simulation"
-clknetsim_ver=5d1dc05
+clknetsim_ver=0a11a35
 clknetsim_src=https://github.com/mlichvar/clknetsim/archive/"$clknetsim_ver"/clknetsim-"$clknetsim_ver".tar.gz
 clknetsim_archive=$(basename "$clknetsim_src")
 
 export CLKNETSIM_PATH="$AUTOPKGTEST_TMP"
+export CLKNETSIM_CONNECT_TIMEOUT=100
 
 # Always use the same seed to get deterministic results
 export CLKNETSIM_RANDOM_SEED=24508
 
-DEB_HOST_MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH)
+DEB_BUILD_ARCH=$(dpkg-architecture -qDEB_BUILD_ARCH)
 
 # The simulation tests are only supported on Linux.
 dpkg-architecture -ilinux-any || exit 77
@@ -27,7 +28,14 @@ prepare_clknetsim() {
         -C "$CLKNETSIM_PATH" --strip-components=1 2>&1 || exit 77
 
     if [ ! -x "$CLKNETSIM_PATH/clknetsim" ] && [ ! -e "$CLKNETSIM_PATH/clknetsim.so" ]; then
-        make -C "$CLKNETSIM_PATH" 2>&1
+        case "$DEB_BUILD_ARCH" in
+            armel|armhf)
+                CFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_TIME_BITS=64" make -C "$CLKNETSIM_PATH" 2>&1
+                ;;
+            *)
+                make -C "$CLKNETSIM_PATH" 2>&1
+                ;;
+        esac
     fi
 }
 
