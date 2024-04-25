@@ -1,3 +1,31 @@
+chrony (4.5-2) unstable; urgency=medium
+
+  * debian/copyright:
+    - Update copyright year for debian/*.
+
+  * debian/control:
+    - Build depend on pkgconf instead of pkg-config.
+    - Bump Standards-Version to 4.7.0 (no changes needed).
+
+  * debian/rules:
+    - Disable seccomp on loong64 until libseccomp in Debian supports it.
+
+  * debian/tests/upstream-simulation-test-suite:
+    - Build clknetsim with extra CFLAGS on armel and armhf architectures as it
+    needs to use the same time_t as the chronyd binary.
+    - Update clknetsim version.
+    - Prevent connection timeout on slow architectures.
+    - Remove unused environment variable.
+
+  [ Bryce Harrington ]
+  * debian/usr.sbin.chronyd:
+    - Fix failure to start timemaster due to lack of rw permissions on chrony
+    socket. (LP: #2032805)
+    - Allow the default UNIX domain socket address to be used by the
+    reflock_sock service in the AppArmor configuration.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Thu, 25 Apr 2024 15:52:18 +0200
+
 chrony (4.5-1) unstable; urgency=medium
 
   * Import upstream version 4.5:
