@@ -1,3 +1,13 @@
+chrony (4.5-3) unstable; urgency=medium
+
+  * debian/upstream-simulation-test-suite:
+    - Update clknetsim version (Closes: #1073861)
+
+  * debian/usr.sbin.chronyd:
+    - Don't be too strict on allowed socket paths (LP: #2068526)
+
+ -- Vincent Blut <vincent.debian@free.fr>  Thu, 20 Jun 2024 00:41:37 +0200
+
 chrony (4.5-2) unstable; urgency=medium
 
   * debian/copyright:
