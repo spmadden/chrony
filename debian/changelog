@@ -1,6 +1,7 @@
 chrony (4.5-3ubuntu1) oracular; urgency=medium
 
-  * Merge with Debian unstable (LP: #2064393). Remaining changes:
+  * Merge with Debian unstable (LP: #2064393, LP: #2068526). Remaining
+    changes:
     - d/chrony.conf: Use ubuntu ntp pool and server.
       (LP #1744664, #1754358)
     - Set -x as default if unable to set time (e.g. in containers) (LP #1589780)
