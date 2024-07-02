@@ -1,3 +1,10 @@
+chrony (4.5-1ubuntu4.1) noble; urgency=medium
+
+  * d/usr.sbin.chronyd: fix the apparmor profile to allow multiple PTP
+    clocks/interfaces (LP: #2068526)
+
+ -- Andreas Hasenack <andreas@canonical.com>  Tue, 02 Jul 2024 17:22:37 -0300
+
 chrony (4.5-1ubuntu4) noble; urgency=medium
 
   * d/usr.sbin.chronyd: Fix failure to start timemaster due to lack
