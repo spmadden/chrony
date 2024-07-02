@@ -1,3 +1,42 @@
+chrony (4.5-3ubuntu1) oracular; urgency=medium
+
+  * Merge with Debian unstable (LP: #2064393). Remaining changes:
+    - d/chrony.conf: Use ubuntu ntp pool and server.
+      (LP #1744664, #1754358)
+    - Set -x as default if unable to set time (e.g. in containers) (LP #1589780)
+      Chrony is a single service which acts as both NTP client (i.e. syncing the
+      local clock) and NTP server (i.e. providing NTP services to the network),
+      and that is both desired and expected in the vast majority of cases.
+      But in containers syncing the local clock is usually impossible, but this
+      shall not break the providing of NTP services to the network.
+      To some extent this makes chrony's default config more similar to 'ntpd',
+      which complained in syslog but still provided NTP server service in those
+      cases.
+      + debian/chrony.service: allow the service to run without CAP_SYS_TIME
+      + d/control: add new dependency libcap2-bin for capsh (usually
+        installed anyway, but make them explicit to be sure).
+      + d/chrony.default: new option SYNC_IN_CONTAINER to not fall
+        back (Default off)
+      + d/chronyd-starter.sh: wrapper to handle special cases in
+        containers and if CAP_SYS_TIME is missing. Effectively allows
+        running the NTP server in containers on a default installation
+        and avoid failing to sync time (or if allowed to sync, avoid
+        multiple containers fighting over it by accident).
+      + d/install: Make chrony-starter.sh available on install.
+      + d/docs, d/README.container: Provide documentation about the
+        handling of this case.
+    - d/rules, d/chrony.examples: Ship restricted service as an example
+      not installed to the system for use.  (See LP #2051028)
+  * Dropped:
+    - d/usr.sbin.chronyd: apparmor fixes (LP: #2032805):
+      + Allow the default UNIX domain socket address to be used by the
+        reflock_sock service in the Apport configuration.
+      + Fix failure to start timemaster due to lack of rw permissions on
+        chrony socket.
+      [In 4.5-2 and 4.5-3]
+
+ -- Andreas Hasenack <andreas@canonical.com>  Tue, 02 Jul 2024 15:57:20 -0300
+
 chrony (4.5-3) unstable; urgency=medium
 
   * debian/upstream-simulation-test-suite:
