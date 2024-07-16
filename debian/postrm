@@ -12,6 +12,7 @@ case "$1" in
         rm -f /var/lib/chrony/*
         rm -f /etc/chrony/chrony.conf
         rm -f /etc/chrony/chrony.keys
+        rm -f /etc/chrony/sources.d/default-ntp-pools.sources
         if command -v ucf >/dev/null
         then
             ucf --purge /etc/chrony/chrony.conf
