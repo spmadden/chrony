@@ -3,6 +3,7 @@
 #
 # see: dh_installdeb(1)
 
+. /usr/share/debconf/confmodule
 set -e
 
 
@@ -18,10 +19,34 @@ case "$1" in
                 --home /var/lib/chrony \
                 --no-create-home _chrony
 
+        default_ntp_pools_sources_filepath="/etc/chrony/sources.d/default-ntp-pools.sources"
+        packaged_default_ntp_pools_sources_filepath="/usr/share/chrony/default-ntp-pools.sources"
+        
+        if [ ! -f "${default_ntp_pools_sources_filepath}" ];
+        then
+            db_input low chrony/configure_default_pools_in_sourcesd || true
+            db_go
+            db_get chrony/configure_default_pools_in_sourcesd
+            if [ "${RET}" = "true" ];
+            then
+                cp --preserve "${packaged_default_ntp_pools_sources_filepath}" "${default_ntp_pools_sources_filepath}"
+            fi
+        # Handle the case where the system already has default-ntp-pools.sources that is different from the packaged version
+        elif ! cmp -s "${packaged_default_ntp_pools_sources_filepath} "${default_ntp_pools_sources_filepath};
+        then
+            db_input low chrony/preserve_user_configured_pools_in_sourcesd || true
+            db_go
+            db_get chrony/preserve_user_configured_pools_in_sourcesd
+            if [ "${RET}" = "false" ];
+            then
+                cp --preserve "${packaged_default_ntp_pools_sources_filepath}" "${default_ntp_pools_sources_filepath}"
+            fi
+        fi
+
         if command -v ucf >/dev/null
         then
-            ucf --three-way /usr/share/chrony/chrony.conf /etc/chrony/chrony.conf
-            ucf --three-way /usr/share/chrony/chrony.keys /etc/chrony/chrony.keys
+            ucf --debconf-ok --three-way /usr/share/chrony/chrony.conf /etc/chrony/chrony.conf
+            ucf --debconf-ok --three-way /usr/share/chrony/chrony.keys /etc/chrony/chrony.keys
             if [ -x "$(command -v ucfr)" ]; then
                 ucfr chrony /etc/chrony/chrony.conf
                 ucfr chrony /etc/chrony/chrony.keys
