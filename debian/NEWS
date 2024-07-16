@@ -1,3 +1,14 @@
+chrony (4.5-3ubuntu2) oracular; urgency=medium
+
+  Starting with chrony version 4.5-3ubuntu2 the default time sources are 
+  configured by default in the /etc/chrony/sources.d/default-ntp-pools.sources
+  file.
+  default-ntp-pools.sources is not tracked by ucf so removing default time 
+  sources and adding custom ones while avoiding a potential ucf prompt during
+  chrony upgrade is possible.
+
+ -- Ankush Pathak <ankush.pathak@canonical.com>  Tue, 16 Jul 2024 17:57:41 -0600
+
 chrony (4.1~pre1-1) experimental; urgency=medium
 
   Starting with chrony 4.0, it is possible to specify NTP sources in files
