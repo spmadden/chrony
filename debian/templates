@@ -1,0 +1,15 @@
+Template: chrony/preserve_user_configured_pools_in_sourcesd
+Type: boolean
+Default: true
+Description: Don't overwrite /etc/chrony/sources.d/default-ntp-pools.sources with the package maintainer's version.
+ The package maintainer's version and local version currently installed of /etc/chrony/sources.d/default-ntp-pools.sources are different.
+ If you want to preserve the current version please respond in affirmative.
+ If you want the current version to be overwritten by the package maintainer's version please respond in negative.
+
+Template: chrony/configure_default_pools_in_sourcesd
+Type: boolean
+Default: true
+Description: Configure default NTP pool sources in /etc/chrony/sources.d/default-ntp-pools.sources.
+ If you plan to configure time sources for chrony yourself, please respond in negative.
+ If you don't plan to configure time sources for chrony yourself, or are not sure what this means
+ it is recommended that you respond in affirmative.
