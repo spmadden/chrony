@@ -1,3 +1,25 @@
+chrony (4.5-3ubuntu2) oracular; urgency=medium
+
+  * d/chrony.conf: Ubuntu NTP pool sources removed to allow
+    configuration of non-default time sources without editing
+    chrony.conf. (LP: #2048876)
+  * d/templates: Add debconf questions to customize installation of
+    /etc/chrony/sources.d/default-ntp-pools.sources. (LP: #2048876)
+  * d/install, d/default-ntp-pools.sources: Install default-ntp-pools.sources
+    in /usr/share/chrony. (LP: #2048876)
+  * d/control, d/postinst: Install default-ntp-pools.sources in
+    /etc/chrony/sources.d during package install based on debconf
+    answers. default-ntp-pools.sources is not tracked by ucf. This
+    allows users to customize chrony time sources and avoid a potential
+    ucf prompt during chrony upgrade. (LP: #2048876)
+  * d/postrm: Remove /etc/chrony/sources.d/default-ntp-pools.sources
+    during chrony uninstall. (LP: #2048876)
+  * d/NEWS: Add information about default time sources moving out from
+    chrony.conf to /etc/chrony/sources.d/default-ntp-pools.sources.
+    (LP: #2048876)
+
+ -- Ankush Pathak <ankush.pathak@canonical.com>  Thu, 18 Jul 2024 15:34:49 -0500
+
 chrony (4.5-3ubuntu1) oracular; urgency=medium
 
   * Merge with Debian unstable (LP: #2064393, LP: #2068526). Remaining
