@@ -10,7 +10,7 @@
 
 Name:           chrony
 Version:        4.6
-Release:        4%{?dist}
+Release:        0.1.pre1%{?dist}
 Summary:        An NTP client/server
 
 License:        GPL-2.0-only
@@ -206,6 +206,9 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Jul 30 2024 Miroslav Lichvar <mlichvar@redhat.com> 4.6-0.1.pre1
+- update to 4.6-pre1
+
 * Wed Jul 17 2024 Fedora Release Engineering <releng@fedoraproject.org> - 4.5-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_41_Mass_Rebuild
 
