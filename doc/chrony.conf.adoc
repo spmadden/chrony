@@ -220,7 +220,7 @@ when disconnecting the network link. (It will still be necessary to use the
 <<chronyc.adoc#online,*online*>> command when the link has been established, to
 enable measurements to start.)
 *prefer*:::
-Prefer this source over sources without the *prefer* option.
+Prefer this source over other selectable sources without the *prefer* option.
 *noselect*:::
 Never select this source. This is particularly useful for monitoring.
 *trust*:::
@@ -343,6 +343,12 @@ the PTP port. The corrections are applied only to NTP measurements with HW
 timestamps (enabled by the <<hwtimestamp,*hwtimestamp*>> directive). This
 field should be enabled only for servers known to be running *chronyd* version
 4.5 or later.
+*ipv4*:::
+*ipv6*:::
+These options force *chronyd* to use only IPv4 or IPv6 addresses respectively
+for this source. They do not override the *-4* or *-6* option on the *chronyd*
+command line.
+
 {blank}:::
 
 [[pool]]*pool* _name_ [_option_]...::
@@ -655,7 +661,7 @@ default is 64. With drivers that perform their own polling (PPS, PHC, SHM), the
 maximum value is adjusted to the number of driver polls per source poll, i.e.
 2^(_poll_ - _dpoll_).
 *prefer*:::
-Prefer this source over sources without the prefer option.
+Prefer this source over other selectable sources without the *prefer* option.
 *noselect*:::
 Never select this source. This is useful for monitoring or with sources which
 are not very accurate, but are locked with a PPS refclock.
@@ -674,9 +680,10 @@ trusted and required source.
 *tai*:::
 This option indicates that the reference clock keeps time in TAI instead of UTC
 and that *chronyd* should correct its offset by the current TAI-UTC offset. The
-<<leapsectz,*leapsectz*>> directive must be used with this option and the
-database must be kept up to date in order for this correction to work as
-expected. This option does not make sense with PPS refclocks.
+<<leapsectz,*leapsectz*>> or <<leapseclist,*leapseclist*>> directive must be
+used with this option and the database must be kept up to date in order for
+this correction to work as expected. This option does not make sense with PPS
+refclocks.
 *local*:::
 This option specifies that the reference clock is an unsynchronised clock which
 is more stable than the system clock (e.g. TCXO, OCXO, or atomic clock) and
@@ -1263,6 +1270,19 @@ $ TZ=right/UTC date -d 'Dec 31 2008 23:59:60'
 Wed Dec 31 23:59:60 UTC 2008
 ----
 
+[[leapseclist]]*leapseclist* _file_::
+This directive specifies the path to a file containing a list of leap seconds
+and TAI-UTC offsets in NIST/IERS format. It is recommended to use
+the file _leap-seconds.list_ usually included with the system timezone
+database. The behaviour of this directive is otherwise equivalent to
+<<leapsectz,*leapsectz*>>.
++
+An example of this directive is:
++
+----
+leapseclist /usr/share/zoneinfo/leap-seconds.list
+----
+
 [[makestep]]*makestep* _threshold_ _limit_::
 Normally *chronyd* will cause the system to gradually correct any time offset,
 by slowing down or speeding up the clock as required. In certain situations,
@@ -1655,6 +1675,14 @@ The current root distance can be calculated from root delay and root dispersion
 ----
 distance = delay / 2 + dispersion
 ----
+*activate* _distance_:::
+This option sets an activating root distance for the local reference. The
+local reference will not be used until the root distance drops below the
+configured value for the first time. This can be used to prevent the local
+reference from being activated on a server which has never been synchronised
+with an upstream server. The default value of 0.0 causes no activating
+distance to be used, such that the local reference is always eligible for
+activation.
 *orphan*:::
 This option enables a special '`orphan`' mode, where sources with stratum equal
 to the local _stratum_ are assumed to not serve real time. They are ignored
@@ -1677,7 +1705,7 @@ The *orphan* mode is compatible with the *ntpd*'s orphan mode (enabled by the
 An example of the directive is:
 +
 ----
-local stratum 10 orphan distance 0.1
+local stratum 10 orphan distance 0.1 activate 0.5
 ----
 
 [[ntpsigndsocket]]*ntpsigndsocket* _directory_::
@@ -1841,6 +1869,14 @@ source address from completely blocking responses to that address. The leak
 rate is defined as a power of 1/2 and it is 2 by default, i.e. on average at
 least every fourth request has a response. The minimum value is 1 and the
 maximum value is 4.
+*kod* _rate_:::
+This option sets the rate at which Kiss-o'-Death (KoD) RATE responses are
+randomly sent when the limits specified by the *interval* and *burst* options
+are exceeded. It is an additional stream of responses to the *leak* option. A
+KoD RATE response is a request for the client to reduce its polling rate. Few
+implementations actually support it. The rate is defined as a power of 1/2. The
+default value is 0, which means disabled. The minimum value is 0 and the
+maximum value is 4.
 {blank}::
 +
 An example use of the directive is:
@@ -1856,7 +1892,7 @@ packets, by up to 75% (with default *leak* of 2).
 [[ntsratelimit]]*ntsratelimit* [_option_]...::
 This directive enables rate limiting of NTS-KE requests. It is similar to the
 <<ratelimit,*ratelimit*>> directive, except the default interval is 6
-(1 connection per 64 seconds).
+(1 connection per 64 seconds) and the *kod* option is not supported.
 +
 An example of the use of the directive is:
 +
@@ -2004,8 +2040,8 @@ need to be run with the *-p 257* option to inter-operate correctly.)
 [[cmdratelimit]]*cmdratelimit* [_option_]...::
 This directive enables response rate limiting for command packets. It is
 similar to the <<ratelimit,*ratelimit*>> directive, except responses to
-localhost are never limited and the default interval is -4 (16 packets per
-second).
+localhost are never limited, the default interval is -4 (16 packets per
+second), and the *kod* option is not supported.
 +
 An example of the use of the directive is:
 +
@@ -2143,8 +2179,8 @@ from the example line above):
 . Results of the *maxdelay*, *maxdelayratio*, and *maxdelaydevratio* (or
   *maxdelayquant*) tests, and a test for synchronisation loop (1=pass,
   0=fail). The first test from these four also checks the server precision,
-  response time, and whether an interleaved response is acceptable for
-  synchronisation. [1111]
+  response time, validity of the measured offset, and whether an interleaved
+  response is acceptable for synchronisation. [1111]
 . Local poll [10]
 . Remote poll [10]
 . '`Score`' (an internal score within each polling level used to decide when to
@@ -2765,6 +2801,11 @@ server ntp1.example.net minpoll 0 maxpoll 0 xleave port 319 extfield F324
 hwtimestamp * rxfilter ptp
 ptpport 319
 ----
+
+[[ptpdomain]]*ptpdomain* _domain_::
+The *ptpdomain* directive sets the PTP domain number of transmitted and
+accepted NTP-over-PTP messages. Messages from other domains are ignored.
+The default is 123, the minimum is 0, and the maximum is 255.
 
 [[sched_priority]]*sched_priority* _priority_::
 On Linux, FreeBSD, NetBSD, and illumos, the *sched_priority* directive will

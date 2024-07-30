@@ -166,8 +166,8 @@ RCL_AddRefclock(RefclockParameters *params)
   if (!inst->driver->init && !inst->driver->poll)
     LOG_FATAL("refclock driver %s is not compiled in", params->driver_name);
 
-  if (params->tai && !CNF_GetLeapSecTimezone())
-    LOG_FATAL("refclock tai option requires leapsectz");
+  if (params->tai && !CNF_GetLeapSecList() && !CNF_GetLeapSecTimezone())
+    LOG_FATAL("refclock tai option requires leapseclist or leapsectz");
 
   inst->data = NULL;
   inst->driver_parameter = Strdup(params->driver_parameter);
@@ -319,6 +319,22 @@ RCL_ReportSource(RPT_SourceReport *report, struct timespec *now)
       break;
     }
   }
+}
+
+int
+RCL_ModifyOffset(uint32_t ref_id, double offset)
+{
+  unsigned int i;
+
+  for (i = 0; i < ARR_GetSize(refclocks); i++) {
+    RCL_Instance inst = get_refclock(i);
+    if (inst->ref_id == ref_id) {
+      inst->offset = offset;
+      LOG(LOGS_INFO, "Source %s new offset %f", UTI_RefidToString(ref_id), offset);
+      return 1;
+    }
+  }
+  return 0;
 }
 
 void

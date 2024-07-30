@@ -221,7 +221,7 @@ struct NCR_Instance_Record {
   int burst_good_samples_to_go;
   int burst_total_samples_to_go;
 
-  /* Report from last valid response */
+  /* Report from last valid response and packet/timestamp statistics */
   RPT_NTPReport report;
 };
 
@@ -2211,7 +2211,8 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
     /* Test A combines multiple tests to avoid changing the measurements log
        format and ntpdata report.  It requires that the minimum estimate of the
        peer delay is not larger than the configured maximum, it is not a
-       response in the 'warm up' exchange, in both client modes that the server
+       response in the 'warm up' exchange, the configured offset correction is
+       within the supported NTP interval, both client modes that the server
        processing time is sane, in interleaved client/server mode that the
        previous response was not in basic mode (which prevents using timestamps
        that minimise delay error), and in interleaved symmetric mode that the
@@ -2220,6 +2221,7 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
     testA = sample.peer_delay - sample.peer_dispersion <= inst->max_delay &&
             precision <= inst->max_delay &&
             inst->presend_done <= 0 &&
+            UTI_IsTimeOffsetSane(&sample.time, sample.offset) &&
             !(inst->mode == MODE_CLIENT && response_time > MAX_SERVER_INTERVAL) &&
             !(inst->mode == MODE_CLIENT && interleaved_packet &&
               UTI_IsZeroTimespec(&inst->prev_local_tx.ts) &&
@@ -2372,13 +2374,17 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
 
     SRC_UpdateReachability(inst->source, synced_packet);
 
-    if (synced_packet) {
-      if (inst->copy && inst->remote_stratum > 0) {
-        /* Assume the reference ID and stratum of the server */
+    if (inst->copy) {
+      /* Assume the reference ID and stratum of the server */
+      if (synced_packet && inst->remote_stratum > 0) {
         inst->remote_stratum--;
         SRC_SetRefid(inst->source, ntohl(message->reference_id), &inst->remote_addr.ip_addr);
+      } else {
+        SRC_ResetInstance(inst->source);
       }
+    }
 
+    if (synced_packet) {
       SRC_UpdateStatus(inst->source, MAX(inst->remote_stratum, inst->min_stratum), pkt_leap);
 
       if (inst->delay_quant)
@@ -2530,6 +2536,10 @@ NCR_ProcessRxKnown(NCR_Instance inst, NTP_Local_Address *local_addr,
   NTP_PacketInfo info;
 
   inst->report.total_rx_count++;
+  if (rx_ts->source == NTP_TS_KERNEL)
+    inst->report.total_kernel_rx_ts++;
+  else if (rx_ts->source == NTP_TS_HARDWARE)
+    inst->report.total_hw_rx_ts++;
 
   if (!parse_packet(message, length, &info))
     return 0;
@@ -2652,6 +2662,7 @@ NCR_ProcessRxUnknown(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_a
   NTP_Local_Timestamp local_tx, *tx_ts;
   NTP_int64 ntp_rx, *local_ntp_rx;
   int log_index, interleaved, poll, version;
+  CLG_Limit limit;
   uint32_t kod;
 
   /* Ignore the packet if it wasn't received by server socket */
@@ -2697,7 +2708,8 @@ NCR_ProcessRxUnknown(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_a
   log_index = CLG_LogServiceAccess(CLG_NTP, &remote_addr->ip_addr, &rx_ts->ts);
 
   /* Don't reply to all requests if the rate is excessive */
-  if (log_index >= 0 && CLG_LimitServiceRate(CLG_NTP, log_index)) {
+  limit = log_index >= 0 ? CLG_LimitServiceRate(CLG_NTP, log_index) : CLG_PASS;
+  if (limit == CLG_DROP) {
       DEBUG_LOG("NTP packet discarded to limit response rate");
       return;
   }
@@ -2709,6 +2721,13 @@ NCR_ProcessRxUnknown(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_a
     /* Don't respond unless a non-zero KoD was returned */
     if (kod == 0)
       return;
+  }
+
+  if (limit == CLG_KOD) {
+    /* Don't respond if there is a conflict with the NTS NAK */
+    if (kod != 0)
+      return;
+    kod = KOD_RATE;
   }
 
   local_ntp_rx = NULL;
@@ -2736,7 +2755,7 @@ NCR_ProcessRxUnknown(NTP_Remote_Address *remote_addr, NTP_Local_Address *local_a
       CLG_DisableNtpTimestamps(&ntp_rx);
   }
 
-  CLG_UpdateNtpStats(kod != 0 && info.auth.mode != NTP_AUTH_NONE &&
+  CLG_UpdateNtpStats(kod == 0 && info.auth.mode != NTP_AUTH_NONE &&
                      info.auth.mode != NTP_AUTH_MSSNTP,
                      rx_ts->source, interleaved ? tx_ts->source : NTP_TS_DAEMON);
 
@@ -2812,8 +2831,11 @@ NCR_ProcessTxKnown(NCR_Instance inst, NTP_Local_Address *local_addr,
                       message);
 
   if (tx_ts->source == NTP_TS_HARDWARE) {
+    inst->report.total_hw_tx_ts++;
     if (has_saved_response(inst))
       process_saved_response(inst);
+  } else if (tx_ts->source == NTP_TS_KERNEL) {
+    inst->report.total_kernel_tx_ts++;
   }
 }
 
@@ -3013,6 +3035,16 @@ NCR_ModifyMinstratum(NCR_Instance inst, int new_min_stratum)
   inst->min_stratum = new_min_stratum;
   LOG(LOGS_INFO, "Source %s new minstratum %d",
       UTI_IPToString(&inst->remote_addr.ip_addr), new_min_stratum);
+}
+
+/* ================================================== */
+
+void
+NCR_ModifyOffset(NCR_Instance inst, double new_offset)
+{
+  inst->offset_correction = new_offset;
+  LOG(LOGS_INFO, "Source %s new offset %f",
+      UTI_IPToString(&inst->remote_addr.ip_addr), new_offset);
 }
 
 /* ================================================== */

@@ -459,8 +459,8 @@ states are reported.
 The following states indicate the source is not considered selectable for
 synchronisation:
 * _N_ - has the *noselect* option.
-* _s_ - is not synchronised.
 * _M_ - does not have enough measurements.
+* _s_ - is not synchronised.
 * _d_ - has a root distance larger than the maximum distance (configured by the
         <<chrony.conf.adoc#maxdistance,*maxdistance*>> directive).
 * _~_ - has a jitter larger than the maximum jitter (configured by the
@@ -492,7 +492,7 @@ local clock:
 This column shows the name or IP address of the source if it is an NTP server,
 or the reference ID if it is a reference clock.
 *Auth*:::
-This column indicites whether an authentication mechanism is enabled for the
+This column indicates whether an authentication mechanism is enabled for the
 source. _Y_ means yes and _N_ means no.
 *COpts*:::
 This column displays the configured selection options of the source.
@@ -555,6 +555,13 @@ synchronisation source.
 The *reselectdist* command sets the reselection distance. It is equivalent to
 the <<chrony.conf.adoc#reselectdist,*reselectdist*>> directive in the
 configuration file.
+
+[[offset]]*offset* _address|refid_ _offset_::
+The *offset* command modifies the offset correction of an NTP source specified
+by IP address (or the _ID#XXXXXXXXXX_ identifier used for unknown addresses),
+or a reference clock specified by reference ID as a string. It is equivalent to
+the *offset* option in the <<chrony.conf.adoc#server,*server*>> or
+<<chrony.conf.adoc#refclock,*refclock*>> directive respectively.
 
 === NTP sources
 
@@ -689,6 +696,10 @@ Total TX        : 24
 Total RX        : 24
 Total valid RX  : 24
 Total good RX   : 22
+Total kernel TX : 24
+Total kernel RX : 24
+Total HW TX     : 0
+Total HW RX     : 0
 ----
 +
 The fields are explained as follows:
@@ -746,6 +757,18 @@ The number of packets which passed the first two groups of NTP tests.
 *Total good RX*:::
 The number of packets which passed all three groups of NTP tests, i.e. the NTP
 measurement was accepted.
+*Total kernel TX*:::
+The number of packets sent to the source for which a timestamp was captured by
+the kernel.
+*Total kernel RX*:::
+The number of packets received from the source for which a timestamp was
+captured by the kernel.
+*Total HW TX*:::
+The number of packets sent to the source for which a timestamp was captured by
+the NIC.
+*Total HW RX*:::
+The number of packets received from the source for which a timestamp was
+captured by the NIC.
 
 [[add_peer]]*add peer* _name_ [_option_]...::
 The *add peer* command allows a new NTP peer to be added whilst

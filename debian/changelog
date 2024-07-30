@@ -1,3 +1,23 @@
+chrony (4.6~pre1-1) experimental; urgency=medium
+
+  * Import upstream version 4.6-pre1:
+    - Please see /usr/share/doc/chrony/NEWS.gz for the release notes.
+
+  * debian/chrony.conf:
+    - Use the leapseclist directive to read NIST/IERS leap-seconds.list file.
+
+  * debian/control:
+    - Revert "d/control: Depend on tzdata-legacy". chronyd is now able to read
+    the NIST/IERS leap-seconds.list file so we don't need to rely on the
+    right/UTC timezone to get the TAI-UTC offsets. This renders the dependency
+    on tzdata-legacy unnecessary.
+
+  * debian/tests/control:
+    - Revert "d/t/control: Let upstream-simulation-test-suite depend on
+    tzdata-legacy".
+
+ -- Vincent Blut <vincent.debian@free.fr>  Tue, 30 Jul 2024 15:01:19 +0200
+
 chrony (4.5-3) unstable; urgency=medium
 
   * debian/upstream-simulation-test-suite:

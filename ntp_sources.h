@@ -55,9 +55,12 @@ extern NSR_Status NSR_AddSource(NTP_Remote_Address *remote_addr, NTP_Source_Type
 
 /* Procedure to add a new server, peer source, or pool of servers specified by
    name instead of address.  The name is resolved in exponentially increasing
-   intervals until it succeeds or fails with a non-temporary error.  If the
-   name is an address, it is equivalent to NSR_AddSource(). */
-extern NSR_Status NSR_AddSourceByName(char *name, int port, int pool, NTP_Source_Type type,
+   intervals until it succeeds or fails with a non-temporary error.  The
+   specified family filters resolved addresses.  If the name is an address
+   and its family does not conflict with the specified family, it is equivalent
+   to NSR_AddSource(). */
+extern NSR_Status NSR_AddSourceByName(char *name, int family, int port, int pool,
+                                      NTP_Source_Type type,
                                       SourceParameters *params, uint32_t *conf_id);
 
 extern const char *NSR_StatusToString(NSR_Status status);
@@ -136,6 +139,8 @@ extern int NSR_ModifyMaxdelayratio(IPAddr *address, double new_max_delay_ratio);
 extern int NSR_ModifyMaxdelaydevratio(IPAddr *address, double new_max_delay_ratio);
 
 extern int NSR_ModifyMinstratum(IPAddr *address, int new_min_stratum);
+
+extern int NSR_ModifyOffset(IPAddr *address, double new_offset);
 
 extern int NSR_ModifyPolltarget(IPAddr *address, int new_poll_target);
 

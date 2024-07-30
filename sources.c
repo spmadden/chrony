@@ -68,8 +68,8 @@ struct SelectInfo {
 typedef enum {
   SRC_OK,               /* OK so far, not a final status! */
   SRC_UNSELECTABLE,     /* Has noselect option set */
-  SRC_UNSYNCHRONISED,   /* Provides samples but not unsynchronised */
   SRC_BAD_STATS,        /* Doesn't have valid stats data */
+  SRC_UNSYNCHRONISED,   /* Provides samples, but not synchronised */
   SRC_BAD_DISTANCE,     /* Has root distance longer than allowed maximum */
   SRC_JITTERY,          /* Had std dev larger than allowed maximum */
   SRC_WAITS_STATS,      /* Others have bad stats, selection postponed */
@@ -177,6 +177,8 @@ static int reported_no_majority;  /* Flag to avoid repeated log message
 static int report_selection_loss; /* Flag to force logging a message if
                                      selection is lost in a transient state
                                      (SRC_WAITS_STATS, SRC_WAITS_UPDATE) */
+static int forced_first_report;   /* Flag to allow one failed selection to be
+                                     logged before a successful selection */
 
 /* Score needed to replace the currently selected source */
 #define SCORE_LIMIT 10.0
@@ -524,8 +526,8 @@ SRC_UpdateReachability(SRC_Instance inst, int reachable)
   if (inst->reachability_size < SOURCE_REACH_BITS)
       inst->reachability_size++;
 
-  if (!reachable && inst->index == selected_source_index) {
-    /* Try to select a better source */
+  /* Source selection can change with unreachable sources */
+  if (inst->reachability == 0) {
     SRC_SelectSource(NULL);
   }
 
@@ -862,7 +864,8 @@ SRC_SelectSource(SRC_Instance updated_inst)
   struct SelectInfo *si;
   struct timespec now, ref_time;
   int i, j, j1, j2, index, sel_prefer, n_endpoints, n_sel_sources, sel_req_source;
-  int n_badstats_sources, max_sel_reach, max_sel_reach_size, max_badstat_reach;
+  int max_badstat_reach, max_badstat_reach_size, n_badstats_sources;
+  int max_sel_reach, max_sel_reach_size;
   int depth, best_depth, trust_depth, best_trust_depth, n_sel_trust_sources;
   int combined, stratum, min_stratum, max_score_index;
   int orphan_stratum, orphan_source;
@@ -893,7 +896,7 @@ SRC_SelectSource(SRC_Instance updated_inst)
   n_badstats_sources = 0;
   sel_req_source = 0;
   max_sel_reach = max_badstat_reach = 0;
-  max_sel_reach_size = 0;
+  max_sel_reach_size = max_badstat_reach_size = 0;
   max_reach_sample_ago = 0.0;
 
   for (i = 0; i < n_sources; i++) {
@@ -913,12 +916,6 @@ SRC_SelectSource(SRC_Instance updated_inst)
       continue;
     }
 
-    /* Ignore sources which are not synchronised */
-    if (sources[i]->leap == LEAP_Unsynchronised) {
-      mark_source(sources[i], SRC_UNSYNCHRONISED);
-      continue;
-    }
-
     si = &sources[i]->sel_info;
     SST_GetSelectionData(sources[i]->stats, &now,
                          &si->lo_limit, &si->hi_limit, &si->root_distance,
@@ -930,6 +927,14 @@ SRC_SelectSource(SRC_Instance updated_inst)
       mark_source(sources[i], SRC_BAD_STATS);
       if (max_badstat_reach < sources[i]->reachability)
         max_badstat_reach = sources[i]->reachability;
+      if (max_badstat_reach_size < sources[i]->reachability_size)
+        max_badstat_reach_size = sources[i]->reachability_size;
+      continue;
+    }
+
+    /* Ignore sources which are not synchronised */
+    if (sources[i]->leap == LEAP_Unsynchronised) {
+      mark_source(sources[i], SRC_UNSYNCHRONISED);
       continue;
     }
 
@@ -1066,6 +1071,14 @@ SRC_SelectSource(SRC_Instance updated_inst)
     mark_ok_sources(SRC_WAITS_STATS);
     unselect_selected_source(LOGS_INFO, NULL, NULL);
     return;
+  }
+
+  /* Wait for a source to have full reachability register to allow one
+     failed selection to be logged before first successful selection */
+  if (!forced_first_report &&
+      MAX(max_sel_reach_size, max_badstat_reach_size) == SOURCE_REACH_BITS) {
+    report_selection_loss = 1;
+    forced_first_report = 1;
   }
 
   if (n_endpoints == 0) {
@@ -1334,6 +1347,7 @@ SRC_SelectSource(SRC_Instance updated_inst)
 
     reported_no_majority = 0;
     report_selection_loss = 0;
+    forced_first_report = 1;
   }
 
   mark_source(sources[selected_source_index], SRC_SELECTED);
@@ -1796,10 +1810,10 @@ get_status_char(SRC_Status status)
   switch (status) {
     case SRC_UNSELECTABLE:
       return 'N';
-    case SRC_UNSYNCHRONISED:
-      return 's';
     case SRC_BAD_STATS:
       return 'M';
+    case SRC_UNSYNCHRONISED:
+      return 's';
     case SRC_BAD_DISTANCE:
       return 'd';
     case SRC_JITTERY:

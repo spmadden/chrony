@@ -2,7 +2,7 @@
   chronyd/chronyc - Programs for keeping computer clocks accurate.
 
  **********************************************************************
- * Copyright (C) Miroslav Lichvar  2021
+ * Copyright (C) Patrick Oppenlander 2023
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -21,50 +21,17 @@
 
   =======================================================================
 
-  This is the header file for the Precision Time Protocol (PTP).
+  This module provides leap second information.
 
   */
-#ifndef GOT_PTP_H
-#define GOT_PTP_H
 
-#include "sysincl.h"
+#ifndef GOT_LEAPDB_H
+#define GOT_LEAPDB_H
 
 #include "ntp.h"
 
-#define PTP_VERSION_2 2
-#define PTP_VERSION_2_1 (2 | 1 << 4)
-#define PTP_TYPE_SYNC 0
-#define PTP_TYPE_DELAY_REQ 1
-#define PTP_FLAG_UNICAST (1 << (2 + 8))
-#define PTP_TLV_NTP 0x2023
+extern void LDB_Initialise(void);
+extern NTP_Leap LDB_GetLeap(time_t when, int *tai_offset);
+extern void LDB_Finalise(void);
 
-typedef struct {
-  uint8_t type;
-  uint8_t version;
-  uint16_t length;
-  uint8_t domain;
-  uint8_t min_sdoid;
-  uint16_t flags;
-  uint8_t correction[8];
-  uint8_t msg_specific[4];
-  uint8_t port_id[10];
-  uint16_t sequence_id;
-  uint8_t control;
-  int8_t interval;
-} PTP_Header;
-
-typedef struct {
-  uint16_t type;
-  uint16_t length;
-} PTP_TlvHeader;
-
-typedef struct {
-  PTP_Header header;
-  uint8_t origin_ts[10];
-  PTP_TlvHeader tlv_header;
-  NTP_Packet ntp_msg;
-} PTP_NtpMessage;
-
-#define PTP_NTP_PREFIX_LENGTH (int)offsetof(PTP_NtpMessage, ntp_msg)
-
-#endif
+#endif /* GOT_LEAPDB_H */

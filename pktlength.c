@@ -111,7 +111,7 @@ static const struct request_length request_lengths[] = {
   REQ_LENGTH_ENTRY(null, null),                 /* REFRESH */
   REQ_LENGTH_ENTRY(null, server_stats),         /* SERVER_STATS */
   { 0, 0 },                                     /* CLIENT_ACCESSES_BY_INDEX2 - not supported */
-  REQ_LENGTH_ENTRY(local, null),                /* LOCAL2 */
+  { 0, 0 },                                     /* LOCAL2 - not supported */
   REQ_LENGTH_ENTRY(ntp_data, ntp_data),         /* NTP_DATA */
   { 0, 0 },                                     /* ADD_SERVER2 */
   { 0, 0 },                                     /* ADD_PEER2 */
@@ -130,6 +130,8 @@ static const struct request_length request_lengths[] = {
   REQ_LENGTH_ENTRY(null, null),                 /* RELOAD_SOURCES */
   REQ_LENGTH_ENTRY(doffset, null),              /* DOFFSET2 */
   REQ_LENGTH_ENTRY(modify_select_opts, null),   /* MODIFY_SELECTOPTS */
+  REQ_LENGTH_ENTRY(modify_offset, null),        /* MODIFY_OFFSET */
+  REQ_LENGTH_ENTRY(local, null),                /* LOCAL3 */
 };
 
 static const uint16_t reply_lengths[] = {
@@ -149,7 +151,7 @@ static const uint16_t reply_lengths[] = {
   RPY_LENGTH_ENTRY(smoothing),                  /* SMOOTHING */
   0,                                            /* SERVER_STATS - not supported */
   0,                                            /* CLIENT_ACCESSES_BY_INDEX2 - not supported */
-  RPY_LENGTH_ENTRY(ntp_data),                   /* NTP_DATA */
+  0,                                            /* NTP_DATA - not supported */
   RPY_LENGTH_ENTRY(manual_timestamp),           /* MANUAL_TIMESTAMP2 */
   RPY_LENGTH_ENTRY(manual_list),                /* MANUAL_LIST2 */
   RPY_LENGTH_ENTRY(ntp_source_name),            /* NTP_SOURCE_NAME */
@@ -159,6 +161,7 @@ static const uint16_t reply_lengths[] = {
   RPY_LENGTH_ENTRY(select_data),                /* SELECT_DATA */
   0,                                            /* SERVER_STATS3 - not supported */
   RPY_LENGTH_ENTRY(server_stats),               /* SERVER_STATS4 */
+  RPY_LENGTH_ENTRY(ntp_data),                   /* NTP_DATA2 */
 };
 
 /* ================================================== */

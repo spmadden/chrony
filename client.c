@@ -345,6 +345,24 @@ parse_source_address(char *word, IPAddr *address)
 /* ================================================== */
 
 static int
+parse_source_address_or_refid(char *s, IPAddr *address, uint32_t *ref_id)
+{
+  address->family = IPADDR_UNSPEC;
+  *ref_id = 0;
+
+  /* Don't allow hostnames to avoid conflicts with reference IDs */
+  if (UTI_StringToIdIP(s, address) || UTI_StringToIP(s, address))
+    return 1;
+
+  if (CPS_ParseRefid(s, ref_id) > 0)
+    return 1;
+
+  return 0;
+}
+
+/* ================================================== */
+
+static int
 read_mask_address(char *line, IPAddr *mask, IPAddr *address)
 {
   unsigned int bits;
@@ -737,22 +755,24 @@ static int
 process_cmd_local(CMD_Request *msg, char *line)
 {
   int on_off, stratum = 0, orphan = 0;
-  double distance = 0.0;
+  double distance = 0.0, activate = 0.0;
 
   if (!strcmp(line, "off")) {
     on_off = 0;
-  } else if (CPS_ParseLocal(line, &stratum, &orphan, &distance)) {
+  } else if (CPS_ParseLocal(line, &stratum, &orphan, &distance, &activate)) {
     on_off = 1;
   } else {
     LOG(LOGS_ERR, "Invalid syntax for local command");
     return 0;
   }
 
-  msg->command = htons(REQ_LOCAL2);
+  msg->command = htons(REQ_LOCAL3);
   msg->data.local.on_off = htonl(on_off);
   msg->data.local.stratum = htonl(stratum);
   msg->data.local.distance = UTI_FloatHostToNetwork(distance);
   msg->data.local.orphan = htonl(orphan);
+  msg->data.local.activate = UTI_FloatHostToNetwork(activate);
+  memset(msg->data.local.reserved, 0, sizeof (msg->data.local.reserved));
 
   return 1;
 }
@@ -962,6 +982,8 @@ process_cmd_add_source(CMD_Request *msg, char *line)
            REQ_ADDSRC_EF_EXP_MONO_ROOT : 0) |
           (data.params.ext_fields & NTP_EF_FLAG_EXP_NET_CORRECTION ?
            REQ_ADDSRC_EF_EXP_NET_CORRECTION : 0) |
+          (data.family == IPADDR_INET4 ? REQ_ADDSRC_IPV4 : 0) |
+          (data.family == IPADDR_INET6 ? REQ_ADDSRC_IPV6 : 0) |
           convert_addsrc_sel_options(data.params.sel_options));
       msg->data.ntp_source.filter_length = htonl(data.params.filter_length);
       msg->data.ntp_source.cert_set = htonl(data.params.cert_set);
@@ -1029,6 +1051,7 @@ give_help(void)
     "selectopts <address|refid> <+|-options>\0Modify selection options\0"
     "reselect\0Force reselecting synchronisation source\0"
     "reselectdist <dist>\0Modify reselection distance\0"
+    "offset <address|refid> <offset>\0Modify offset correction\0"
     "\0\0"
     "NTP sources:\0\0"
     "activity\0Check how many NTP sources are online/offline\0"
@@ -1139,7 +1162,8 @@ command_name_generator(const char *text, int state)
     "clients", "cmdaccheck", "cmdallow", "cmddeny", "cyclelogs", "delete",
     "deny", "dns", "dump", "exit", "help", "keygen", "local", "makestep",
     "manual", "maxdelay", "maxdelaydevratio", "maxdelayratio", "maxpoll",
-    "maxupdateskew", "minpoll", "minstratum", "ntpdata", "offline", "online", "onoffline",
+    "maxupdateskew", "minpoll", "minstratum", "ntpdata",
+    "offline", "offset", "online", "onoffline",
     "polltarget", "quit", "refresh", "rekey", "reload", "reselect", "reselectdist", "reset",
     "retries", "rtcdata", "selectdata", "selectopts", "serverstats", "settime",
     "shutdown", "smoothing", "smoothtime", "sourcename", "sources", "sourcestats",
@@ -2329,7 +2353,7 @@ process_cmd_ntpdata(char *line)
 
     request.command = htons(REQ_NTP_DATA);
     UTI_IPHostToNetwork(&remote_addr, &request.data.ntp_data.ip_addr);
-    if (!request_reply(&request, &reply, RPY_NTP_DATA, 0))
+    if (!request_reply(&request, &reply, RPY_NTP_DATA2, 0))
       return 0;
 
     UTI_IPNetworkToHost(&reply.data.ntp_data.remote_addr, &remote_addr);
@@ -2365,7 +2389,11 @@ process_cmd_ntpdata(char *line)
                  "Total TX        : %U\n"
                  "Total RX        : %U\n"
                  "Total valid RX  : %U\n"
-                 "Total good RX   : %U\n",
+                 "Total good RX   : %U\n"
+                 "Total kernel TX : %U\n"
+                 "Total kernel RX : %U\n"
+                 "Total HW TX     : %U\n"
+                 "Total HW RX     : %U\n",
                  UTI_IPToString(&remote_addr), UTI_IPToRefid(&remote_addr),
                  ntohs(reply.data.ntp_data.remote_port),
                  UTI_IPToString(&local_addr), UTI_IPToRefid(&local_addr),
@@ -2393,6 +2421,10 @@ process_cmd_ntpdata(char *line)
                  ntohl(reply.data.ntp_data.total_rx_count),
                  ntohl(reply.data.ntp_data.total_valid_count),
                  ntohl(reply.data.ntp_data.total_good_count),
+                 ntohl(reply.data.ntp_data.total_kernel_tx_ts),
+                 ntohl(reply.data.ntp_data.total_kernel_rx_ts),
+                 ntohl(reply.data.ntp_data.total_hw_tx_ts),
+                 ntohl(reply.data.ntp_data.total_hw_rx_ts),
                  REPORT_END);
   }
 
@@ -2849,6 +2881,34 @@ process_cmd_activity(const char *line)
 /* ================================================== */
 
 static int
+process_cmd_offset(CMD_Request *msg, char *line)
+{
+  uint32_t ref_id;
+  IPAddr ip_addr;
+  double offset;
+  char *src;
+
+  src = line;
+  line = CPS_SplitWord(line);
+
+  if (!parse_source_address_or_refid(src, &ip_addr, &ref_id) ||
+      sscanf(line, "%lf", &offset) != 1) {
+    LOG(LOGS_ERR, "Invalid syntax for offset command");
+    return 0;
+  }
+
+  UTI_IPHostToNetwork(&ip_addr, &msg->data.modify_offset.address);
+  msg->data.modify_offset.ref_id = htonl(ref_id);
+  msg->data.modify_offset.new_offset = UTI_FloatHostToNetwork(offset);
+
+  msg->command = htons(REQ_MODIFY_OFFSET);
+
+  return 1;
+}
+
+/* ================================================== */
+
+static int
 process_cmd_reselectdist(CMD_Request *msg, char *line)
 {
   double dist;
@@ -2929,15 +2989,10 @@ process_cmd_selectopts(CMD_Request *msg, char *line)
 
   src = line;
   line = CPS_SplitWord(line);
-  ref_id = 0;
 
-  /* Don't allow hostnames to avoid conflicts with reference IDs */
-  if (!UTI_StringToIdIP(src, &ip_addr) && !UTI_StringToIP(src, &ip_addr)) {
-    ip_addr.family = IPADDR_UNSPEC;
-    if (CPS_ParseRefid(src, &ref_id) == 0) {
-      LOG(LOGS_ERR, "Invalid syntax for selectopts command");
-      return 0;
-    }
+  if (!parse_source_address_or_refid(src, &ip_addr, &ref_id)) {
+    LOG(LOGS_ERR, "Invalid syntax for selectopts command");
+    return 0;
   }
 
   mask = options = 0;
@@ -3239,6 +3294,8 @@ process_line(char *line)
     ret = process_cmd_ntpdata(line);
   } else if (!strcmp(command, "offline")) {
     do_normal_submit = process_cmd_offline(&tx_message, line);
+  } else if (!strcmp(command, "offset")) {
+    do_normal_submit = process_cmd_offset(&tx_message, line);
   } else if (!strcmp(command, "online")) {
     do_normal_submit = process_cmd_online(&tx_message, line);
   } else if (!strcmp(command, "onoffline")) {
