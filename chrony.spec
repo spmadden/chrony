@@ -1,5 +1,6 @@
 %global _hardened_build 1
-%global clknetsim_ver 5d1dc0
+%global clknetsim_ver 633a0b
+%global prerelease -pre1
 %bcond_without debug
 %bcond_without nts
 
@@ -8,7 +9,7 @@
 %endif
 
 Name:           chrony
-Version:        4.5
+Version:        4.6
 Release:        4%{?dist}
 Summary:        An NTP client/server
 
@@ -34,7 +35,7 @@ BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
 %{?systemd_requires}
 %{?sysusers_requires_compat}
 
-# Needed by the leapsectz directive in default chrony.conf
+# Needed by the leapseclist directive in default chrony.conf
 Requires:       tzdata
 
 # Old NetworkManager expects the dispatcher scripts in a different place
@@ -65,7 +66,7 @@ service to other computers in the network.
 # review changes in packaged configuration files and scripts
 md5sum -c <<-EOF | (! grep -v 'OK$')
         5530d6e60f84b76c27495485d2510bac  examples/chrony-wait.service
-        2d01b94bc1a7b7fb70cbee831488d121  examples/chrony.conf.example2
+        826354a2d467d6147e412d43bfe07484  examples/chrony.conf.example2
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         c3992e2f985550739cd1cd95f98c9548  examples/chrony.nm-dispatcher.dhcp
         4e85d36595727318535af3387411070c  examples/chrony.nm-dispatcher.onoffline
@@ -78,10 +79,10 @@ test -n "%{vendorzone}"
 
 # use example chrony.conf as the default config with some modifications:
 # - use our vendor zone (2.*pool.ntp.org names include IPv6 addresses)
-# - enable leapsectz to get TAI-UTC offset and leap seconds from tzdata
+# - enable leapseclist to get TAI-UTC offset and leap seconds
 # - use NTP servers from DHCP
 sed -e 's|^\(pool \)\(pool.ntp.org\)|\12.%{vendorzone}\2|' \
-    -e 's|#\(leapsectz\)|\1|' \
+    -e 's|#\(leapseclist\)|\1|' \
     -e 's|^pool.*pool.ntp.org.*|&\n\n# Use NTP servers from DHCP.\nsourcedir /run/chrony-dhcp|' \
         < examples/chrony.conf.example2 > chrony.conf
 
