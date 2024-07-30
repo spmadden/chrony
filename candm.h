@@ -110,7 +110,9 @@
 #define REQ_RELOAD_SOURCES 70
 #define REQ_DOFFSET2 71
 #define REQ_MODIFY_SELECTOPTS 72
-#define N_REQUEST_TYPES 73
+#define REQ_MODIFY_OFFSET 73
+#define REQ_LOCAL3 74
+#define N_REQUEST_TYPES 75
 
 /* Structure used to exchange timespecs independent of time_t size */
 typedef struct {
@@ -236,6 +238,8 @@ typedef struct {
   int32_t stratum;
   Float distance;
   int32_t orphan;
+  Float activate;
+  uint32_t reserved[2];
   int32_t EOR;
 } REQ_Local;
 
@@ -279,6 +283,8 @@ typedef struct {
 #define REQ_ADDSRC_COPY 0x400
 #define REQ_ADDSRC_EF_EXP_MONO_ROOT 0x800
 #define REQ_ADDSRC_EF_EXP_NET_CORRECTION 0x1000
+#define REQ_ADDSRC_IPV4 0x2000
+#define REQ_ADDSRC_IPV6 0x4000
 
 typedef struct {
   uint32_t type;
@@ -388,6 +394,13 @@ typedef struct {
   int32_t EOR;
 } REQ_Modify_SelectOpts;
 
+typedef struct {
+  IPAddr address;
+  uint32_t ref_id;
+  Float new_offset;
+  int32_t EOR;
+} REQ_Modify_Offset;
+
 /* ================================================== */
 
 #define PKT_TYPE_CMD_REQUEST 1
@@ -495,6 +508,7 @@ typedef struct {
     REQ_AuthData auth_data;
     REQ_SelectData select_data;
     REQ_Modify_SelectOpts modify_select_opts;
+    REQ_Modify_Offset modify_offset;
   } data; /* Command specific parameters */
 
   /* Padding used to prevent traffic amplification.  It only defines the
@@ -538,7 +552,8 @@ typedef struct {
 #define RPY_SELECT_DATA 23
 #define RPY_SERVER_STATS3 24
 #define RPY_SERVER_STATS4 25
-#define N_REPLY_TYPES 26
+#define RPY_NTP_DATA2 26
+#define N_REPLY_TYPES 27
 
 /* Status codes */
 #define STT_SUCCESS 0
@@ -761,7 +776,11 @@ typedef struct {
   uint32_t total_rx_count;
   uint32_t total_valid_count;
   uint32_t total_good_count;
-  uint32_t reserved[3];
+  uint32_t total_kernel_tx_ts;
+  uint32_t total_kernel_rx_ts;
+  uint32_t total_hw_tx_ts;
+  uint32_t total_hw_rx_ts;
+  uint32_t reserved[4];
   int32_t EOR;
 } RPY_NTPData;
 

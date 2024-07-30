@@ -145,6 +145,8 @@ static const char permissions[] = {
   PERMIT_AUTH, /* RELOAD_SOURCES */
   PERMIT_AUTH, /* DOFFSET2 */
   PERMIT_AUTH, /* MODIFY_SELECTOPTS */
+  PERMIT_AUTH, /* MODIFY_OFFSET */
+  PERMIT_AUTH, /* LOCAL3 */
 };
 
 /* ================================================== */
@@ -530,7 +532,8 @@ handle_local(CMD_Request *rx_message, CMD_Reply *tx_message)
   if (ntohl(rx_message->data.local.on_off)) {
     REF_EnableLocal(ntohl(rx_message->data.local.stratum),
                     UTI_FloatNetworkToHost(rx_message->data.local.distance),
-                    ntohl(rx_message->data.local.orphan));
+                    ntohl(rx_message->data.local.orphan),
+                    UTI_FloatNetworkToHost(rx_message->data.local.activate));
   } else {
     REF_DisableLocal();
   }
@@ -720,9 +723,10 @@ handle_add_source(CMD_Request *rx_message, CMD_Reply *tx_message)
 {
   NTP_Source_Type type;
   SourceParameters params;
+  int family, pool, port;
   NSR_Status status;
+  uint32_t flags;
   char *name;
-  int pool, port;
   
   switch (ntohl(rx_message->data.ntp_source.type)) {
     case REQ_ADDSRC_SERVER:
@@ -750,6 +754,10 @@ handle_add_source(CMD_Request *rx_message, CMD_Reply *tx_message)
       return;
   }
 
+  flags = ntohl(rx_message->data.ntp_source.flags);
+
+  family = flags & REQ_ADDSRC_IPV4 ? IPADDR_INET4 :
+           flags & REQ_ADDSRC_IPV6 ? IPADDR_INET6 : IPADDR_UNSPEC;
   port = ntohl(rx_message->data.ntp_source.port);
   params.minpoll = ntohl(rx_message->data.ntp_source.minpoll);
   params.maxpoll = ntohl(rx_message->data.ntp_source.maxpoll);
@@ -775,21 +783,19 @@ handle_add_source(CMD_Request *rx_message, CMD_Reply *tx_message)
   params.asymmetry = UTI_FloatNetworkToHost(rx_message->data.ntp_source.asymmetry);
   params.offset = UTI_FloatNetworkToHost(rx_message->data.ntp_source.offset);
 
-  params.connectivity = ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_ONLINE ?
-                        SRC_ONLINE : SRC_OFFLINE;
-  params.auto_offline = ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_AUTOOFFLINE ? 1 : 0;
-  params.iburst = ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_IBURST ? 1 : 0;
-  params.interleaved = ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_INTERLEAVED ? 1 : 0;
-  params.burst = ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_BURST ? 1 : 0;
-  params.nts = ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_NTS ? 1 : 0;
-  params.copy = ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_COPY ? 1 : 0;
-  params.ext_fields = (ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_EF_EXP_MONO_ROOT ?
-                      NTP_EF_FLAG_EXP_MONO_ROOT : 0) |
-                      (ntohl(rx_message->data.ntp_source.flags) & REQ_ADDSRC_EF_EXP_NET_CORRECTION ?
-                      NTP_EF_FLAG_EXP_NET_CORRECTION : 0);
+  params.connectivity = flags & REQ_ADDSRC_ONLINE ? SRC_ONLINE : SRC_OFFLINE;
+  params.auto_offline = !!(flags & REQ_ADDSRC_AUTOOFFLINE);
+  params.iburst = !!(flags & REQ_ADDSRC_IBURST);
+  params.interleaved = !!(flags & REQ_ADDSRC_INTERLEAVED);
+  params.burst = !!(flags & REQ_ADDSRC_BURST);
+  params.nts = !!(flags & REQ_ADDSRC_NTS);
+  params.copy = !!(flags & REQ_ADDSRC_COPY);
+  params.ext_fields = (flags & REQ_ADDSRC_EF_EXP_MONO_ROOT ? NTP_EF_FLAG_EXP_MONO_ROOT : 0) |
+                      (flags & REQ_ADDSRC_EF_EXP_NET_CORRECTION ?
+                       NTP_EF_FLAG_EXP_NET_CORRECTION : 0);
   params.sel_options = convert_addsrc_select_options(ntohl(rx_message->data.ntp_source.flags));
 
-  status = NSR_AddSourceByName(name, port, pool, type, &params, NULL);
+  status = NSR_AddSourceByName(name, family, port, pool, type, &params, NULL);
   switch (status) {
     case NSR_Success:
       break;
@@ -807,6 +813,8 @@ handle_add_source(CMD_Request *rx_message, CMD_Reply *tx_message)
       tx_message->status = htons(STT_INVALIDNAME);
       break;
     case NSR_InvalidAF:
+      tx_message->status = htons(STT_INVALIDAF);
+      break;
     case NSR_NoSuchSource:
       assert(0);
       break;
@@ -1225,7 +1233,7 @@ handle_ntp_data(CMD_Request *rx_message, CMD_Reply *tx_message)
     return;
   }
 
-  tx_message->reply = htons(RPY_NTP_DATA);
+  tx_message->reply = htons(RPY_NTP_DATA2);
   UTI_IPHostToNetwork(&report.remote_addr, &tx_message->data.ntp_data.remote_addr);
   UTI_IPHostToNetwork(&report.local_addr, &tx_message->data.ntp_data.local_addr);
   tx_message->data.ntp_data.remote_port = htons(report.remote_port);
@@ -1253,6 +1261,10 @@ handle_ntp_data(CMD_Request *rx_message, CMD_Reply *tx_message)
   tx_message->data.ntp_data.total_rx_count = htonl(report.total_rx_count);
   tx_message->data.ntp_data.total_valid_count = htonl(report.total_valid_count);
   tx_message->data.ntp_data.total_good_count = htonl(report.total_good_count);
+  tx_message->data.ntp_data.total_kernel_tx_ts = htonl(report.total_kernel_tx_ts);
+  tx_message->data.ntp_data.total_kernel_rx_ts = htonl(report.total_kernel_rx_ts);
+  tx_message->data.ntp_data.total_hw_tx_ts = htonl(report.total_hw_tx_ts);
+  tx_message->data.ntp_data.total_hw_rx_ts = htonl(report.total_hw_rx_ts);
   memset(tx_message->data.ntp_data.reserved, 0xff, sizeof (tx_message->data.ntp_data.reserved));
 }
 
@@ -1410,6 +1422,24 @@ handle_modify_selectopts(CMD_Request *rx_message, CMD_Reply *tx_message)
 }
 
 /* ================================================== */
+
+static void
+handle_modify_offset(CMD_Request *rx_message, CMD_Reply *tx_message)
+{
+  uint32_t ref_id;
+  IPAddr ip_addr;
+  double offset;
+
+  UTI_IPNetworkToHost(&rx_message->data.modify_offset.address, &ip_addr);
+  ref_id = ntohl(rx_message->data.modify_offset.ref_id);
+  offset = UTI_FloatNetworkToHost(rx_message->data.modify_offset.new_offset);
+
+  if ((ip_addr.family != IPADDR_UNSPEC && !NSR_ModifyOffset(&ip_addr, offset)) ||
+      (ip_addr.family == IPADDR_UNSPEC && !RCL_ModifyOffset(ref_id, offset)))
+    tx_message->status = htons(STT_NOSUCHSOURCE);
+}
+
+/* ================================================== */
 /* Read a packet and process it */
 
 static void
@@ -1483,9 +1513,10 @@ read_from_cmd_socket(int sock_fd, int event, void *anything)
 
   /* Don't reply to all requests from hosts other than localhost if the rate
      is excessive */
-  if (!localhost && log_index >= 0 && CLG_LimitServiceRate(CLG_CMDMON, log_index)) {
-      DEBUG_LOG("Command packet discarded to limit response rate");
-      return;
+  if (!localhost && log_index >= 0 &&
+      CLG_LimitServiceRate(CLG_CMDMON, log_index) != CLG_PASS) {
+    DEBUG_LOG("Command packet discarded to limit response rate");
+    return;
   }
 
   expected_length = PKL_CommandLength(&rx_message);
@@ -1620,8 +1651,8 @@ read_from_cmd_socket(int sock_fd, int event, void *anything)
         case REQ_SETTIME:
           handle_settime(&rx_message, &tx_message);
           break;
-        
-        case REQ_LOCAL2:
+
+        case REQ_LOCAL3:
           handle_local(&rx_message, &tx_message);
           break;
 
@@ -1807,6 +1838,10 @@ read_from_cmd_socket(int sock_fd, int event, void *anything)
 
         case REQ_MODIFY_SELECTOPTS:
           handle_modify_selectopts(&rx_message, &tx_message);
+          break;
+
+        case REQ_MODIFY_OFFSET:
+          handle_modify_offset(&rx_message, &tx_message);
           break;
 
         default:

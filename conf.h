@@ -91,6 +91,7 @@ extern char *CNF_GetNtpSigndSocket(void);
 extern char *CNF_GetPidFile(void);
 extern REF_LeapMode CNF_GetLeapSecMode(void);
 extern char *CNF_GetLeapSecTimezone(void);
+extern char *CNF_GetLeapSecList(void);
 
 /* Value returned in ppm, as read from file */
 extern double CNF_GetMaxUpdateSkew(void);
@@ -107,14 +108,14 @@ extern double CNF_GetReselectDistance(void);
 extern double CNF_GetStratumWeight(void);
 extern double CNF_GetCombineLimit(void);
 
-extern int CNF_AllowLocalReference(int *stratum, int *orphan, double *distance);
+extern int CNF_AllowLocalReference(int *stratum, int *orphan, double *distance, double *activate);
 
 extern void CNF_SetupAccessRestrictions(void);
 
 extern int CNF_GetSchedPriority(void);
 extern int CNF_GetLockMemory(void);
 
-extern int CNF_GetNTPRateLimit(int *interval, int *burst, int *leak);
+extern int CNF_GetNTPRateLimit(int *interval, int *burst, int *leak, int *kod);
 extern int CNF_GetNtsRateLimit(int *interval, int *burst, int *leak);
 extern int CNF_GetCommandRateLimit(int *interval, int *burst, int *leak);
 extern void CNF_GetSmooth(double *max_freq, double *max_wander, int *leap_only);
@@ -158,6 +159,7 @@ extern int CNF_GetHwTsInterface(unsigned int index, CNF_HwTsInterface **iface);
 extern double CNF_GetHwTsTimeout(void);
 
 extern int CNF_GetPtpPort(void);
+extern int CNF_GetPtpDomain(void);
 
 extern int CNF_GetRefresh(void);
 

@@ -2,12 +2,12 @@
 .\"     Title: chronyc
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2023-12-05
+.\"      Date: 2024-07-30
 .\"    Manual: User manual
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYC" "1" "2023-12-05" "chrony @CHRONY_VERSION@" "User manual"
+.TH "CHRONYC" "1" "2024-07-30" "chrony @CHRONY_VERSION@" "User manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -695,7 +695,7 @@ synchronisation:
 .  sp -1
 .  IP \(bu 2.3
 .\}
-\fIs\fP \- is not synchronised.
+\fIM\fP \- does not have enough measurements.
 .RE
 .sp
 .RS 4
@@ -706,7 +706,7 @@ synchronisation:
 .  sp -1
 .  IP \(bu 2.3
 .\}
-\fIM\fP \- does not have enough measurements.
+\fIs\fP \- is not synchronised.
 .RE
 .sp
 .RS 4
@@ -881,7 +881,7 @@ or the reference ID if it is a reference clock.
 .sp
 \fBAuth\fP
 .RS 4
-This column indicites whether an authentication mechanism is enabled for the
+This column indicates whether an authentication mechanism is enabled for the
 source. \fIY\fP means yes and \fIN\fP means no.
 .RE
 .sp
@@ -1053,6 +1053,15 @@ synchronisation source.
 The \fBreselectdist\fP command sets the reselection distance. It is equivalent to
 the \fBreselectdist\fP directive in the
 configuration file.
+.RE
+.sp
+\fBoffset\fP \fIaddress|refid\fP \fIoffset\fP
+.RS 4
+The \fBoffset\fP command modifies the offset correction of an NTP source specified
+by IP address (or the \fIID#XXXXXXXXXX\fP identifier used for unknown addresses),
+or a reference clock specified by reference ID as a string. It is equivalent to
+the \fBoffset\fP option in the \fBserver\fP or
+\fBrefclock\fP directive respectively.
 .RE
 .SS "NTP sources"
 .sp
@@ -1391,6 +1400,10 @@ Total TX        : 24
 Total RX        : 24
 Total valid RX  : 24
 Total good RX   : 22
+Total kernel TX : 24
+Total kernel RX : 24
+Total HW TX     : 0
+Total HW RX     : 0
 .fam
 .fi
 .if n .RE
@@ -1485,6 +1498,30 @@ The number of packets which passed the first two groups of NTP tests.
 .RS 4
 The number of packets which passed all three groups of NTP tests, i.e. the NTP
 measurement was accepted.
+.RE
+.sp
+\fBTotal kernel TX\fP
+.RS 4
+The number of packets sent to the source for which a timestamp was captured by
+the kernel.
+.RE
+.sp
+\fBTotal kernel RX\fP
+.RS 4
+The number of packets received from the source for which a timestamp was
+captured by the kernel.
+.RE
+.sp
+\fBTotal HW TX\fP
+.RS 4
+The number of packets sent to the source for which a timestamp was captured by
+the NIC.
+.RE
+.sp
+\fBTotal HW RX\fP
+.RS 4
+The number of packets received from the source for which a timestamp was
+captured by the NIC.
 .RE
 .RE
 .sp
