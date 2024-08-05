@@ -5,21 +5,34 @@
 
 set -e
 
+. /usr/share/debconf/confmodule
+
 # targets: purge|remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear
+
+default_ntp_pools_sources_filepath="/etc/chrony/sources.d/default-ntp-pools.sources"
+ucf_managed_sources="true"
+
+db_get chrony/configure_default_pools_in_sourcesd
+ucf_managed_sources="${RET}"
 
 case "$1" in
     purge)
         rm -f /var/lib/chrony/*
         rm -f /etc/chrony/chrony.conf
         rm -f /etc/chrony/chrony.keys
-        rm -f /etc/chrony/sources.d/default-ntp-pools.sources
         if command -v ucf >/dev/null
         then
             ucf --purge /etc/chrony/chrony.conf
             ucf --purge /etc/chrony/chrony.keys
+            if [ "${ucf_managed_sources}" = "true" ]; then
+                ucf --purge "${default_ntp_pools_sources_filepath}"
+            fi
             if [ -x "$(command -v ucfr)" ]; then
                 ucfr --purge chrony /etc/chrony/chrony.conf
                 ucfr --purge chrony /etc/chrony/chrony.keys
+                if [ "${ucf_managed_sources}" = "true" ]; then
+                    ucfr --purge chrony "${default_ntp_pools_sources_filepath}"
+                fi
             fi
         fi
         rm -rf /etc/chrony
