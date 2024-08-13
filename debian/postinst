@@ -20,10 +20,10 @@ case "$1" in
                 --home /var/lib/chrony \
                 --no-create-home _chrony
 
-        default_ntp_pools_sources_filepath="/etc/chrony/sources.d/default-ntp-pools.sources"
-        packaged_default_ntp_pools_sources_filepath="/usr/share/chrony/default-ntp-pools.sources"
+        ubuntu_ntp_pools_sources_filepath="/etc/chrony/sources.d/ubuntu-ntp-pools.sources"
+        packaged_ubuntu_ntp_pools_sources_filepath="/usr/share/chrony/ubuntu-ntp-pools.sources"
 
-        db_get chrony/configure_default_pools_in_sourcesd
+        db_get chrony/configure_ubuntu_pools_in_sourcesd
         ucf_managed_sources="${RET}"
 
         if command -v ucf >/dev/null
@@ -31,22 +31,22 @@ case "$1" in
             ucf --debconf-ok --three-way /usr/share/chrony/chrony.conf /etc/chrony/chrony.conf
             ucf --debconf-ok --three-way /usr/share/chrony/chrony.keys /etc/chrony/chrony.keys
             if [ "${ucf_managed_sources}" = "true" ]; then
-                ucf --debconf-ok --three-way "${packaged_default_ntp_pools_sources_filepath}" "${default_ntp_pools_sources_filepath}"
+                ucf --debconf-ok --three-way "${packaged_ubuntu_ntp_pools_sources_filepath}" "${ubuntu_ntp_pools_sources_filepath}"
             else
                 # If this was under ucf before, purge it.
                 # If it wasn't under ucf before, this does not fail
-                ucf --debconf-ok --purge "${default_ntp_pools_sources_filepath}"
-                rm -f "${default_ntp_pools_sources_filepath}"
+                ucf --debconf-ok --purge "${ubuntu_ntp_pools_sources_filepath}"
+                rm -f "${ubuntu_ntp_pools_sources_filepath}"
             fi
             if [ -x "$(command -v ucfr)" ]; then
                 ucfr chrony /etc/chrony/chrony.conf
                 ucfr chrony /etc/chrony/chrony.keys
                 if [ "${ucf_managed_sources}" = "true" ]; then
-                    ucfr chrony "${default_ntp_pools_sources_filepath}"
+                    ucfr chrony "${ubuntu_ntp_pools_sources_filepath}"
                 else
                     # If this was under ucf before, purge it.
                     # If it wasn't under ucf before, this does not fail
-                    ucfr --purge chrony "${default_ntp_pools_sources_filepath}"
+                    ucfr --purge chrony "${ubuntu_ntp_pools_sources_filepath}"
                 fi
             fi
         fi

@@ -1,7 +1,7 @@
-Template: chrony/configure_default_pools_in_sourcesd
+Template: chrony/configure_ubuntu_pools_in_sourcesd
 Type: boolean
 Default: true
-Description: Configure default NTP pool sources in /etc/chrony/sources.d/default-ntp-pools.sources.
+Description: Configure default NTP pool sources in /etc/chrony/sources.d/ubuntu-ntp-pools.sources.
  If you plan to configure time sources for chrony yourself, please respond in negative.
  If you don't plan to configure time sources for chrony yourself, or are not sure what this means
  it is recommended that you respond in affirmative.
