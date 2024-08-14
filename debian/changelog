@@ -1,3 +1,23 @@
+chrony (4.5-3ubuntu2) oracular; urgency=medium
+  * Move Ubuntu NTP sources to /etc/chrony/sources.d/ubuntu-ntp-pools.sources,
+    gated on a low priority (default yes) debconf question (LP: #2048876):
+    - d/NEWS: Add entry with information about default time sources moving out
+      from chrony.conf to /etc/chrony/sources.d/ubuntu-ntp-pools.sources.
+    - d/chrony.conf, d/ubuntu-ntp-pools.sources: Move Ubuntu NTP pool sources
+      from chrony.conf to ubuntu-ntp-pools.sources 
+    - d/chrony.config: Ask chrony/configure_ubuntu_pools_in_sourcesd debconf
+      question.
+    - d/control: Add debconf dependency.
+    - d/install: Install ubuntu-ntp-pools.sources in /usr/share/chrony
+    - d/postinst: Handle ubuntu-ntp-pools.sources installation, removal and
+      ucf tracking based on debconf question.
+    - d/postrm: Handle /etc/chrony/sources.d/ubuntu-ntp-pools.sources removal
+      from ucf tracking based on debconf question on uninstall.
+    - d/templates: Add debconf question to customize installation of
+      /etc/chrony/sources.d/ubuntu-ntp-pools.sources. 
+ 
+ -- Ankush Pathak <ankush.pathak@canonical.com>  Thu, 15 Aug 2024 00:03:08 +0530
+
 chrony (4.5-3ubuntu1) oracular; urgency=medium
 
   * Merge with Debian unstable (LP: #2064393, LP: #2068526). Remaining
