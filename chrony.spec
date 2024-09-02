@@ -1,5 +1,5 @@
 %global _hardened_build 1
-%global clknetsim_ver 633a0b
+%global clknetsim_ver 64df92
 %bcond_without debug
 %bcond_without nts
 
