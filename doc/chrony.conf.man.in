@@ -2,12 +2,12 @@
 .\"     Title: chrony.conf
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2024-07-30
+.\"      Date: 2024-08-29
 .\"    Manual: Configuration Files
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONY.CONF" "5" "2024-07-30" "chrony @CHRONY_VERSION@" "Configuration Files"
+.TH "CHRONY.CONF" "5" "2024-08-29" "chrony @CHRONY_VERSION@" "Configuration Files"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -144,6 +144,15 @@ mechanism. Unlike with the \fBkey\fP option, the server and client do not need t
 share a key in a key file. NTS has a Key Establishment (NTS\-KE) protocol using
 the Transport Layer Security (TLS) protocol to get the keys and cookies
 required by NTS for authentication of NTP packets.
+.sp
+With this option, the hostname specified in the server or pool directive is the
+NTS\-KE server or pool of NTS\-KE servers respectively. The NTP server usually
+runs on the same host, but it can be separated from the NTS\-KE server (the
+hostname or address of the NTP server is provided to the client by the NTS\-KE
+server).
+.sp
+The NTS\-KE server can be specified by IP address if it is included in the
+server\(cqs certificate as a Subject Alternative Name (SAN).
 .RE
 .sp
 \fBcertset\fP \fIID\fP
@@ -4569,6 +4578,8 @@ pidfile /run/chronyd.pid
 .fam
 .fi
 .if n .RE
+.sp
+Setting this directive to \fI/\fP disables writing and checking of the PID file.
 .RE
 .sp
 \fBptpport\fP \fIport\fP

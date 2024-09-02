@@ -64,6 +64,7 @@ Table of Contents
         each another?
   o 7. Operation
       ? 7.1. What clocks does chronyd use?
+      ? 7.2. How accurate is my system clock?
   o 8. Operating systems
       ? 8.1. Does chrony support Windows?
       ? 8.2. Are there any plans to support Windows?
@@ -765,6 +766,17 @@ all sources, even those that do not have a known address yet, with their names
 as they were specified in the configuration. This can be useful to verify that
 the names specified in the configuration are used as expected.
 
+When DNSSEC is enabled, it will not work until the time is synchronized, as it
+requires validating a signature timestamp and its expiration date, so if the
+system time is too far in the future or the past DNSSEC validation will fail
+and chronyd will be unable to resolve the address of the NTP server. In such
+cases, if hostnames are the only options and bare IP addresses cannot be used,
+DNSSEC can be disabled for chronyd using resolver-specific mechanisms, if
+available, although of course that means losing the protection afforded by
+DNSSEC. For example, when using systemd-resolved, the
+SYSTEMD_NSS_RESOLVE_VALIDATE=0 environment variable can be set, for example in
+the chronyd systemd unit via Environment=SYSTEMD_NSS_RESOLVE_VALIDATE=0.
+
 3.4. Is chronyd allowed to step the system clock?
 
 By default, chronyd adjusts the clock gradually by slowing it down or speeding
@@ -1141,6 +1153,52 @@ There are several different clocks used by chronyd:
     synchronised by chronyd. Its offset is tracked relative to the NTP clock in
     order to convert the hardware timestamps.
 
+7.2. How accurate is my system clock?
+
+chronyd does not know how accurate really is the clock it is synchronizing.
+Even if the measured offset of the clock is stable to nanoseconds, it could be
+off by milliseconds due to asymmetric network delay, e.g. caused by asymmetric
+routing or queuing delays in network switches. NTP provides root delay and root
+dispersion to enable clients to estimate the maximum error of their clock.
+
+Root delay measures the sum of round-trip times between all NTP servers on the
+path from the client to the primary time source (e.g. a GPS receiver). Half of
+the root delay is the maximum error due to asymmetric delays, assuming one
+direction (e.g. from the client to the server) has a zero delay and the other
+direction (from the server to the client) takes all of the measured delay. The
+root delay also covers timestamping errors if the server implementation and
+hardware meet the NTP requirement for transmit timestamps to never be late and
+receive timestamps to never be early.
+
+If you have additional information about the hardware and network between the
+client and primary time source, you could modify the root delay to get a better
+estimate of the maximum error. For example, from the physical distance of the
+server and signal propagation speed in the cables a minimum symmetric
+round-trip delay can be calculated and subtracted from the root delay measured
+by NTP.
+
+Root dispersion estimates errors due to instability of clocks and NTP
+measurements. chronyd adjusts the rate at which root dispersion grows between
+updates of the clock according to the stability of its NTP measurements. The
+minimum rate is set by the the maxclockerror directive. By default it is 1 ppm
+(1 microsecond per second).
+
+The estimated maximum error of the NTP clock is the sum of the root dispersion
+and half of the root delay. This value is called root distance. The current
+values of root dispersion and delay are included in the tracking report.
+
+The estimated maximum error of the system clock, which is synchronized to the
+NTP clock, is the sum of the root distance and remaining correction of the
+system clock provided as System time in the tracking report. A maximum value of
+this estimate between updates of the clock is included in the tracking log.
+
+Note that the resolution of the root delay and root dispersion fields in NTP
+messages is about 15 microseconds and chronyd rounds the values up, i.e. the
+minimum root distance an NTP client can normally observe is about 22.5
+microseconds. An NTP extension field containing root delay and dispersion in a
+better resolution of about 4 nanoseconds can be enabled by the extfield F323
+option.
+
 8. Operating systems
 
 8.1. Does chrony support Windows?
@@ -1156,4 +1214,4 @@ needs to be made to work as a service.
 We have no plans to do this. Anyone is welcome to pick this work up and
 contribute it back to the project.
 
-Last updated 2024-07-30 14:05:42 +0200
+Last updated 2024-08-29 10:28:49 +0200

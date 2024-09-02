@@ -1,3 +1,17 @@
+chrony (4.6-1) unstable; urgency=medium
+
+  * Import upstream version 4.6-1:
+    - Please see /usr/share/doc/chrony/NEWS.gz for the release notes.
+
+  * debian/copyright:
+    - Update copyright years.
+    - Add Files stanzas.
+
+  * debian/tests/upstream-simulation-test-suite:
+    - Update clknetsim version.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Mon, 02 Sep 2024 19:37:15 +0200
+
 chrony (4.6~pre1-1) experimental; urgency=medium
 
   * Import upstream version 4.6-pre1:

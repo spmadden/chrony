@@ -78,6 +78,7 @@ static void parse_makestep(char *);
 static void parse_maxchange(char *);
 static void parse_ntsserver(char *, ARR_Instance files);
 static void parse_ntstrustedcerts(char *);
+static void parse_pidfile(char *line);
 static void parse_ratelimit(char *line, int *enabled, int *interval,
                             int *burst, int *leak, int *kod);
 static void parse_refclock(char *);
@@ -294,15 +295,15 @@ typedef struct {
   NTP_Source_Type type;
   int pool;
   CPS_NTP_Source params;
+  NSR_Status status;
+  uint32_t conf_id;
 } NTP_Source;
 
 /* Array of NTP_Source */
 static ARR_Instance ntp_sources;
 /* Array of (char *) */
 static ARR_Instance ntp_source_dirs;
-/* Array of uint32_t corresponding to ntp_sources (for sourcedirs reload) */
-static ARR_Instance ntp_source_ids;
-/* Flag indicating ntp_sources and ntp_source_ids are used for sourcedirs */
+/* Flag indicating ntp_sources is used for sourcedirs after config load */
 static int conf_ntp_sources_added = 0;
 
 /* Array of RefclockParameters */
@@ -403,7 +404,6 @@ CNF_Initialise(int r, int client_only)
   init_sources = ARR_CreateInstance(sizeof (IPAddr));
   ntp_sources = ARR_CreateInstance(sizeof (NTP_Source));
   ntp_source_dirs = ARR_CreateInstance(sizeof (char *));
-  ntp_source_ids = ARR_CreateInstance(sizeof (uint32_t));
   refclock_sources = ARR_CreateInstance(sizeof (RefclockParameters));
   broadcasts = ARR_CreateInstance(sizeof (NTP_Broadcast_Destination));
 
@@ -463,7 +463,6 @@ CNF_Finalise(void)
   ARR_DestroyInstance(init_sources);
   ARR_DestroyInstance(ntp_sources);
   ARR_DestroyInstance(ntp_source_dirs);
-  ARR_DestroyInstance(ntp_source_ids);
   ARR_DestroyInstance(refclock_sources);
   ARR_DestroyInstance(broadcasts);
 
@@ -705,7 +704,7 @@ CNF_ParseLine(const char *filename, int number, char *line)
   } else if (!strcasecmp(command, "peer")) {
     parse_source(p, command, 1);
   } else if (!strcasecmp(command, "pidfile")) {
-    parse_string(p, &pidfile);
+    parse_pidfile(p);
   } else if (!strcasecmp(command, "pool")) {
     parse_source(p, command, 1);
   } else if (!strcasecmp(command, "port")) {
@@ -837,6 +836,9 @@ parse_source(char *line, char *type, int fatal)
   }
 
   source.params.name = Strdup(source.params.name);
+  source.status = NSR_NoSuchSource;
+  source.conf_id = 0;
+
   ARR_AppendElement(ntp_sources, &source);
 }
 
@@ -1528,6 +1530,20 @@ parse_hwtimestamp(char *line)
 
 /* ================================================== */
 
+static void
+parse_pidfile(char *line)
+{
+  parse_string(line, &pidfile);
+
+  /* / disables the PID file handling */
+  if (strcmp(pidfile, "/") == 0) {
+    Free(pidfile);
+    pidfile = NULL;
+  }
+}
+
+/* ================================================== */
+
 static const char *
 get_basename(const char *path)
 {
@@ -1694,7 +1710,6 @@ reload_source_dirs(void)
 {
   NTP_Source *prev_sources, *new_sources, *source;
   unsigned int i, j, prev_size, new_size, unresolved;
-  uint32_t *prev_ids, *new_ids;
   char buf[MAX_LINE_LENGTH];
   NSR_Status s;
   int d, pass;
@@ -1703,13 +1718,9 @@ reload_source_dirs(void)
   if (!conf_ntp_sources_added)
     return;
 
-  prev_size = ARR_GetSize(ntp_source_ids);
-  if (ARR_GetSize(ntp_sources) != prev_size)
-    assert(0);
+  prev_size = ARR_GetSize(ntp_sources);
 
-  /* Save the current sources and their configuration IDs */
-  prev_ids = MallocArray(uint32_t, prev_size);
-  memcpy(prev_ids, ARR_GetElements(ntp_source_ids), prev_size * sizeof (prev_ids[0]));
+  /* Save the current sources */
   prev_sources = MallocArray(NTP_Source, prev_size);
   memcpy(prev_sources, ARR_GetElements(ntp_sources), prev_size * sizeof (prev_sources[0]));
 
@@ -1727,8 +1738,6 @@ reload_source_dirs(void)
 
   new_size = ARR_GetSize(ntp_sources);
   new_sources = ARR_GetElements(ntp_sources);
-  ARR_SetSize(ntp_source_ids, new_size);
-  new_ids = ARR_GetElements(ntp_source_ids);
   unresolved = 0;
 
   LOG_SetContext(LOGC_SourceFile);
@@ -1743,31 +1752,31 @@ reload_source_dirs(void)
         d = i < prev_size ? -1 : 1;
 
       /* Remove missing sources before adding others to avoid conflicts */
-      if (pass == 0 && d < 0 && prev_sources[i].params.name[0] != '\0') {
-        NSR_RemoveSourcesById(prev_ids[i]);
+      if (pass == 0 && d < 0 && prev_sources[i].status == NSR_Success) {
+        NSR_RemoveSourcesById(prev_sources[i].conf_id);
       }
 
-      /* Add new sources */
-      if (pass == 1 && d > 0) {
+      /* Add new sources and sources that could not be added before */
+      if (pass == 1 && (d > 0 || (d == 0 && prev_sources[i].status != NSR_Success))) {
         source = &new_sources[j];
         s = NSR_AddSourceByName(source->params.name, source->params.family, source->params.port,
                                 source->pool, source->type, &source->params.params,
-                                &new_ids[j]);
+                                &source->conf_id);
+        source->status = s;
 
         if (s == NSR_UnresolvedName) {
           unresolved++;
-        } else if (s != NSR_Success) {
+        } else if (s != NSR_Success && (d > 0 || s != prev_sources[i].status)) {
           LOG(LOGS_ERR, "Could not add source %s : %s",
               source->params.name, NSR_StatusToString(s));
-
-          /* Mark the source as not present */
-          source->params.name[0] = '\0';
         }
       }
 
       /* Keep unchanged sources */
-      if (pass == 1 && d == 0)
-        new_ids[j] = prev_ids[i];
+      if (pass == 1 && d == 0) {
+        new_sources[j].status = prev_sources[i].status;
+        new_sources[j].conf_id = prev_sources[i].conf_id;
+      }
     }
   }
 
@@ -1776,7 +1785,6 @@ reload_source_dirs(void)
   for (i = 0; i < prev_size; i++)
     Free(prev_sources[i].params.name);
   Free(prev_sources);
-  Free(prev_ids);
 
   if (unresolved > 0)
     NSR_ResolveSources();
@@ -1875,7 +1883,6 @@ CNF_AddSources(void)
 
   /* The arrays will be used for sourcedir (re)loading */
   ARR_SetSize(ntp_sources, 0);
-  ARR_SetSize(ntp_source_ids, 0);
   conf_ntp_sources_added = 1;
 
   reload_source_dirs();

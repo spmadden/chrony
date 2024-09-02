@@ -3,7 +3,7 @@
 
  **********************************************************************
  * Copyright (C) Richard P. Curnow  1997-2003
- * Copyright (C) Miroslav Lichvar  2011-2012, 2014, 2016, 2020-2023
+ * Copyright (C) Miroslav Lichvar  2011-2012, 2014, 2016, 2020-2024
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -219,8 +219,14 @@ NSR_Finalise(void)
   ARR_DestroyInstance(pools);
 
   SCH_RemoveTimeout(resolving_id);
-  while (unresolved_sources)
-    remove_unresolved_source(unresolved_sources);
+
+  /* Leave the unresolved sources allocated if the async resolver is running
+     to avoid reading the name from freed memory.  The handler will not be
+     called as the scheduler should no longer be running at this point. */
+  if (!resolving_source) {
+    while (unresolved_sources)
+      remove_unresolved_source(unresolved_sources);
+  }
 
   initialised = 0;
 }
