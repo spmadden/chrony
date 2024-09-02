@@ -1,3 +1,9 @@
+# Keep this as the first test, to check default installation behavior more
+# easily.
+Tests: default-ubuntu-sources-behavior
+Depends: chrony, dpkg-dev
+Restrictions: isolation-container, needs-root
+
 Tests: upstream-simulation-test-suite
 Depends: @builddeps@, build-essential, ca-certificates, wget
 Restrictions: isolation-container, build-needed, skippable, needs-root, needs-internet
