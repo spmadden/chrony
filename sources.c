@@ -3,7 +3,7 @@
 
  **********************************************************************
  * Copyright (C) Richard P. Curnow  1997-2003
- * Copyright (C) Miroslav Lichvar  2011-2016, 2018, 2020-2023
+ * Copyright (C) Miroslav Lichvar  2011-2016, 2018, 2020-2024
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -526,11 +526,6 @@ SRC_UpdateReachability(SRC_Instance inst, int reachable)
   if (inst->reachability_size < SOURCE_REACH_BITS)
       inst->reachability_size++;
 
-  /* Source selection can change with unreachable sources */
-  if (inst->reachability == 0) {
-    SRC_SelectSource(NULL);
-  }
-
   /* Check if special reference update mode failed */
   if (REF_GetMode() != REF_ModeNormal && special_mode_end()) {
     REF_SetUnsynchronised();
@@ -539,6 +534,10 @@ SRC_UpdateReachability(SRC_Instance inst, int reachable)
   /* Try to replace unreachable NTP sources */
   if (inst->reachability == 0 && inst->reachability_size == SOURCE_REACH_BITS)
     handle_bad_source(inst);
+
+  /* Source selection can change with unreachable sources */
+  if (inst->reachability == 0)
+    SRC_SelectSource(NULL);
 }
 
 /* ================================================== */
