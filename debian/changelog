@@ -1,3 +1,10 @@
+chrony (4.5-3ubuntu3) oracular; urgency=medium
+
+  * d/t/control, d/t/default-ubuntu-sources-behavior: new test to check the
+    debconf behavior introduced in LP #2048876)
+
+ -- Andreas Hasenack <andreas@canonical.com>  Mon, 02 Sep 2024 16:37:40 -0300
+
 chrony (4.5-3ubuntu2) oracular; urgency=medium
   * Move Ubuntu NTP sources to /etc/chrony/sources.d/ubuntu-ntp-pools.sources,
     gated on a low priority (default yes) debconf question (LP: #2048876):
