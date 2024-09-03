@@ -1,5 +1,5 @@
 %global _hardened_build 1
-%global clknetsim_ver 5d1dc0
+%global clknetsim_ver 64df92
 %bcond_without debug
 %bcond_without nts
 
@@ -8,7 +8,7 @@
 %endif
 
 Name:           chrony
-Version:        4.5
+Version:        4.6
 Release:        3%{?dist}
 Summary:        An NTP client/server
 
@@ -25,6 +25,8 @@ Source10:       https://gitlab.com/chrony/clknetsim/-/archive/master/clknetsim-%
 
 # add distribution-specific bits to DHCP dispatcher
 Patch1:         chrony-nm-dispatcher-dhcp.patch
+# revert upstream changes in packaged configuration examples
+Patch2:         chrony-defconfig.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
@@ -59,6 +61,7 @@ service to other computers in the network.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch -P 0 -p1}
 %patch -P 1 -p1 -b .nm-dispatcher-dhcp
+%patch -P 2 -p1 -b .defconfig
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
