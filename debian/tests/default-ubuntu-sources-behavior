@@ -26,15 +26,17 @@ cleanup() {
 
 trap cleanup EXIT
 
-test_fresh_install_has_sources() {
+test_fresh_install_has_nts_sources() {
     local -i n=0
     local output
 
     echo
     echo "## Running ${FUNCNAME[0]}"
-    echo "## Fresh install, ubuntu sources must be defined"
+    echo "## Fresh install, ubuntu NTS sources must be defined"
     ls -la "$(dirname ${UBUNTU_NTP_POOLS})"
     test -f "${UBUNTU_NTP_POOLS}" || return 1
+    cat "${UBUNTU_NTP_POOLS}"
+    grep -qE "^pool.*nts" "${UBUNTU_NTP_POOLS}" || return 1
     echo
     echo "## Chrony should have valid sources loaded"
     # Sometimes this lists sources and still fails ($? != 0), so let's ignore
@@ -43,6 +45,18 @@ test_fresh_install_has_sources() {
     echo "${output}"
     n=$(echo "${output}" | grep -E '^\^'|wc -l)
     echo "## ${n} sources identified"
+    if [ "${n}" -gt 0 ]; then
+        echo "## OK"
+    else
+        echo "## FAIL"
+        return 1
+    fi
+    echo
+    echo "## And these sources should be authenticated"
+    output=$(chronyc authdata 2>&1 || :)
+    echo "${output}"
+    n=$(echo "${output}" | grep -E 'NTS'|wc -l)
+    echo "## ${n} authenticated sources identified"
     if [ "${n}" -gt 0 ]; then
         echo "## OK"
     else
@@ -110,8 +124,11 @@ EOF
         return 1
     fi
 }
+
 __no_system_clock_control
 __restart_chronyd
-test_fresh_install_has_sources
+# these tests must be run in this order, because they don't reset the state
+# each time
+test_fresh_install_has_nts_sources
 test_debconf_no_ubuntu_sources
 test_debconf_with_ubuntu_sources
