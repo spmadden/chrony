@@ -1,3 +1,10 @@
+chrony (4.5-1ubuntu4.2) noble; urgency=medium
+
+  * SRU: LP: #2083480: No-change rebuild to disable frame pointers on
+    ppc64el and s390x.
+
+ -- Matthias Klose <doko@ubuntu.com>  Wed, 02 Oct 2024 14:40:49 +0200
+
 chrony (4.5-1ubuntu4.1) noble; urgency=medium
 
   * d/usr.sbin.chronyd: fix the apparmor profile to allow multiple PTP
