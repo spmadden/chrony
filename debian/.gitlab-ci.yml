@@ -1,7 +1,6 @@
 ---
 include:
-    - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/salsa-ci.yml
-    - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/pipeline-jobs.yml
+    - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/recipes/debian.yml
 
 variables:
     # Skip the reprotest job as long as it is run as root due to problems with

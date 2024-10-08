@@ -2,7 +2,7 @@
   chronyd/chronyc - Programs for keeping computer clocks accurate.
 
  **********************************************************************
- * Copyright (C) Miroslav Lichvar  2020-2021
+ * Copyright (C) Miroslav Lichvar  2020-2021, 2024
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -50,7 +50,9 @@ struct NKC_Instance_Record {
   int got_response;
   int resolving_name;
 
+  int compliant_128gcm;
   NKE_Context context;
+  NKE_Context alt_context;
   NKE_Cookie cookies[NKE_MAX_COOKIES];
   int num_cookies;
   char server_name[NKE_MAX_RECORD_BODY_LENGTH + 2];
@@ -98,12 +100,14 @@ name_resolve_handler(DNS_Status status, int n_addrs, IPAddr *ip_addrs, void *arg
 
 /* ================================================== */
 
+#define MAX_AEAD_ALGORITHMS 4
+
 static int
 prepare_request(NKC_Instance inst)
 {
   NKSN_Instance session = inst->session;
-  uint16_t data[2];
-  int length;
+  uint16_t data[MAX_AEAD_ALGORITHMS];
+  int i, aead_algorithm, length;
 
   NKSN_BeginMessage(session);
 
@@ -111,14 +115,23 @@ prepare_request(NKC_Instance inst)
   if (!NKSN_AddRecord(session, 1, NKE_RECORD_NEXT_PROTOCOL, data, sizeof (data[0])))
     return 0;
 
-  length = 0;
-  if (SIV_GetKeyLength(AEAD_AES_128_GCM_SIV) > 0)
-    data[length++] = htons(AEAD_AES_128_GCM_SIV);
-  if (SIV_GetKeyLength(AEAD_AES_SIV_CMAC_256) > 0)
-    data[length++] = htons(AEAD_AES_SIV_CMAC_256);
+  for (i = length = 0; i < ARR_GetSize(CNF_GetNtsAeads()) && length < MAX_AEAD_ALGORITHMS;
+       i++) {
+    aead_algorithm = *(int *)ARR_GetElement(CNF_GetNtsAeads(), i);
+    if (SIV_GetKeyLength(aead_algorithm) > 0)
+      data[length++] = htons(aead_algorithm);
+  }
   if (!NKSN_AddRecord(session, 1, NKE_RECORD_AEAD_ALGORITHM, data,
                       length * sizeof (data[0])))
     return 0;
+
+  for (i = 0; i < length; i++) {
+    if (data[i] == htons(AEAD_AES_128_GCM_SIV)) {
+      if (!NKSN_AddRecord(session, 0, NKE_RECORD_COMPLIANT_128GCM_EXPORT, NULL, 0))
+        return 0;
+      break;
+    }
+  }
 
   if (!NKSN_EndMessage(session))
     return 0;
@@ -139,6 +152,8 @@ process_response(NKC_Instance inst)
   assert(sizeof (data) % sizeof (uint16_t) == 0);
   assert(sizeof (uint16_t) == 2);
 
+  inst->compliant_128gcm = 0;
+  inst->alt_context.algorithm = AEAD_SIV_INVALID;
   inst->num_cookies = 0;
   inst->ntp_address.ip_addr.family = IPADDR_UNSPEC;
   inst->ntp_address.port = 0;
@@ -165,15 +180,31 @@ process_response(NKC_Instance inst)
         next_protocol = NKE_NEXT_PROTOCOL_NTPV4;
         break;
       case NKE_RECORD_AEAD_ALGORITHM:
-        if (length != 2 || (ntohs(data[0]) != AEAD_AES_SIV_CMAC_256 &&
-                            ntohs(data[0]) != AEAD_AES_128_GCM_SIV) ||
-            SIV_GetKeyLength(ntohs(data[0])) <= 0) {
-          DEBUG_LOG("Unexpected NTS-KE AEAD algorithm");
+        if (length != 2) {
+          DEBUG_LOG("Unexpected AEAD algorithm");
           error = 1;
           break;
         }
-        aead_algorithm = ntohs(data[0]);
-        inst->context.algorithm = aead_algorithm;
+        for (i = 0; i < ARR_GetSize(CNF_GetNtsAeads()); i++) {
+          if (ntohs(data[0]) == *(int *)ARR_GetElement(CNF_GetNtsAeads(), i) &&
+              SIV_GetKeyLength(ntohs(data[0])) > 0) {
+            aead_algorithm = ntohs(data[0]);
+            inst->context.algorithm = aead_algorithm;
+          }
+        }
+        if (aead_algorithm < 0) {
+          DEBUG_LOG("Unexpected AEAD algorithm");
+          error = 1;
+        }
+        break;
+      case NKE_RECORD_COMPLIANT_128GCM_EXPORT:
+        if (length != 0) {
+          DEBUG_LOG("Non-empty compliant-128gcm record");
+          error = 1;
+          break;
+        }
+        DEBUG_LOG("Compliant AES-128-GCM-SIV export");
+        inst->compliant_128gcm = 1;
         break;
       case NKE_RECORD_ERROR:
         if (length == 2)
@@ -255,6 +286,7 @@ process_response(NKC_Instance inst)
 static int
 handle_message(void *arg)
 {
+  SIV_Algorithm exporter_algorithm;
   NKC_Instance inst = arg;
 
   if (!process_response(inst)) {
@@ -262,8 +294,25 @@ handle_message(void *arg)
     return 0;
   }
 
-  if (!NKSN_GetKeys(inst->session, inst->context.algorithm,
-                    &inst->context.c2s, &inst->context.s2c))
+  exporter_algorithm = inst->context.algorithm;
+
+  /* With AES-128-GCM-SIV, set the algorithm ID in the RFC5705 key exporter
+     context incorrectly for compatibility with older chrony servers unless
+     the server confirmed support for the compliant context.  Generate both
+     sets of keys in case the server uses the compliant context, but does not
+     support the negotiation record, assuming it will respond with an NTS NAK
+     to a request authenticated with the noncompliant key. */
+  if (exporter_algorithm == AEAD_AES_128_GCM_SIV && !inst->compliant_128gcm) {
+    inst->alt_context.algorithm = inst->context.algorithm;
+    if (!NKSN_GetKeys(inst->session, inst->alt_context.algorithm, exporter_algorithm,
+                      NKE_NEXT_PROTOCOL_NTPV4, &inst->alt_context.c2s, &inst->alt_context.s2c))
+      return 0;
+
+    exporter_algorithm = AEAD_AES_SIV_CMAC_256;
+  }
+
+  if (!NKSN_GetKeys(inst->session, inst->context.algorithm, exporter_algorithm,
+                    NKE_NEXT_PROTOCOL_NTPV4, &inst->context.c2s, &inst->context.s2c))
     return 0;
 
   if (inst->server_name[0] != '\0') {
@@ -428,7 +477,7 @@ NKC_IsActive(NKC_Instance inst)
 /* ================================================== */
 
 int
-NKC_GetNtsData(NKC_Instance inst, NKE_Context *context,
+NKC_GetNtsData(NKC_Instance inst, NKE_Context *context, NKE_Context *alt_context,
                NKE_Cookie *cookies, int *num_cookies, int max_cookies,
                IPSockAddr *ntp_address)
 {
@@ -438,6 +487,7 @@ NKC_GetNtsData(NKC_Instance inst, NKE_Context *context,
     return 0;
 
   *context = inst->context;
+  *alt_context = inst->alt_context;
 
   for (i = 0; i < inst->num_cookies && i < max_cookies; i++)
     cookies[i] = inst->cookies[i];
