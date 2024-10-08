@@ -8,7 +8,7 @@
 %endif
 
 Name:           chrony
-Version:        4.6
+Version:        4.6.1
 Release:        1%{?dist}
 Summary:        An NTP client/server
 
