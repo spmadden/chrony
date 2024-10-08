@@ -30,11 +30,12 @@
 #define NKSN_GetKeys get_keys
 
 static int
-get_keys(NKSN_Instance session, SIV_Algorithm siv, NKE_Key *c2s, NKE_Key *s2c)
+get_keys(NKSN_Instance session, SIV_Algorithm algorithm, SIV_Algorithm exporter_algorithm,
+         int next_protocol, NKE_Key *c2s, NKE_Key *s2c)
 {
-  c2s->length = SIV_GetKeyLength(siv);
+  c2s->length = SIV_GetKeyLength(algorithm);
   UTI_GetRandomBytes(c2s->key, c2s->length);
-  s2c->length = SIV_GetKeyLength(siv);
+  s2c->length = SIV_GetKeyLength(algorithm);
   UTI_GetRandomBytes(s2c->key, s2c->length);
   return 1;
 }
@@ -91,7 +92,7 @@ prepare_request(NKSN_Instance session, int valid)
 
   if (index == 8) {
     length = random() % (sizeof (data) + 1);
-    TEST_CHECK(NKSN_AddRecord(session, 1, 1000 + random() % 1000, data, length));
+    TEST_CHECK(NKSN_AddRecord(session, 1, 2000 + random() % 1000, data, length));
   }
 
   if (random() % 2) {
@@ -105,9 +106,12 @@ prepare_request(NKSN_Instance session, int valid)
     TEST_CHECK(NKSN_AddRecord(session, 0, NKE_RECORD_NTPV4_PORT_NEGOTIATION, data, length));
   }
 
+  if (random() % 2)
+    TEST_CHECK(NKSN_AddRecord(session, 0, NKE_RECORD_COMPLIANT_128GCM_EXPORT, NULL, 0));
+
   if (random() % 2) {
     length = random() % (sizeof (data) + 1);
-    TEST_CHECK(NKSN_AddRecord(session, 0, 1000 + random() % 1000, data, length));
+    TEST_CHECK(NKSN_AddRecord(session, 0, 2000 + random() % 1000, data, length));
   }
 
   TEST_CHECK(NKSN_EndMessage(session));
@@ -174,7 +178,8 @@ test_unit(void)
 
   for (i = 0; i < 10000; i++) {
     context.algorithm = AEAD_AES_SIV_CMAC_256;
-    get_keys(session, context.algorithm, &context.c2s, &context.s2c);
+    get_keys(session, context.algorithm, random() % 100, NKE_NEXT_PROTOCOL_NTPV4,
+             &context.c2s, &context.s2c);
     memset(&cookie, 0, sizeof (cookie));
     TEST_CHECK(NKS_GenerateCookie(&context, &cookie));
     TEST_CHECK(NKS_DecodeCookie(&cookie, &context2));

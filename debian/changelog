@@ -1,3 +1,16 @@
+chrony (4.6.1-1) unstable; urgency=medium
+
+  * Import upstream version 4.6.1:
+    - Please see /usr/share/doc/chrony/NEWS.gz for the release notes.
+
+  * debian/copyright:
+    - Update copyright year.
+
+  * debian/.gitlab-ci:
+    - Use the recommended URL.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Tue, 08 Oct 2024 16:06:04 +0200
+
 chrony (4.6-1) unstable; urgency=medium
 
   * Import upstream version 4.6-1:

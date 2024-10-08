@@ -2,12 +2,12 @@
 .\"     Title: chrony.conf
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2024-08-29
+.\"      Date: 2024-10-08
 .\"    Manual: Configuration Files
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONY.CONF" "5" "2024-08-29" "chrony @CHRONY_VERSION@" "Configuration Files"
+.TH "CHRONY.CONF" "5" "2024-10-08" "chrony @CHRONY_VERSION@" "Configuration Files"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -1109,6 +1109,62 @@ changes in the frequency and offset of the clock. The offsets in the
 \fBtracking\fP and
 \fBsourcestats\fP reports (and the \fItracking.log\fP and
 \fIstatistics.log\fP files) may be smaller than the actual offsets.
+.RE
+.sp
+\fBntsaeads\fP \fIID\fP...
+.RS 4
+This directive specifies a list of IDs of Authenticated Encryption with
+Associated Data (AEAD) algorithms enabled for NTS authentication of NTP
+messages. The algorithms are specified in decreasing order of priority.
+Algorithms that are not supported by the installed version of the crypto
+library (Nettle, GnuTLS) are ignored.
+.sp
+The following IDs are supported:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+15: AES\-SIV\-CMAC\-256
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+30: AES\-128\-GCM\-SIV
+.RE
+.RE
+.sp
+
+.RS 4
+.sp
+The default list of IDs is \fI30 15\fP. AES\-128\-GCM\-SIV is prefered over
+AES\-SIV\-CMAC\-256 for shorter keys, which makes NTS cookies shorter and improves
+reliability of NTS in networks that block or limit rate of longer NTP messages.
+.sp
+The ID of the used algorithm is reported for each server by the
+\fBauthdata\fP command.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+ntsaeads 15
+.fam
+.fi
+.if n .RE
+.sp
+This list is used also by the NTS server.
 .RE
 .sp
 \fBntsdumpdir\fP \fIdirectory\fP
@@ -2290,6 +2346,71 @@ This directive specifies the maximum number of concurrent NTS\-KE connections
 per process that the NTS server will accept. The default value is 100. The
 maximum practical value is half of the system \fBFD_SETSIZE\fP constant (usually
 1024).
+.RE
+.sp
+\fBntsaeads\fP \fIID\fP...
+.RS 4
+This directive specifies a list of IDs of Authenticated Encryption with
+Associated Data (AEAD) algorithms enabled for NTS authentication of NTP
+messages. \fBchronyd\fP as a server uses the first enabled algorithm from the list
+provided by the client. Algorithms that are not supported by the installed
+version of the crypto library (Nettle, GnuTLS) are ignored.
+.sp
+The following IDs are supported:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+15: AES\-SIV\-CMAC\-256
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+30: AES\-128\-GCM\-SIV
+.RE
+.RE
+.sp
+
+.RS 4
+.sp
+The default list of IDs is \fI30 15\fP. AES\-128\-GCM\-SIV is prefered over
+AES\-SIV\-CMAC\-256 for shorter keys, which makes NTS cookies shorter and improves
+reliability of NTS in networks that block or limit rate of longer NTP messages.
+.sp
+An example of the directive is:
+.sp
+.if n .RS 4
+.nf
+.fam C
+ntsaeads 15
+.fam
+.fi
+.if n .RE
+.sp
+This list is used also by the NTS client.
+.sp
+Note the the NTS specification (RFC 8915) requires servers to support
+AES\-SIV\-CMAC\-256, i.e. 15 should be always included in the specified list.
+.sp
+The AES\-128\-GCM\-SIV keys used by \fBchronyd\fP do not comply to RFC 8915 for
+compatibility with older \fBchrony\fP clients unless the use of compliant keys is
+negotiated with an
+.URL "https://chrony\-project.org/doc/spec/nts\-compliant\-128gcm.html" "NTS\-KE record" "."
+Support for this record was added in version 4.6.1. As a client, \fBchronyd\fP can
+interoperate with a server that uses compliant keys, but does not support the
+negotiation, if it responds to incorrectly authenticated requests with an NTS
+NAK.
 .RE
 .sp
 \fBntsdumpdir\fP \fIdirectory\fP
@@ -4545,7 +4666,11 @@ source is specified in the configuration file with a key shorter than 80 bits.
 .sp
 The recommended key types are AES ciphers and SHA3 hash functions. MD5 should
 be avoided unless no other type is supported on the server and client, or
-peers.
+peers. A major weakness of MD5 for the NTP MAC is a length extension attack,
+where a man\-in\-the\-middle attacker can add arbitrary extension fields to the
+NTP message and update the MAC to pass the verification of the extended
+message. The \fBextfield\fP option (enabling processing of the specified extension
+field) should not be used for NTP sources authenticated with an MD5 key.
 .sp
 The \fBkeygen\fP command of \fBchronyc\fP can be used to
 generate random keys for the key file. By default, it generates 160\-bit MD5 or
