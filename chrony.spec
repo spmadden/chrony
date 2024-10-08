@@ -205,6 +205,9 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Tue Oct 08 2024 Miroslav Lichvar <mlichvar@redhat.com> 4.6.1-1
+- update to 4.6.1
+
 * Mon Sep 02 2024 Miroslav Lichvar <mlichvar@redhat.com> 4.6-1
 - update to 4.6
 
