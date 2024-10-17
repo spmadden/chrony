@@ -1,3 +1,17 @@
+chrony (4.5-3ubuntu4) plucky; urgency=medium
+
+  * Use Ubuntu NTS servers by default (LP: #2084585):
+    - d/conf.d/ubuntu-nts.conf: refer to the CA used to sign the NTS bootstrap
+      server
+    - d/nts-bootstrap-{,staging}-ubuntu.crt: CA certificate for the NTS
+      bootstrap servers
+    - d/install: install the NTS bootstrap CAs
+    - d/ubuntu-ntp-pools.sources: use NTS by default
+    - d/t/default-ubuntu-sources-behavior: update tests for NTS support
+    - d/NEWS: add news entry about the NTS change
+
+ -- Andreas Hasenack <andreas@canonical.com>  Thu, 17 Oct 2024 10:25:57 -0300
+
 chrony (4.5-3ubuntu3) oracular; urgency=medium
 
   * d/t/control, d/t/default-ubuntu-sources-behavior: new test to check the
