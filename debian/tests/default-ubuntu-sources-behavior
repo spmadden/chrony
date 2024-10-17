@@ -122,7 +122,8 @@ EOF
     fi
 }
 
-# these tests must be run in this order, because assumptions
+# these tests must be run in this order, because they don't reset the state
+# each time
 test_fresh_install_has_nts_sources
 test_debconf_no_ubuntu_sources
 test_debconf_with_ubuntu_sources
