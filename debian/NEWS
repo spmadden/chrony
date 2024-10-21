@@ -6,9 +6,8 @@ chrony (4.5-3ubuntu4) plucky; urgency=medium
   The two main changes are:
 
   a) NTS/KE uses a separate port (4460/tcp) to negotiate security parameters,
-  which are then used via the normal NTP port (123/udp). And in the case of
-  the Ubuntu servers, they are also running on different IP addresses than the
-  normal NTP ones.
+  which are then used via the normal NTP port (123/udp). This is a new
+  deployment, running on different IP addresses than the service without NTS.
 
   b) A new CA is installed in /etc/chrony/nts-bootstrap-ubuntu.crt that is
   used specifically for the Ubuntu NTS bootstrap server, needed for when the
