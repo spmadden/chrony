@@ -26,6 +26,7 @@ Package: chrony
 Architecture: linux-any
 Pre-Depends: ${misc:Pre-Depends}
 Depends: adduser (>= 3.130),
+         debconf (>= 0.5),
          iproute2 [linux-any],
          tzdata,
          libcap2-bin (>= 1:2.32-1),
