@@ -29,7 +29,7 @@ case "$1" in
         fi
 
         # Change the user and group ownership of "/var/l{ib,og}/chrony" iif
-        # the chronyd's configuration does not contain the "user" directive.
+        # chronyd's configuration does not contain the "user" directive.
         # Also, update these directories' mode bits to 0750 to follow upstream.
         #
         # We must also ensure that chronyd can read /etc/chrony/chrony.keys

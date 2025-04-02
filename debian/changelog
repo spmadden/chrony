@@ -1,3 +1,42 @@
+chrony (4.6.1-2) unstable; urgency=medium
+
+  [ Vincent Blut ]
+  * debian/chrony.conf:
+    - Move the confdir directive at the end of the configuration file. This
+    should prevent directives defined in /etc/chrony/conf.d/ from being
+    overridden by corresponding directives in chrony.conf. (Closes: #1073865)
+
+  * debian/chrony.service:
+    - Drop 'After=network.target'. First and foremost, the network.target unit
+    doesn't guarantee that any network interfaces are configured or
+    operational. Furthermore, chronyd is perfectly able to operate without
+    network or DNS functionality notably when used with a hardware reference
+    clock as a time source.
+    - Do not pull time-sync.target nor order chrony.service before it. Services
+    pulling and being ordered before time-sync.target must ensure that the
+    system clock has been completely synchronized and thus typically guarantee
+    an accurate clock. This can't be assumed right after chrony.service has
+    finished starting.
+
+  * debian/control:
+    - Support seccomp facility on loong64.
+    - Bump Standards-Version to 4.7.2 (no changes required).
+
+  * debian/copyright:
+    - Update copyright year for debian/*.
+
+  * debian/rules:
+    - Revert "d/rules: Disable seccomp on loong64".
+
+  * debian/usr.sbin.chronyd:
+    - Relax rule regarding temperature sensors. (Closes: #1084841)
+
+  [ Joachim Kross ]
+  * debian/{control,postinst,chrony.conf}:
+    - Minor textual updates.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Wed, 02 Apr 2025 21:33:06 +0200
+
 chrony (4.6.1-1) unstable; urgency=medium
 
   * Import upstream version 4.6.1:
