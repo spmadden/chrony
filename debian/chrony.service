@@ -2,9 +2,6 @@
 Description=chrony, an NTP client/server
 Documentation=man:chronyd(8) man:chronyc(1) man:chrony.conf(5)
 Conflicts=openntpd.service ntp.service ntpsec.service
-Wants=time-sync.target
-Before=time-sync.target
-After=network.target
 ConditionCapability=CAP_SYS_TIME
 
 [Service]
