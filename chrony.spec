@@ -1,5 +1,6 @@
 %global _hardened_build 1
-%global clknetsim_ver 64df92
+%global clknetsim_ver d60afc
+%global prerelease -pre1
 %bcond_without debug
 %bcond_without nts
 
@@ -8,7 +9,7 @@
 %endif
 
 Name:           chrony
-Version:        4.6.1
+Version:        4.7
 Release:        2%{?dist}
 Summary:        An NTP client/server
 
@@ -69,8 +70,8 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         c3992e2f985550739cd1cd95f98c9548  examples/chrony.nm-dispatcher.dhcp
         4e85d36595727318535af3387411070c  examples/chrony.nm-dispatcher.onoffline
-        c11159b78b89684eca773db6236a9855  examples/chronyd.service
-        46fa3e2d42c8eb9c42e71095686c90ed  examples/chronyd-restricted.service
+        274a44cd51981d6d4d3a44dfc92c94ab  examples/chronyd.service
+        5ddbb8a8055f587cb6b0b462ca73ea46  examples/chronyd-restricted.service
 EOF
 
 # don't allow packaging without vendor zone
