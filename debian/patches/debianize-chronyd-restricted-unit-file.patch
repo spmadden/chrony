@@ -8,14 +8,15 @@ Index: chrony/examples/chronyd-restricted.service
 ===================================================================
 --- chrony.orig/examples/chronyd-restricted.service
 +++ chrony/examples/chronyd-restricted.service
-@@ -14,10 +14,10 @@ ConditionCapability=CAP_SYS_TIME
+@@ -14,11 +14,10 @@ ConditionCapability=CAP_SYS_TIME
  [Service]
- Type=forking
+ Type=notify
  PIDFile=/run/chrony/chronyd.pid
+-Environment="OPTIONS="
 -EnvironmentFile=-/etc/sysconfig/chronyd
--ExecStart=/usr/sbin/chronyd -U $OPTIONS
+-ExecStart=/usr/sbin/chronyd -n -U $OPTIONS
 +EnvironmentFile=-/etc/default/chrony
-+ExecStart=/usr/sbin/chronyd -U $DAEMON_OPTS
++ExecStart=/usr/sbin/chronyd -n -U $DAEMON_OPTS
  
 -User=chrony
 +User=_chrony

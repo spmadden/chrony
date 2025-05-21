@@ -56,7 +56,7 @@ extern void CNF_ReloadSources(void);
 
 extern int CNF_GetAcquisitionPort(void);
 extern int CNF_GetNTPPort(void);
-extern char *CNF_GetDriftFile(void);
+extern char *CNF_GetDriftFile(int *interval);
 extern char *CNF_GetLogDir(void);
 extern char *CNF_GetDumpDir(void);
 extern int CNF_GetLogBanner(void);
@@ -70,6 +70,7 @@ extern int CNF_GetLogTempComp(void);
 extern char *CNF_GetKeysFile(void);
 extern char *CNF_GetRtcFile(void);
 extern int CNF_GetManualEnabled(void);
+extern ARR_Instance CNF_GetOpenCommands(void);
 extern int CNF_GetCommandPort(void);
 extern int CNF_GetRtcOnUtc(void);
 extern int CNF_GetRtcSync(void);
@@ -109,7 +110,8 @@ extern double CNF_GetReselectDistance(void);
 extern double CNF_GetStratumWeight(void);
 extern double CNF_GetCombineLimit(void);
 
-extern int CNF_AllowLocalReference(int *stratum, int *orphan, double *distance, double *activate);
+extern int CNF_AllowLocalReference(int *stratum, int *orphan, double *distance, double *activate,
+                                   double *wait_synced, double *wait_unsynced);
 
 extern void CNF_SetupAccessRestrictions(void);
 

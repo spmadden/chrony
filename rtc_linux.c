@@ -296,14 +296,25 @@ slew_samples
    corresponding real time clock 'DMY HMS' form, taking account of
    whether the user runs his RTC on the local time zone or UTC */
 
-static struct tm *
-rtc_from_t(const time_t *t)
+static void
+rtc_from_t(const time_t *t, struct rtc_time *rtc_raw, int utc)
 {
-  if (rtc_on_utc) {
-    return gmtime(t);
+  struct tm *rtc_tm;
+  if (utc) {
+    rtc_tm = gmtime(t);
   } else {
-    return localtime(t);
+    rtc_tm = localtime(t);
   }
+
+  rtc_raw->tm_sec = rtc_tm->tm_sec;
+  rtc_raw->tm_min = rtc_tm->tm_min;
+  rtc_raw->tm_hour = rtc_tm->tm_hour;
+  rtc_raw->tm_mday = rtc_tm->tm_mday;
+  rtc_raw->tm_mon = rtc_tm->tm_mon;
+  rtc_raw->tm_year = rtc_tm->tm_year;
+  rtc_raw->tm_wday = rtc_tm->tm_wday;
+  rtc_raw->tm_yday = rtc_tm->tm_yday;
+  rtc_raw->tm_isdst = rtc_tm->tm_isdst;
 }
 
 /* ================================================== */
@@ -341,17 +352,27 @@ rtc_from_t(const time_t *t)
 */
 
 static time_t
-t_from_rtc(struct tm *stm) {
-  struct tm temp1, temp2, *tm;
+t_from_rtc(struct rtc_time *rtc_raw, int utc)
+{
+  struct tm rtc_tm, temp1, temp2, *tm;
   long diff;
   time_t t1, t2;
 
-  temp1 = *stm;
+  /* Convert to seconds since 1970 */
+  memset(&rtc_tm, 0, sizeof (rtc_tm));
+  rtc_tm.tm_sec = rtc_raw->tm_sec;
+  rtc_tm.tm_min = rtc_raw->tm_min;
+  rtc_tm.tm_hour = rtc_raw->tm_hour;
+  rtc_tm.tm_mday = rtc_raw->tm_mday;
+  rtc_tm.tm_mon = rtc_raw->tm_mon;
+  rtc_tm.tm_year = rtc_raw->tm_year;
+
+  temp1 = rtc_tm;
   temp1.tm_isdst = 0;
-  
+
   t1 = mktime(&temp1);
 
-  tm = rtc_on_utc ? gmtime(&t1) : localtime(&t1);
+  tm = utc ? gmtime(&t1) : localtime(&t1);
   if (!tm) {
     DEBUG_LOG("gmtime()/localtime() failed");
     return -1;
@@ -476,8 +497,8 @@ write_coefs_to_file(int valid,time_t ref_time,double offset,double rate)
 
 /* ================================================== */
 
-static int
-switch_interrupts(int on_off)
+int
+RTC_Linux_SwitchInterrupt(int fd, int on_off)
 {
   if (ioctl(fd, on_off ? RTC_UIE_ON : RTC_UIE_OFF, 0) < 0) {
     LOG(LOGS_ERR, "Could not %s RTC interrupt : %s",
@@ -508,7 +529,7 @@ RTC_Linux_Initialise(void)
   }
 
   /* Make sure the RTC supports interrupts */
-  if (!switch_interrupts(1) || !switch_interrupts(0)) {
+  if (!RTC_Linux_SwitchInterrupt(fd, 1) || !RTC_Linux_SwitchInterrupt(fd, 0)) {
     close(fd);
     return 0;
   }
@@ -557,7 +578,7 @@ RTC_Linux_Finalise(void)
   /* Remove input file handler */
   if (fd >= 0) {
     SCH_RemoveFileHandler(fd);
-    switch_interrupts(0);
+    RTC_Linux_SwitchInterrupt(fd, 0);
     close(fd);
 
     /* Save the RTC data */
@@ -578,7 +599,7 @@ static void
 measurement_timeout(void *any)
 {
   timeout_id = 0;
-  switch_interrupts(1);
+  RTC_Linux_SwitchInterrupt(fd, 1);
 }
 
 /* ================================================== */
@@ -586,21 +607,10 @@ measurement_timeout(void *any)
 static void
 set_rtc(time_t new_rtc_time)
 {
-  struct tm rtc_tm;
   struct rtc_time rtc_raw;
   int status;
 
-  rtc_tm = *rtc_from_t(&new_rtc_time);
-
-  rtc_raw.tm_sec = rtc_tm.tm_sec;
-  rtc_raw.tm_min = rtc_tm.tm_min;
-  rtc_raw.tm_hour = rtc_tm.tm_hour;
-  rtc_raw.tm_mday = rtc_tm.tm_mday;
-  rtc_raw.tm_mon = rtc_tm.tm_mon;
-  rtc_raw.tm_year = rtc_tm.tm_year;
-  rtc_raw.tm_wday = rtc_tm.tm_wday;
-  rtc_raw.tm_yday = rtc_tm.tm_yday;
-  rtc_raw.tm_isdst = rtc_tm.tm_isdst;
+  rtc_from_t(&new_rtc_time, &rtc_raw, rtc_on_utc);
 
   status = ioctl(fd, RTC_SET_TIME, &rtc_raw);
   if (status < 0) {
@@ -750,16 +760,11 @@ process_reading(time_t rtc_time, struct timespec *system_time)
 
 /* ================================================== */
 
-static void
-read_from_device(int fd_, int event, void *any)
+int
+RTC_Linux_CheckInterrupt(int fd)
 {
   int status;
   unsigned long data;
-  struct timespec sys_time;
-  struct rtc_time rtc_raw;
-  struct tm rtc_tm;
-  time_t rtc_t;
-  int error = 0;
 
   status = read(fd, &data, sizeof(data));
 
@@ -767,64 +772,79 @@ read_from_device(int fd_, int event, void *any)
     /* This looks like a bad error : the file descriptor was indicating it was
      * ready to read but we couldn't read anything.  Give up. */
     LOG(LOGS_ERR, "Could not read flags %s : %s", CNF_GetRtcDevice(), strerror(errno));
-    SCH_RemoveFileHandler(fd);
-    switch_interrupts(0); /* Likely to raise error too, but just to be sure... */
-    close(fd);
-    fd = -1;
-    return;
-  }    
+    return -1;
+  }
 
   if (skip_interrupts > 0) {
     /* Wait for the next interrupt, this one may be bogus */
     skip_interrupts--;
+    return 0;
+  }
+
+  /* Update interrupt detected? */
+  return (data & RTC_UF) == RTC_UF;
+}
+
+time_t
+RTC_Linux_ReadTimeAfterInterrupt(int fd, int utc,
+                                 struct timespec *sys_time_cooked,
+                                 struct timespec *sys_time_raw)
+{
+  int status;
+  struct rtc_time rtc_raw;
+
+  /* Read RTC time, sandwiched between two polls of the system clock
+     so we can bound any error */
+
+  SCH_GetLastEventTime(sys_time_cooked, NULL, sys_time_raw);
+
+  status = ioctl(fd, RTC_RD_TIME, &rtc_raw);
+  if (status < 0) {
+    LOG(LOGS_ERR, "Could not read time from %s : %s", CNF_GetRtcDevice(), strerror(errno));
+    return -1;
+  }
+
+  /* Convert RTC time into a struct timespec */
+  return t_from_rtc(&rtc_raw, utc);
+}
+
+static void
+read_from_device(int fd_, int event, void *any)
+{
+  struct timespec sys_time;
+  int status, error = 0;
+  time_t rtc_t;
+
+  status = RTC_Linux_CheckInterrupt(fd);
+  if (status < 0) {
+    SCH_RemoveFileHandler(fd);
+    RTC_Linux_SwitchInterrupt(fd, 0); /* Likely to raise error too, but just to be sure... */
+    close(fd);
+    fd = -1;
+    return;
+  } else if (status == 0) {
+    /* Wait for the next interrupt, this one may be bogus */
     return;
   }
 
-  if ((data & RTC_UF) == RTC_UF) {
-    /* Update interrupt detected */
-    
-    /* Read RTC time, sandwiched between two polls of the system clock
-       so we can bound any error. */
+  rtc_t = RTC_Linux_ReadTimeAfterInterrupt(fd, rtc_on_utc, &sys_time, NULL);
+  if (rtc_t == (time_t)-1) {
+    error = 1;
+    goto turn_off_interrupt;
+  }
 
-    SCH_GetLastEventTime(&sys_time, NULL, NULL);
+  process_reading(rtc_t, &sys_time);
 
-    status = ioctl(fd, RTC_RD_TIME, &rtc_raw);
-    if (status < 0) {
-      LOG(LOGS_ERR, "Could not read time from %s : %s", CNF_GetRtcDevice(), strerror(errno));
-      error = 1;
-      goto turn_off_interrupt;
-    }
-
-    /* Convert RTC time into a struct timespec */
-    rtc_tm.tm_sec = rtc_raw.tm_sec;
-    rtc_tm.tm_min = rtc_raw.tm_min;
-    rtc_tm.tm_hour = rtc_raw.tm_hour;
-    rtc_tm.tm_mday = rtc_raw.tm_mday;
-    rtc_tm.tm_mon = rtc_raw.tm_mon;
-    rtc_tm.tm_year = rtc_raw.tm_year;
-    rtc_tm.tm_wday = 0;
-
-    rtc_t = t_from_rtc(&rtc_tm);
-
-    if (rtc_t == (time_t)(-1)) {
-      error = 1;
-      goto turn_off_interrupt;
-    }      
-
-    process_reading(rtc_t, &sys_time);
-
-    if (n_samples < 4) {
-      measurement_period = LOWEST_MEASUREMENT_PERIOD;
-    } else if (n_samples < 6) {
-      measurement_period = LOWEST_MEASUREMENT_PERIOD << 1;
-    } else if (n_samples < 10) {
-      measurement_period = LOWEST_MEASUREMENT_PERIOD << 2;
-    } else if (n_samples < 14) {
-      measurement_period = LOWEST_MEASUREMENT_PERIOD << 3;
-    } else {
-      measurement_period = LOWEST_MEASUREMENT_PERIOD << 4;
-    }
-
+  if (n_samples < 4) {
+    measurement_period = LOWEST_MEASUREMENT_PERIOD;
+  } else if (n_samples < 6) {
+    measurement_period = LOWEST_MEASUREMENT_PERIOD << 1;
+  } else if (n_samples < 10) {
+    measurement_period = LOWEST_MEASUREMENT_PERIOD << 2;
+  } else if (n_samples < 14) {
+    measurement_period = LOWEST_MEASUREMENT_PERIOD << 3;
+  } else {
+    measurement_period = LOWEST_MEASUREMENT_PERIOD << 4;
   }
 
 turn_off_interrupt:
@@ -836,7 +856,7 @@ turn_off_interrupt:
         operating_mode = OM_NORMAL;
         (after_init_hook)(after_init_hook_arg);
 
-        switch_interrupts(0);
+        RTC_Linux_SwitchInterrupt(fd, 0);
     
         timeout_id = SCH_AddTimeoutByDelay((double) measurement_period, measurement_timeout, NULL);
       }
@@ -848,7 +868,7 @@ turn_off_interrupt:
         DEBUG_LOG("Could not complete after trim relock due to errors");
         operating_mode = OM_NORMAL;
 
-        switch_interrupts(0);
+        RTC_Linux_SwitchInterrupt(fd, 0);
     
         timeout_id = SCH_AddTimeoutByDelay((double) measurement_period, measurement_timeout, NULL);
       }
@@ -856,7 +876,7 @@ turn_off_interrupt:
       break;
 
     case OM_NORMAL:
-      switch_interrupts(0);
+      RTC_Linux_SwitchInterrupt(fd, 0);
     
       timeout_id = SCH_AddTimeoutByDelay((double) measurement_period, measurement_timeout, NULL);
 
@@ -878,7 +898,7 @@ RTC_Linux_TimeInit(void (*after_hook)(void *), void *anything)
 
   operating_mode = OM_INITIAL;
   timeout_id = 0;
-  switch_interrupts(1);
+  RTC_Linux_SwitchInterrupt(fd, 1);
 }
 
 /* ================================================== */
@@ -911,6 +931,33 @@ RTC_Linux_WriteParameters(void)
   return(retval);
 }
 
+time_t
+RTC_Linux_ReadTimeNow(int fd, int utc,
+                      struct timespec *old_sys_cooked,
+                      struct timespec *old_sys_raw)
+{
+  struct rtc_time rtc_raw, rtc_raw_retry;
+  int status;
+
+  /* Retry reading the RTC until both read attempts give the same sec value.
+     This way the race condition is prevented that the RTC has updated itself
+     during the first read operation. */
+  do {
+    status = ioctl(fd, RTC_RD_TIME, &rtc_raw);
+    if (status >= 0) {
+      status = ioctl(fd, RTC_RD_TIME, &rtc_raw_retry);
+    }
+  } while (status >= 0 && rtc_raw.tm_sec != rtc_raw_retry.tm_sec);
+
+  /* Read system clock */
+  if (old_sys_raw)
+    LCL_ReadRawTime(old_sys_raw);
+  if (old_sys_cooked)
+    LCL_ReadCookedTime(old_sys_cooked, NULL);
+
+  return status >= 0 ? t_from_rtc(&rtc_raw, utc) : -1;
+}
+
 /* ================================================== */
 /* Try to set the system clock from the RTC, in the same manner as
    /sbin/hwclock -s would do.  We're not as picky about OS version
@@ -920,12 +967,10 @@ RTC_Linux_WriteParameters(void)
 int
 RTC_Linux_TimePreInit(time_t driftfile_time)
 {
-  int fd, status;
-  struct rtc_time rtc_raw, rtc_raw_retry;
-  struct tm rtc_tm;
   time_t rtc_t;
   double accumulated_error, sys_offset;
   struct timespec new_sys_time, old_sys_time;
+  int fd;
 
   coefs_file_name = CNF_GetRtcFile();
 
@@ -938,65 +983,40 @@ RTC_Linux_TimePreInit(time_t driftfile_time)
     return 0; /* Can't open it, and won't be able to later */
   }
 
-  /* Retry reading the rtc until both read attempts give the same sec value.
-     This way the race condition is prevented that the RTC has updated itself
-     during the first read operation. */
-  do {
-    status = ioctl(fd, RTC_RD_TIME, &rtc_raw);
-    if (status >= 0) {
-      status = ioctl(fd, RTC_RD_TIME, &rtc_raw_retry);
-    }
-  } while (status >= 0 && rtc_raw.tm_sec != rtc_raw_retry.tm_sec);
-
-  /* Read system clock */
-  LCL_ReadCookedTime(&old_sys_time, NULL);
+  rtc_t = RTC_Linux_ReadTimeNow(fd, rtc_on_utc, &old_sys_time, NULL);
 
   close(fd);
 
-  if (status >= 0) {
-    /* Convert to seconds since 1970 */
-    rtc_tm.tm_sec = rtc_raw.tm_sec;
-    rtc_tm.tm_min = rtc_raw.tm_min;
-    rtc_tm.tm_hour = rtc_raw.tm_hour;
-    rtc_tm.tm_mday = rtc_raw.tm_mday;
-    rtc_tm.tm_mon = rtc_raw.tm_mon;
-    rtc_tm.tm_year = rtc_raw.tm_year;
-    
-    rtc_t = t_from_rtc(&rtc_tm);
+  if (rtc_t != (time_t)(-1)) {
 
-    if (rtc_t != (time_t)(-1)) {
-
-      /* Work out approximatation to correct time (to about the
-         nearest second) */
-      if (valid_coefs_from_file) {
-        accumulated_error = file_ref_offset +
-          (rtc_t - file_ref_time) * 1.0e-6 * file_rate_ppm;
-      } else {
-        accumulated_error = 0.0;
-      }
-
-      /* Correct time */
-
-      new_sys_time.tv_sec = rtc_t;
-      /* Average error in the RTC reading */
-      new_sys_time.tv_nsec = 500000000;
-
-      UTI_AddDoubleToTimespec(&new_sys_time, -accumulated_error, &new_sys_time);
-
-      if (new_sys_time.tv_sec < driftfile_time) {
-        LOG(LOGS_WARN, "RTC time before last driftfile modification (ignored)");
-        return 0;
-      }
-
-      sys_offset = UTI_DiffTimespecsToDouble(&old_sys_time, &new_sys_time);
-
-      /* Set system time only if the step is larger than 1 second */
-      if (fabs(sys_offset) >= 1.0) {
-        if (LCL_ApplyStepOffset(sys_offset))
-          LOG(LOGS_INFO, "System time set from RTC");
-      }
+    /* Work out approximation to correct time (to about the
+       nearest second) */
+    if (valid_coefs_from_file) {
+      accumulated_error = file_ref_offset +
+        (rtc_t - file_ref_time) * 1.0e-6 * file_rate_ppm;
     } else {
+      accumulated_error = 0.0;
+    }
+
+    /* Correct time */
+
+    new_sys_time.tv_sec = rtc_t;
+    /* Average error in the RTC reading */
+    new_sys_time.tv_nsec = 500000000;
+
+    UTI_AddDoubleToTimespec(&new_sys_time, -accumulated_error, &new_sys_time);
+
+    if (new_sys_time.tv_sec < driftfile_time) {
+      LOG(LOGS_WARN, "RTC time before last driftfile modification (ignored)");
       return 0;
+    }
+
+    sys_offset = UTI_DiffTimespecsToDouble(&old_sys_time, &new_sys_time);
+
+    /* Set system time only if the step is larger than 1 second */
+    if (fabs(sys_offset) >= 1.0) {
+      if (LCL_ApplyStepOffset(sys_offset))
+        LOG(LOGS_INFO, "System time set from RTC");
     }
   } else {
     return 0;
@@ -1065,7 +1085,7 @@ RTC_Linux_Trim(void)
     /* And start rapid sampling, interrupts on now */
     SCH_RemoveTimeout(timeout_id);
     timeout_id = 0;
-    switch_interrupts(1);
+    RTC_Linux_SwitchInterrupt(fd, 1);
   }
 
   return 1;

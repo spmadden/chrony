@@ -2,12 +2,12 @@
 .\"     Title: chronyc
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2024-10-08
+.\"      Date: 2025-05-21
 .\"    Manual: User manual
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYC" "1" "2024-10-08" "chrony @CHRONY_VERSION@" "User manual"
+.TH "CHRONYC" "1" "2025-05-21" "chrony @CHRONY_VERSION@" "User manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -52,7 +52,7 @@ running under a non\-root user), it will try to connect to 127.0.0.1 and then
 ::1.
 .sp
 Only the following monitoring commands, which do not affect the behaviour of
-\fBchronyd\fP, are allowed from the network: \fBactivity\fP, \fBmanual list\fP,
+\fBchronyd\fP, are allowed from the network by default: \fBactivity\fP, \fBmanual list\fP,
 \fBrtcdata\fP, \fBsmoothing\fP, \fBsourcename\fP, \fBsources\fP, \fBsourcestats\fP, \fBtracking\fP,
 \fBwaitsync\fP. The
 set of hosts from which \fBchronyd\fP will accept these commands can be configured
@@ -60,7 +60,10 @@ with the \fBcmdallow\fP directive in the \fBchronyd\fP\*(Aqs
 configuration file or the \fBcmdallow\fP command in \fBchronyc\fP. By
 default, the commands are accepted only from localhost (127.0.0.1 or ::1).
 .sp
-All other commands are allowed only through the Unix domain socket. When sent
+Other monitoring commands can be enabled for network access by the
+\fBopencommands\fP directive. Monitoring commands
+with disabled network access and commands that affect the behaviour of
+\fBchronyd\fP are allowed only through the Unix domain socket. If they are sent
 over the network, \fBchronyd\fP will respond with a \(oqNot authorised\(cq error, even
 if it is from localhost.
 .sp
@@ -535,9 +538,12 @@ the polling rate in response to prevailing conditions.
 \fBReach\fP
 .RS 4
 This shows the source\(cqs reachability register printed as an octal number. The
-register has 8 bits and is updated on every received or missed packet from
-the source. A value of 377 indicates that a valid reply was received for all
-from the last eight transmissions.
+register has 8 bits. It is shifted to left by one bit with each poll and it is
+updated by 1 when a valid NTP response, or just a sample in case of a reference
+clock, is received from the source. A value of 377 indicates that a valid
+response or sample was received for all of the last 8 polls. Note that samples
+can be dropped if they are not considered good enough for synchronisation, but
+the reachability register will still have 1s for their polls.
 .RE
 .sp
 \fBLastRx\fP
@@ -2634,6 +2640,13 @@ purged. An example of how to do this is shown below.
 .fam
 .fi
 .if n .RE
+.sp
+Note that log files enabled by the \fBlog\fP directive are opened when the first
+entry is made. The message log file specified by the \fBchronyd\fP\*(Aqs \fB\-l\fP option is
+opened early on start and closed on the \fBcyclelogs\fP command only if opening of
+the new file succeeds to avoid losing messages. If \fBchronyd\fP is configured to
+drop root privileges and the directory containg the log file is not writable
+for the specified user, \fBchronyd\fP will not be able to open the file again.
 .RE
 .sp
 \fBdump\fP

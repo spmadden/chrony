@@ -30,12 +30,15 @@
 
 typedef struct QNT_Instance_Record *QNT_Instance;
 
-extern QNT_Instance QNT_CreateInstance(int min_k, int max_k, int q, int repeat, double min_step);
+extern QNT_Instance QNT_CreateInstance(int min_k, int max_k, int q, int repeat,
+                                       int large_step_delay, double min_step);
 extern void QNT_DestroyInstance(QNT_Instance inst);
 
 extern void QNT_Reset(QNT_Instance inst);
 extern void QNT_Accumulate(QNT_Instance inst, double value);
 extern int QNT_GetMinK(QNT_Instance inst);
+extern int QNT_GetMaxK(QNT_Instance inst);
+extern double QNT_GetMinStep(QNT_Instance inst);
 extern double QNT_GetQuantile(QNT_Instance inst, int k);
 
 #endif

@@ -49,20 +49,21 @@ struct QNT_Instance_Record {
   int q;
   int min_k;
   double min_step;
+  double neg_step_limit;
   int n_set;
 };
 
 /* ================================================== */
 
 QNT_Instance
-QNT_CreateInstance(int min_k, int max_k, int q, int repeat, double min_step)
+QNT_CreateInstance(int min_k, int max_k, int q, int repeat,
+                   int large_step_delay, double min_step)
 {
   QNT_Instance inst;
   long seed;
 
-  if (q < 2 || min_k > max_k || min_k < 1 || max_k >= q ||
-      repeat < 1 || repeat > MAX_REPEAT || min_step <= 0.0)
-    assert(0);
+  BRIEF_ASSERT(q >= 2 && min_k <= max_k && min_k >= 1 && max_k < q && repeat >= 1 &&
+               repeat <= MAX_REPEAT && min_step > 0.0 && large_step_delay >= 0);
 
   inst = MallocNew(struct QNT_Instance_Record);
   inst->n_quants = (max_k - min_k + 1) * repeat;
@@ -71,6 +72,7 @@ QNT_CreateInstance(int min_k, int max_k, int q, int repeat, double min_step)
   inst->q = q;
   inst->min_k = min_k;
   inst->min_step = min_step;
+  inst->neg_step_limit = -large_step_delay * min_step;
 
   QNT_Reset(inst);
 
@@ -114,8 +116,7 @@ insert_initial_value(QNT_Instance inst, double value)
 {
   int i, j, r = inst->repeat;
 
-  if (inst->n_set * r >= inst->n_quants)
-    assert(0);
+  BRIEF_ASSERT(inst->n_set * r < inst->n_quants);
 
   /* Keep the initial estimates repeated and ordered */
   for (i = inst->n_set; i > 0 && inst->quants[(i - 1) * r].est > value; i--) {
@@ -136,29 +137,36 @@ insert_initial_value(QNT_Instance inst, double value)
 
 static void
 update_estimate(struct Quantile *quantile, double value, double p, double rand,
-                double min_step)
+                double min_step, double neg_step_limit)
 {
-  if (value > quantile->est && rand > (1.0 - p)) {
+  if (value >= quantile->est) {
+    if (rand < (1.0 - p))
+        return;
     quantile->step += quantile->sign > 0 ? min_step : -min_step;
-    quantile->est += quantile->step > 0.0 ? fabs(quantile->step) : min_step;
+    quantile->est += quantile->step > min_step ? quantile->step : min_step;
     if (quantile->est > value) {
       quantile->step += value - quantile->est;
-      quantile->est = value;
+      quantile->est = value + min_step / 4.0;
     }
     if (quantile->sign < 0 && quantile->step > min_step)
       quantile->step = min_step;
     quantile->sign = 1;
-  } else if (value < quantile->est && rand > p) {
+  } else {
+    if (rand < p)
+      return;
     quantile->step += quantile->sign < 0 ? min_step : -min_step;
-    quantile->est -= quantile->step > 0.0 ? fabs(quantile->step) : min_step;
+    quantile->est -= quantile->step > min_step ? quantile->step : min_step;
     if (quantile->est < value) {
       quantile->step += quantile->est - value;
-      quantile->est = value;
+      quantile->est = value - min_step / 4.0;
     }
     if (quantile->sign > 0 && quantile->step > min_step)
       quantile->step = min_step;
     quantile->sign = -1;
   }
+
+  if (quantile->step < neg_step_limit)
+    quantile->step = neg_step_limit;
 }
 
 /* ================================================== */
@@ -179,7 +187,7 @@ QNT_Accumulate(QNT_Instance inst, double value)
     p = (double)(i / inst->repeat + inst->min_k) / inst->q;
     rand = (double)random() / ((1U << 31) - 1);
 
-    update_estimate(&inst->quants[i], value, p, rand, inst->min_step);
+    update_estimate(&inst->quants[i], value, p, rand, inst->min_step, inst->neg_step_limit);
   }
 }
 
@@ -193,14 +201,29 @@ QNT_GetMinK(QNT_Instance inst)
 
 /* ================================================== */
 
+int
+QNT_GetMaxK(QNT_Instance inst)
+{
+  return inst->min_k + (inst->n_quants / inst->repeat) - 1;
+}
+
+/* ================================================== */
+
+double
+QNT_GetMinStep(QNT_Instance inst)
+{
+  return inst->min_step;
+}
+
+/* ================================================== */
+
 double
 QNT_GetQuantile(QNT_Instance inst, int k)
 {
   double estimates[MAX_REPEAT];
   int i;
 
-  if (k < inst->min_k || k - inst->min_k >= inst->n_quants)
-    assert(0);
+  BRIEF_ASSERT(k >= inst->min_k && (k - inst->min_k) * inst->repeat < inst->n_quants);
 
   for (i = 0; i < inst->repeat; i++)
     estimates[i] = inst->quants[(k - inst->min_k) * inst->repeat + i].est;

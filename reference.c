@@ -47,9 +47,6 @@
 /* The update interval of the reference in the local reference mode */
 #define LOCAL_REF_UPDATE_INTERVAL 64.0
 
-/* Interval between updates of the drift file */
-#define MAX_DRIFTFILE_AGE 3600.0
-
 static int are_we_synchronised;
 static int enable_local_stratum;
 static int local_stratum;
@@ -57,6 +54,8 @@ static int local_orphan;
 static double local_distance;
 static int local_activate_ok;
 static double local_activate;
+static double local_wait_synced;
+static double local_wait_unsynced;
 static struct timespec local_ref_time;
 static NTP_Leap our_leap_status;
 static int our_leap_sec;
@@ -65,6 +64,7 @@ static int our_stratum;
 static uint32_t our_ref_id;
 static IPAddr our_ref_ip;
 static struct timespec our_ref_time;
+static double unsynchronised_since;
 static double our_skew;
 static double our_residual_freq;
 static double our_root_delay;
@@ -110,6 +110,7 @@ static REF_ModeEndHandler mode_end_handler = NULL;
 /* Filename of the drift file. */
 static char *drift_file=NULL;
 static double drift_file_age;
+static int drift_file_interval;
 
 static void update_drift_file(double, double);
 
@@ -213,7 +214,7 @@ REF_Initialise(void)
   local_activate_ok = 0;
 
   /* Now see if we can get the drift file opened */
-  drift_file = CNF_GetDriftFile();
+  drift_file = CNF_GetDriftFile(&drift_file_interval);
   if (drift_file) {
     in = UTI_OpenFile(NULL, drift_file, NULL, 'r', 0);
     if (in) {
@@ -250,8 +251,11 @@ REF_Initialise(void)
   correction_time_ratio = CNF_GetCorrectionTimeRatio();
 
   enable_local_stratum = CNF_AllowLocalReference(&local_stratum, &local_orphan,
-                                                 &local_distance, &local_activate);
+                                                 &local_distance, &local_activate,
+                                                 &local_wait_synced,
+                                                 &local_wait_unsynced);
   UTI_ZeroTimespec(&local_ref_time);
+  unsynchronised_since = SCH_GetLastEventMonoTime();
 
   leap_when = 0;
   leap_timeout_id = 0;
@@ -987,6 +991,8 @@ REF_SetReference(int stratum, NTP_Leap leap, int combined_sources,
   if (step_offset != 0.0) {
     if (LCL_ApplyStepOffset(step_offset))
       LOG(LOGS_WARN, "System clock was stepped by %.6f seconds", -step_offset);
+    else
+      LCL_AccumulateOffset(step_offset, 0.0);
   }
 
   update_leap_status(leap, raw_now.tv_sec, 0);
@@ -1005,7 +1011,7 @@ REF_SetReference(int stratum, NTP_Leap leap, int combined_sources,
   if (drift_file) {
     /* Update drift file at most once per hour */
     drift_file_age += update_interval;
-    if (drift_file_age >= MAX_DRIFTFILE_AGE) {
+    if (drift_file_age >= drift_file_interval) {
       update_drift_file(local_abs_frequency, our_skew);
       drift_file_age = 0.0;
     }
@@ -1095,6 +1101,9 @@ REF_SetUnsynchronised(void)
   our_ref_ip.family = IPADDR_INET4;
   our_ref_ip.addr.in4 = 0;
   our_stratum = 0;
+
+  if (are_we_synchronised)
+    unsynchronised_since = SCH_GetLastEventMonoTime();
   are_we_synchronised = 0;
 
   LCL_SetSyncStatus(0, 0.0, 0.0);
@@ -1138,13 +1147,16 @@ REF_GetReferenceParams
 )
 {
   double dispersion, delta, distance;
+  int wait_local_ok;
 
   assert(initialised);
 
   if (are_we_synchronised) {
     dispersion = get_root_dispersion(local_time);
+    wait_local_ok = UTI_DiffTimespecsToDouble(local_time, &our_ref_time) >= local_wait_synced;
   } else {
     dispersion = 0.0;
+    wait_local_ok = SCH_GetLastEventMonoTime() - unsynchronised_since >= local_wait_unsynced;
   }
 
   distance = our_root_delay / 2 + dispersion;
@@ -1156,7 +1168,8 @@ REF_GetReferenceParams
      or the root distance exceeds the threshold */
 
   if (are_we_synchronised &&
-      !(enable_local_stratum && local_activate_ok && distance > local_distance)) {
+      !(enable_local_stratum && local_activate_ok && wait_local_ok &&
+        distance > local_distance)) {
 
     *is_synchronised = 1;
 
@@ -1168,7 +1181,7 @@ REF_GetReferenceParams
     *root_delay = our_root_delay;
     *root_dispersion = dispersion;
 
-  } else if (enable_local_stratum && local_activate_ok) {
+  } else if (enable_local_stratum && local_activate_ok && wait_local_ok) {
 
     *is_synchronised = 0;
 
@@ -1268,13 +1281,16 @@ REF_ModifyMakestep(int limit, double threshold)
 /* ================================================== */
 
 void
-REF_EnableLocal(int stratum, double distance, int orphan, double activate)
+REF_EnableLocal(int stratum, double distance, int orphan, double activate,
+                double wait_synced, double wait_unsynced)
 {
   enable_local_stratum = 1;
   local_stratum = CLAMP(1, stratum, NTP_MAX_STRATUM - 1);
   local_distance = distance;
   local_orphan = !!orphan;
   local_activate = activate;
+  local_wait_synced = wait_synced;
+  local_wait_unsynced = wait_unsynced;
   LOG(LOGS_INFO, "%s local reference mode", "Enabled");
 }
 

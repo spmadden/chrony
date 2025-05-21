@@ -125,12 +125,11 @@ read_line(void)
       strncpy(line, cmd, sizeof(line) - 1);
       line[sizeof(line) - 1] = '\0';
       add_history(cmd);
-      /* free the buffer allocated by readline */
-      Free(cmd);
     } else {
       /* simulate the user has entered an empty line */
       *line = '\0';
     }
+    Free(cmd);
     return( line );
 #else
     printf("%s", prompt);
@@ -754,12 +753,13 @@ process_cmd_burst(CMD_Request *msg, char *line)
 static int
 process_cmd_local(CMD_Request *msg, char *line)
 {
+  double distance = 0.0, activate = 0.0, wait_synced = 0.0, wait_unsynced = 0.0;
   int on_off, stratum = 0, orphan = 0;
-  double distance = 0.0, activate = 0.0;
 
   if (!strcmp(line, "off")) {
     on_off = 0;
-  } else if (CPS_ParseLocal(line, &stratum, &orphan, &distance, &activate)) {
+  } else if (CPS_ParseLocal(line, &stratum, &orphan, &distance, &activate,
+                            &wait_synced, &wait_unsynced) == CPS_Success) {
     on_off = 1;
   } else {
     LOG(LOGS_ERR, "Invalid syntax for local command");
@@ -772,7 +772,8 @@ process_cmd_local(CMD_Request *msg, char *line)
   msg->data.local.distance = UTI_FloatHostToNetwork(distance);
   msg->data.local.orphan = htonl(orphan);
   msg->data.local.activate = UTI_FloatHostToNetwork(activate);
-  memset(msg->data.local.reserved, 0, sizeof (msg->data.local.reserved));
+  msg->data.local.wait_synced = UTI_FloatHostToNetwork(wait_synced);
+  msg->data.local.wait_unsynced = UTI_FloatHostToNetwork(wait_unsynced);
 
   return 1;
 }
@@ -906,8 +907,9 @@ static int
 process_cmd_add_source(CMD_Request *msg, char *line)
 {
   CPS_NTP_Source data;
+  CPS_Status status;
   IPAddr ip_addr;
-  int result = 0, status, type;
+  int result = 0, type;
   const char *opt_name, *word;
   
   msg->command = htons(REQ_ADD_SOURCE);
@@ -928,10 +930,7 @@ process_cmd_add_source(CMD_Request *msg, char *line)
 
   status = CPS_ParseNTPSourceAdd(line, &data);
   switch (status) {
-    case 0:
-      LOG(LOGS_ERR, "Invalid syntax for add command");
-      break;
-    default:
+    case CPS_Success:
       /* Verify that the address is resolvable (chronyc and chronyd are
          assumed to be running on the same host) */
       if (strlen(data.name) >= sizeof (msg->data.ntp_source.name) ||
@@ -947,8 +946,7 @@ process_cmd_add_source(CMD_Request *msg, char *line)
       }
 
       msg->data.ntp_source.type = htonl(type);
-      if (strlen(data.name) >= sizeof (msg->data.ntp_source.name))
-        assert(0);
+      BRIEF_ASSERT(strlen(data.name) < sizeof (msg->data.ntp_source.name));
       strncpy((char *)msg->data.ntp_source.name, data.name,
               sizeof (msg->data.ntp_source.name));
       msg->data.ntp_source.port = htonl(data.port);
@@ -993,6 +991,15 @@ process_cmd_add_source(CMD_Request *msg, char *line)
 
       result = 1;
 
+      break;
+    case CPS_InvalidOption:
+      LOG(LOGS_ERR, "Invalid %s add command", "option in");
+      break;
+    case CPS_InvalidValue:
+      LOG(LOGS_ERR, "Invalid %s add command", "value in");
+      break;
+    default:
+      LOG(LOGS_ERR, "Invalid %s add command", "syntax for");
       break;
   }
 
@@ -3588,6 +3595,7 @@ main(int argc, char **argv)
   close_io();
   free_addresses(server_addresses);
   SCK_Finalise();
+  UTI_ResetGetRandomFunctions();
 
   return !ret;
 }

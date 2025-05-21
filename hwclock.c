@@ -49,6 +49,7 @@
 #define DELAY_QUANT_MAX_K 2
 #define DELAY_QUANT_Q 10
 #define DELAY_QUANT_REPEAT 7
+#define DELAY_QUANT_LARGE_STEP_DELAY 1000
 #define DELAY_QUANT_MIN_STEP 1.0e-9
 
 struct HCL_Instance_Record {
@@ -127,6 +128,7 @@ HCL_CreateInstance(int min_samples, int max_samples, double min_separation, doub
   clock->precision = precision;
   clock->delay_quants = QNT_CreateInstance(DELAY_QUANT_MIN_K, DELAY_QUANT_MAX_K,
                                            DELAY_QUANT_Q, DELAY_QUANT_REPEAT,
+                                           DELAY_QUANT_LARGE_STEP_DELAY,
                                            DELAY_QUANT_MIN_STEP);
 
   LCL_AddParameterChangeHandler(handle_slew, clock);
@@ -199,8 +201,10 @@ HCL_ProcessReadings(HCL_Instance clock, int n_readings, struct timespec tss[][3]
 
   local_prec = LCL_GetSysPrecisionAsQuantum();
 
-  low_delay = QNT_GetQuantile(clock->delay_quants, DELAY_QUANT_MIN_K);
-  high_delay = QNT_GetQuantile(clock->delay_quants, DELAY_QUANT_MAX_K);
+  low_delay = QNT_GetQuantile(clock->delay_quants, QNT_GetMinK(clock->delay_quants)) -
+              QNT_GetMinStep(clock->delay_quants) / 2.0;
+  high_delay = QNT_GetQuantile(clock->delay_quants, QNT_GetMaxK(clock->delay_quants)) +
+               QNT_GetMinStep(clock->delay_quants) / 2.0;
   low_delay = MIN(low_delay, high_delay);
   high_delay = MAX(high_delay, low_delay + local_prec);
 

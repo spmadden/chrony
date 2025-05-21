@@ -286,6 +286,7 @@ static ARR_Instance broadcasts;
 
 /* Parameters for the peer delay quantile */
 #define DELAY_QUANT_Q 100
+#define DELAY_QUANT_LARGE_STEP_DELAY 100
 #define DELAY_QUANT_REPEAT 7
 
 /* Minimum and maximum allowed poll interval */
@@ -690,6 +691,7 @@ NCR_CreateInstance(NTP_Remote_Address *remote_addr, NTP_Source_Type type,
   if (params->max_delay_quant > 0.0) {
     int k = round(CLAMP(0.05, params->max_delay_quant, 0.95) * DELAY_QUANT_Q);
     result->delay_quant = QNT_CreateInstance(k, k, DELAY_QUANT_Q, DELAY_QUANT_REPEAT,
+                                             DELAY_QUANT_LARGE_STEP_DELAY,
                                              LCL_GetSysPrecisionAsQuantum() / 2.0);
   } else {
     result->delay_quant = NULL;
@@ -1742,7 +1744,7 @@ check_delay_quant(NCR_Instance inst, double delay)
 
   quant = QNT_GetQuantile(inst->delay_quant, QNT_GetMinK(inst->delay_quant));
 
-  if (delay <= quant)
+  if (delay <= quant + QNT_GetMinStep(inst->delay_quant) / 2.0)
     return 1;
 
   DEBUG_LOG("maxdelayquant: delay=%e quant=%e", delay, quant);
@@ -2335,9 +2337,8 @@ process_response(NCR_Instance inst, int saved, NTP_Local_Address *local_addr,
     inst->valid_rx = 1;
   }
 
-  if ((unsigned int)local_receive.source >= sizeof (tss_chars) ||
-      (unsigned int)local_transmit.source >= sizeof (tss_chars))
-    assert(0);
+  BRIEF_ASSERT((unsigned int)local_receive.source < sizeof (tss_chars) &&
+               (unsigned int)local_transmit.source < sizeof (tss_chars));
 
   DEBUG_LOG("NTP packet lvm=%o stratum=%d poll=%d prec=%d root_delay=%.9f root_disp=%.9f refid=%"PRIx32" [%s]",
             message->lvm, message->stratum, message->poll, message->precision,

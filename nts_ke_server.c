@@ -520,8 +520,7 @@ generate_key(int index)
   ServerKey *key;
   int key_length;
 
-  if (index < 0 || index >= MAX_SERVER_KEYS)
-    assert(0);
+  BRIEF_ASSERT(index >= 0 && index < MAX_SERVER_KEYS);
 
   /* Prefer AES-128-GCM-SIV if available.  Note that if older keys loaded
      from ntsdumpdir use a different algorithm, responding to NTP requests
@@ -534,11 +533,11 @@ generate_key(int index)
   key = &server_keys[index];
 
   key_length = SIV_GetKeyLength(algorithm);
-  if (key_length > sizeof (key->key))
-    assert(0);
+  BRIEF_ASSERT(key_length <= sizeof (key->key));
 
   UTI_GetRandomBytesUrandom(key->key, key_length);
-  memset(key->key + key_length, 0, sizeof (key->key) - key_length);
+  if (key_length < sizeof (key->key))
+    memset(key->key + key_length, 0, sizeof (key->key) - key_length);
   UTI_GetRandomBytes(&key->id, sizeof (key->id));
 
   /* Encode the index in the lowest bits of the ID */
@@ -702,7 +701,7 @@ key_timeout(void *arg)
 /* ================================================== */
 
 static void
-run_helper(uid_t uid, gid_t gid, int scfilter_level)
+run_helper(uid_t uid, gid_t gid, int scfilter_level, int sock_fd)
 {
   LOG_Severity log_severity;
 
@@ -729,9 +728,14 @@ run_helper(uid_t uid, gid_t gid, int scfilter_level)
   if (scfilter_level != 0)
     SYS_EnableSystemCallFilter(scfilter_level, SYS_NTSKE_HELPER);
 
+  SCH_AddFileHandler(sock_fd, SCH_FILE_INPUT, handle_helper_request, NULL);
+
   SCH_MainLoop();
 
   DEBUG_LOG("Helper exiting");
+
+  SCH_RemoveFileHandler(sock_fd);
+  close(sock_fd);
 
   NKS_Finalise();
   SCK_Finalise();
@@ -792,9 +796,8 @@ NKS_PreInitialise(uid_t uid, gid_t gid, int scfilter_level)
     LOG_CloseParentFd();
 
     SCK_CloseSocket(sock_fd1);
-    SCH_AddFileHandler(sock_fd2, SCH_FILE_INPUT, handle_helper_request, NULL);
 
-    run_helper(uid, gid, scfilter_level);
+    run_helper(uid, gid, scfilter_level, sock_fd2);
   }
 
   SCK_CloseSocket(sock_fd2);
@@ -957,8 +960,7 @@ NKS_GenerateCookie(NKE_Context *context, NKE_Cookie *cookie)
   header->key_id = htonl(key->id);
 
   nonce = cookie->cookie + sizeof (*header);
-  if (key->nonce_length > sizeof (cookie->cookie) - sizeof (*header))
-    assert(0);
+  BRIEF_ASSERT(key->nonce_length <= sizeof (cookie->cookie) - sizeof (*header));
   UTI_GetRandomBytes(nonce, key->nonce_length);
 
   plaintext_length = context->c2s.length + context->s2c.length;

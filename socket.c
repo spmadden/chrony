@@ -213,12 +213,25 @@ get_reusable_socket(int type, IPSockAddr *spec)
 /* ================================================== */
 
 #if defined(SOCK_CLOEXEC) || defined(SOCK_NONBLOCK)
+
+static int
+get_default_inet_domain(void)
+{
+#ifdef FEAT_IPV6
+  if (!ip4_enabled && ip6_enabled)
+    return AF_INET6;
+#endif
+  return AF_INET;
+}
+
+/* ================================================== */
+
 static int
 check_socket_flag(int sock_flag, int fd_flag, int fs_flag)
 {
   int sock_fd, fd_flags, fs_flags;
 
-  sock_fd = socket(AF_INET, SOCK_DGRAM | sock_flag, 0);
+  sock_fd = socket(get_default_inet_domain(), SOCK_DGRAM | sock_flag, 0);
   if (sock_fd < 0)
     return 0;
 
@@ -526,7 +539,7 @@ open_ip_socket(IPSockAddr *remote_addr, IPSockAddr *local_addr, const char *ifac
   else if (remote_addr)
     family = remote_addr->ip_addr.family;
   else
-    family = IPADDR_INET4;
+    family = !ip4_enabled && ip6_enabled ? IPADDR_INET6 : IPADDR_INET4;
 
   switch (family) {
     case IPADDR_INET4:
@@ -590,25 +603,40 @@ error:
 
 /* ================================================== */
 
+static socklen_t
+set_unix_sockaddr(struct sockaddr_un *sun, const char *addr)
+{
+  size_t len = strlen(addr);
+
+  if (len + 1 > sizeof (sun->sun_path)) {
+    DEBUG_LOG("Unix socket path %s too long", addr);
+    return 0;
+  }
+
+  memset(sun, 0, sizeof (*sun));
+  sun->sun_family = AF_UNIX;
+  memcpy(sun->sun_path, addr, len);
+
+  return offsetof(struct sockaddr_un, sun_path) + len + 1;
+}
+
+/* ================================================== */
+
 static int
 bind_unix_address(int sock_fd, const char *addr, int flags)
 {
   union sockaddr_all saddr;
+  socklen_t saddr_len;
 
-  memset(&saddr, 0, sizeof (saddr));
-
-  if (snprintf(saddr.un.sun_path, sizeof (saddr.un.sun_path), "%s", addr) >=
-      sizeof (saddr.un.sun_path)) {
-    DEBUG_LOG("Unix socket path %s too long", addr);
+  saddr_len = set_unix_sockaddr(&saddr.un, addr);
+  if (saddr_len == 0)
     return 0;
-  }
-  saddr.un.sun_family = AF_UNIX;
 
   if (unlink(addr) < 0)
     DEBUG_LOG("Could not remove %s : %s", addr, strerror(errno));
 
   /* PRV_BindSocket() doesn't support Unix sockets yet */
-  if (bind(sock_fd, &saddr.sa, sizeof (saddr.un)) < 0) {
+  if (bind(sock_fd, &saddr.sa, saddr_len) < 0) {
     DEBUG_LOG("Could not bind Unix socket to %s : %s", addr, strerror(errno));
     return 0;
   }
@@ -628,17 +656,13 @@ static int
 connect_unix_address(int sock_fd, const char *addr)
 {
   union sockaddr_all saddr;
+  socklen_t saddr_len;
 
-  memset(&saddr, 0, sizeof (saddr));
-
-  if (snprintf(saddr.un.sun_path, sizeof (saddr.un.sun_path), "%s", addr) >=
-      sizeof (saddr.un.sun_path)) {
-    DEBUG_LOG("Unix socket path %s too long", addr);
+  saddr_len = set_unix_sockaddr(&saddr.un, addr);
+  if (saddr_len == 0)
     return 0;
-  }
-  saddr.un.sun_family = AF_UNIX;
 
-  if (connect(sock_fd, &saddr.sa, sizeof (saddr.un)) < 0) {
+  if (connect(sock_fd, &saddr.sa, saddr_len) < 0) {
     DEBUG_LOG("Could not connect Unix socket to %s : %s", addr, strerror(errno));
     return 0;
   }
@@ -853,8 +877,10 @@ static int
 process_header(struct msghdr *msg, int msg_length, int sock_fd, int flags,
                SCK_Message *message)
 {
+  int r = 1, path_len, max_path_len;
   struct cmsghdr *cmsg;
-  int r = 1;
+
+  init_message_addresses(message, SCK_ADDR_UNSPEC);
 
   if (msg->msg_namelen <= sizeof (union sockaddr_all) &&
       msg->msg_namelen > sizeof (((struct sockaddr *)msg->msg_name)->sa_family)) {
@@ -867,18 +893,23 @@ process_header(struct msghdr *msg, int msg_length, int sock_fd, int flags,
         SCK_SockaddrToIPSockAddr(msg->msg_name, msg->msg_namelen, &message->remote_addr.ip);
         break;
       case AF_UNIX:
+        /* Make sure the path is terminated by '\0' */
+        max_path_len = sizeof (((struct sockaddr_un *)msg->msg_name)->sun_path);
+        path_len = strnlen(((struct sockaddr_un *)msg->msg_name)->sun_path, max_path_len);
+        if (path_len >= max_path_len) {
+          DEBUG_LOG("Unterminated path");
+          r = 0;
+          break;
+        }
         init_message_addresses(message, SCK_ADDR_UNIX);
         message->remote_addr.path = ((struct sockaddr_un *)msg->msg_name)->sun_path;
         break;
       default:
-        init_message_addresses(message, SCK_ADDR_UNSPEC);
         DEBUG_LOG("Unexpected address");
         r = 0;
         break;
     }
   } else {
-    init_message_addresses(message, SCK_ADDR_UNSPEC);
-
     if (msg->msg_namelen > sizeof (union sockaddr_all)) {
       DEBUG_LOG("Truncated source address");
       r = 0;
@@ -1050,9 +1081,8 @@ receive_messages(int sock_fd, int flags, int max_messages, int *num_messages)
   n = ARR_GetSize(recv_headers);
   n = MIN(n, max_messages);
 
-  if (n < 1 || n > MAX_RECV_MESSAGES ||
-      n > ARR_GetSize(recv_messages) || n > ARR_GetSize(recv_sck_messages))
-    assert(0);
+  BRIEF_ASSERT(n >= 1 && n <= MAX_RECV_MESSAGES &&
+               n <= ARR_GetSize(recv_messages) && n <= ARR_GetSize(recv_sck_messages));
 
   recv_flags = get_recv_flags(flags);
 
@@ -1142,14 +1172,9 @@ send_message(int sock_fd, SCK_Message *message, int flags)
                                            (struct sockaddr *)&saddr, sizeof (saddr));
       break;
     case SCK_ADDR_UNIX:
-      memset(&saddr, 0, sizeof (saddr));
-      if (snprintf(saddr.un.sun_path, sizeof (saddr.un.sun_path), "%s",
-                   message->remote_addr.path) >= sizeof (saddr.un.sun_path)) {
-        DEBUG_LOG("Unix socket path %s too long", message->remote_addr.path);
+      saddr_len = set_unix_sockaddr(&saddr.un, message->remote_addr.path);
+      if (saddr_len == 0)
         return 0;
-      }
-      saddr.un.sun_family = AF_UNIX;
-      saddr_len = sizeof (saddr.un);
       break;
     default:
       assert(0);
