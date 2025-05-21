@@ -48,6 +48,7 @@ extern RefclockDriver RCL_SHM_driver;
 extern RefclockDriver RCL_SOCK_driver;
 extern RefclockDriver RCL_PPS_driver;
 extern RefclockDriver RCL_PHC_driver;
+extern RefclockDriver RCL_RTC_driver;
 
 struct FilterSample {
   double offset;
@@ -63,6 +64,7 @@ struct RCL_Instance_Record {
   int driver_poll;
   int driver_polled;
   int poll;
+  int reached;
   int leap_status;
   int local;
   int pps_forced;
@@ -159,6 +161,8 @@ RCL_AddRefclock(RefclockParameters *params)
     inst->driver = &RCL_PPS_driver;
   } else if (strcmp(params->driver_name, "PHC") == 0) {
     inst->driver = &RCL_PHC_driver;
+  } else if (strcmp(params->driver_name, "RTC") == 0) {
+    inst->driver = &RCL_RTC_driver;
   } else {
     LOG_FATAL("unknown refclock driver %s", params->driver_name);
   }
@@ -175,6 +179,7 @@ RCL_AddRefclock(RefclockParameters *params)
   inst->driver_poll = params->driver_poll;
   inst->poll = params->poll;
   inst->driver_polled = 0;
+  inst->reached = 0;
   inst->leap_status = LEAP_Normal;
   inst->local = params->local;
   inst->pps_forced = params->pps_forced;
@@ -226,29 +231,16 @@ RCL_AddRefclock(RefclockParameters *params)
   }
 
   if (inst->driver->poll) {
-    int max_samples;
-
     if (inst->driver_poll > inst->poll)
       inst->driver_poll = inst->poll;
-
-    max_samples = 1 << (inst->poll - inst->driver_poll);
-    if (max_samples < params->filter_length) {
-      if (max_samples < 4) {
-        LOG(LOGS_WARN, "Setting filter length for %s to %d",
-            UTI_RefidToString(inst->ref_id), max_samples);
-      }
-      params->filter_length = max_samples;
-    }
   }
 
   if (inst->driver->init && !inst->driver->init(inst))
     LOG_FATAL("refclock %s initialisation failed", params->driver_name);
 
-  /* Require the filter to have at least 4 samples to produce a filtered
-     sample, or be full for shorter lengths, and combine 60% of samples
-     closest to the median */
-  inst->filter = SPF_CreateInstance(MIN(params->filter_length, 4), params->filter_length,
-                                    params->max_dispersion, 0.6);
+  /* Don't require more than one sample per poll and combine 60% of the
+     samples closest to the median offset */
+  inst->filter = SPF_CreateInstance(1, params->filter_length, params->max_dispersion, 0.6);
 
   inst->source = SRC_CreateNewInstance(inst->ref_id, SRC_REFCLOCK, 0, params->sel_options,
                                        NULL, params->min_samples, params->max_samples,
@@ -665,6 +657,12 @@ RCL_AddCookedPulse(RCL_Instance instance, struct timespec *cooked_time,
   return 1;
 }
 
+void
+RCL_UpdateReachability(RCL_Instance instance)
+{
+  instance->reached++;
+}
+
 double
 RCL_GetPrecision(RCL_Instance instance)
 {
@@ -792,6 +790,9 @@ poll_timeout(void *arg)
   if (!(inst->driver->poll && inst->driver_polled < (1 << (inst->poll - inst->driver_poll)))) {
     inst->driver_polled = 0;
 
+    SRC_UpdateReachability(inst->source, inst->reached > 0);
+    inst->reached = 0;
+
     if (SPF_GetFilteredSample(inst->filter, &sample)) {
       double local_freq, local_offset;
       struct timespec local_ref_time;
@@ -807,7 +808,6 @@ poll_timeout(void *arg)
         inst->leap_status = LEAP_Unsynchronised;
       }
 
-      SRC_UpdateReachability(inst->source, 1);
       SRC_UpdateStatus(inst->source, stratum, inst->leap_status);
       SRC_AccumulateSample(inst->source, &sample);
       SRC_SelectSource(inst->source);
@@ -816,8 +816,6 @@ poll_timeout(void *arg)
         follow_local(inst, &local_ref_time, local_freq, local_offset);
 
       log_sample(inst, &sample.time, 1, 0, 0.0, sample.offset, sample.peer_dispersion);
-    } else {
-      SRC_UpdateReachability(inst->source, 0);
     }
   }
 

@@ -2,12 +2,12 @@
 .\"     Title: chronyd
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2024-10-08
+.\"      Date: 2025-05-21
 .\"    Manual: System Administration
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYD" "8" "2024-10-08" "chrony @CHRONY_VERSION@" "System Administration"
+.TH "CHRONYD" "8" "2025-05-21" "chrony @CHRONY_VERSION@" "System Administration"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -262,6 +262,16 @@ service. This allows for zero\-downtime service restarts as the sockets buffer
 client requests until the service is able to handle them. The service manager
 sets the LISTEN_FDS environment variable to the number of passed file
 descriptors.
+.RE
+.sp
+\fBNOTIFY_SOCKET\fP
+.RS 4
+The systemd service manager sets this variable for services of the \fBnotify\fP
+type. \fBchronyd\fP sends a message to this socket when it it is fully initialised
+and ready to accept commands (e.g. from \fBchronyc\fP), with the clock already set
+if using the \fB\-s\fP option or \fBinitstepslew\fP directive. It is an alternative to
+the \fBforking\fP service type, which does not need the PID file. \fBchronyd\fP needs
+to be started with the \fB\-n\fP or \fB\-d\fP option to not fork.
 .RE
 .SH "FILES"
 .sp

@@ -37,7 +37,6 @@
 #define DEFAULT_CANDM_PORT 323
 
 /* Request codes */
-#define REQ_NULL 0
 #define REQ_ONLINE 1
 #define REQ_OFFLINE 2
 #define REQ_BURST 3
@@ -226,11 +225,6 @@ typedef struct {
 typedef struct {
   Timespec ts;
   int32_t EOR;
-} REQ_Logon;
-
-typedef struct {
-  Timespec ts;
-  int32_t EOR;
 } REQ_Settime;
 
 typedef struct {
@@ -239,7 +233,8 @@ typedef struct {
   Float distance;
   int32_t orphan;
   Float activate;
-  uint32_t reserved[2];
+  Float wait_synced;
+  Float wait_unsynced;
   int32_t EOR;
 } REQ_Local;
 
@@ -487,7 +482,6 @@ typedef struct {
     REQ_Modify_Polltarget modify_polltarget;
     REQ_Modify_Maxupdateskew modify_maxupdateskew;
     REQ_Modify_Makestep modify_makestep;
-    REQ_Logon logon;
     REQ_Settime settime;
     REQ_Local local;
     REQ_Manual manual;
@@ -516,13 +510,6 @@ typedef struct {
   uint8_t padding[MAX_PADDING_LENGTH];
 
 } CMD_Request;
-
-/* ================================================== */
-/* Authority codes for command types */
-
-#define PERMIT_OPEN 0
-#define PERMIT_LOCAL 1
-#define PERMIT_AUTH 2
 
 /* ================================================== */
 

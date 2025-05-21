@@ -69,12 +69,19 @@ also when the <<chronyc.adoc#online,*online*>> command is issued in *chronyc*.
 +
 The DNS record can change over time. The used address will be replaced with a
 newly resolved address when the server becomes unreachable (i.e. no valid
-response to last 8 requests), unsynchronised, a falseticker (i.e. does not
+response to the last 8 requests), unsynchronised, a falseticker (i.e. does not
 agree with a majority of other sources), or the root distance is too large (the
 limit can be configured by the <<maxdistance,*maxdistance*>> directive). The
-automatic replacement happens at most once per 30 minutes.
+automatic replacement happens at most once per 30 minutes and only one
+server can be replaced at a time. The address is also refreshed periodically
+when the server is working normally (the interval can be configured by the
+<<refresh,*refresh*>> directive).
 +
-This directive can be used multiple times to specify multiple servers.
+This directive can be used multiple times to specify multiple servers. Each
+server must have a different IP address to be usable by *chronyd*. If a server
+is specified by a hostname that resolves only to addresses already used by
+other servers, the server will be treated as having an unknown address (e.g.
+reported by the *chronyc* <<chronyc.adoc#activity,*activity*>> command).
 +
 The directive supports the following options:
 +
@@ -108,13 +115,13 @@ the current interval needs to be at least two times longer than the minimum
 interval in order to allow a burst with two requests.
 *key* _ID_:::
 The NTP protocol supports a message authentication code (MAC) to prevent
-computers having their system time upset by rogue packets being sent to them.
+computers from having their system time upset by rogue packets being sent to them.
 The MAC is generated as a function of a key specified in the key file,
 which is specified by the <<keyfile,*keyfile*>> directive.
 +
 The *key* option specifies which key (with an ID in the range 1 through 2^32-1)
-should *chronyd* use to authenticate requests sent to the server and verify its
-responses. The server must have the same key for this number configured,
+*chronyd* should use to authenticate requests sent to the server and verify its
+responses. The server must have the same key for this number configured;
 otherwise no relationship between the computers will be possible.
 +
 If the server is running *ntpd* and the output size of the hash function used
@@ -128,7 +135,7 @@ the Transport Layer Security (TLS) protocol to get the keys and cookies
 required by NTS for authentication of NTP packets.
 +
 With this option, the hostname specified in the server or pool directive is the
-NTS-KE server or pool of NTS-KE servers respectively. The NTP server usually
+NTS-KE server or pool of NTS-KE servers, respectively. The NTP server usually
 runs on the same host, but it can be separated from the NTS-KE server (the
 hostname or address of the NTP server is provided to the client by the NTS-KE
 server).
@@ -145,10 +152,10 @@ default trusted certificate authorities.
 *chronyd* uses the network round-trip delay to the server to determine how
 accurate a particular measurement is likely to be. Long round-trip delays
 indicate that the request, or the response, or both were delayed. If only one
-of the messages was delayed the measurement error is likely to be substantial.
+of the messages was delayed, the measurement error is likely to be substantial.
 +
 For small variations in the round-trip delay, *chronyd* uses a weighting scheme
-when processing the measurements. However, beyond a certain level of delay the
+when processing the measurements. Beyond a certain level of delay, however, the
 measurements are likely to be so corrupted as to be useless. (This is
 particularly so on wireless networks and other slow links, where a long delay
 probably indicates a highly asymmetric delay caused by the response waiting
@@ -158,7 +165,7 @@ If the user knows that round trip delays above a certain level should cause the
 measurement to be ignored, this level can be defined with the *maxdelay*
 option. For example, *maxdelay 0.3* would indicate that measurements with a
 round-trip delay greater than 0.3 seconds should be ignored. The default value
-is 3 seconds and the maximum value is 1000 seconds.
+is 3 seconds, and the maximum value is 1000 seconds.
 *maxdelayratio* _ratio_:::
 This option is similar to the *maxdelay* option above. *chronyd* keeps a record
 of the minimum round-trip delay amongst the previous measurements that it has
@@ -198,7 +205,7 @@ The asymmetry can be between -0.5 and +0.5. A negative value means the delay of
 packets sent to the source is more variable than the delay of packets sent from
 the source back. By default, *chronyd* estimates the asymmetry automatically.
 *offset* _offset_:::
-This option specifies a correction (in seconds) which will be applied to
+This option specifies a correction (in seconds) that will be applied to
 offsets measured with this source. It's particularly useful to compensate for a
 known asymmetry in network delay or timestamping errors. For example, if
 packets sent to the source were on average delayed by 100 microseconds more
@@ -292,7 +299,7 @@ included in a *server* directive:
 presend 9
 ----
 +
-when the polling interval is 512 seconds or more, an extra NTP client packet
+When the polling interval is 512 seconds or more, an extra NTP client packet
 will be sent to the server a short time (2 seconds) before making the actual
 measurement.
 +
@@ -303,7 +310,7 @@ When the synchronisation source is selected from available sources, sources
 with lower stratum are normally slightly preferred. This option can be used to
 increase stratum of the source to the specified minimum, so *chronyd* will
 avoid selecting that source. This is useful with low-stratum sources that are
-known to be unreliable or inaccurate and which should be used only when other
+known to be unreliable or inaccurate and that should be used only when other
 sources are unreachable.
 *version* _version_:::
 This option sets the NTP version of packets sent to the server. This can be
@@ -311,7 +318,7 @@ useful when the server runs an old NTP implementation that does not respond to
 requests using a newer version. The default version depends on other options.
 If the *extfield* or *xleave* option is used, the default version is 4. If
 those options are not used and the *key* option specifies a key using a hash
-function with output size longer than 160 bits (e.g. SHA256), the default
+function with an output size longer than 160 bits (e.g. SHA256), the default
 version is 3 for compatibility with older *chronyd* servers. In other cases,
 the default version is 4.
 *copy*:::
@@ -374,7 +381,7 @@ directive too. There is one option specific to the *pool* directive:
 *maxsources* _sources_:::
 This option sets the desired number of sources to be used from the pool.
 *chronyd* will repeatedly try to resolve the name until it gets this number of
-sources responding to requests. The default value is 4 and the maximum value is
+sources responding to requests. The default value is 4, and the maximum value is
 16.
 +
 An example of the *pool* directive is
@@ -398,7 +405,7 @@ The following options of the *server* directive do not work in the *peer*
 directive: *iburst*, *burst*, *nts*, *presend*, *copy*.
 +
 When using the *xleave* option, both peers must support and have enabled the
-interleaved mode, otherwise the synchronisation will work in one direction
+interleaved mode; otherwise the synchronisation will work in one direction
 only.
 When a key is specified by the *key* option to enable authentication, both
 peers must use the same key and the same key number.
@@ -426,7 +433,7 @@ recommended to use two separate client/server associations (specified by the
 directive.)
 +
 The purpose of the *initstepslew* directive is to allow *chronyd* to make a
-rapid measurement of the system clock error at boot time, and to correct the
+rapid measurement of the system clock error at boot time and to correct the
 system clock by stepping before normal operation begins. Since this would
 normally be performed only at an appropriate point in the system boot sequence,
 no other software should be adversely affected by the step.
@@ -455,7 +462,7 @@ The *initstepslew* directive can also be used in an isolated LAN environment,
 where the clocks are set manually. The most stable computer is chosen as the
 primary server and the other computers are its clients. If each of the clients
 is configured with the <<local,*local*>> directive, the server can be set up
-with an *initstepslew* directive which references some or all of the clients.
+with an *initstepslew* directive that references some or all of the clients.
 Then, if the server machine has to be rebooted, the clients can be relied on to
 act analogously to a flywheel and preserve the time for a short period while
 the server completes its reboot.
@@ -478,7 +485,7 @@ the driver-specific parameter using the *:* character.
 +
 This directive can be used multiple times to specify multiple reference clocks.
 +
-There are four drivers included in *chronyd*:
+There are five drivers included in *chronyd*:
 +
 *PPS*:::
 Driver for the kernel PPS (pulse per second) API. The parameter is the path to
@@ -508,7 +515,7 @@ samples from another application running on the system. The parameter is the
 path to the socket, which *chronyd* will create on start. The format of the
 messages is described in the _refclock_sock.c_ file in the chrony source code.
 +
-An application which supports the SOCK protocol is the *gpsd* daemon. It can
+An application that supports the SOCK protocol is the *gpsd* daemon. It can
 provide accurate measurements using the receiver's PPS signal, and since
 version 3.25 also (much less accurate) measurements based on the timing of
 serial data (e.g. NMEA), which can be useful when the receiver does not provide
@@ -557,8 +564,9 @@ refclock SHM 1:perm=0644 refid GPS2
 ----
 +
 *PHC*:::
-PTP hardware clock (PHC) driver. The parameter is the path to the device of
-the PTP clock which should be used as a time source. If the clock is kept in
+PTP hardware clock (PHC) driver. The parameter is the absolute path to the
+device of the PTP clock which should be used as a time source, or the name of
+the network interface whose PTP clock should be used. If the clock is kept in
 TAI instead of UTC (e.g. it is synchronised by a PTP daemon), the current
 UTC-TAI offset needs to be specified by the *offset* option. Alternatively, the
 *pps* refclock option can be enabled to treat the PHC as a PPS refclock, using
@@ -596,6 +604,23 @@ refclock PHC /dev/ptp1:nocrossts poll 3 pps
 refclock PHC /dev/ptp2:extpps:pin=1 width 0.2 poll 2
 ----
 +
+*RTC*:::
+Driver for using the Real Time Clock (RTC) as a reference clock. The parameter
+is the path to the RTC character device which should be used as a time source.
+This driver cannot be used together with the <<rtcfile,*rtcfile*>> or
+<<rtcsync,*rtcsync*>> directive. The driver supports the following option:
++
+*utc*::::
+Assume that RTC keeps Universal Coordinated Time (UTC) instead of local
+time.
+{blank}:::
++
+Examples:
++
+----
+refclock RTC /dev/rtc0:utc
+----
++
 {blank}::
 The *refclock* directive supports the following options:
 +
@@ -622,18 +647,18 @@ specified by its reference ID. In this mode received PPS samples are paired
 directly with raw samples from the specified refclock.
 *rate* _rate_:::
 This option sets the rate of the pulses in the PPS signal (in Hz). This option
-controls how the pulses will be completed with real time. To actually receive
+controls how the pulses will be completed with real time. In order to receive
 more than one pulse per second, a negative *dpoll* has to be specified (-3 for
 a 5Hz signal). The default is 1.
 *maxlockage* _pulses_:::
-This option specifies in number of pulses how old can be samples from the
+This option specifies in number of pulses how old samples can be from the
 refclock specified by the *lock* option to be paired with the pulses.
 Increasing this value is useful when the samples are produced at a lower rate
 than the pulses. The default is 2.
 *width* _width_:::
 This option specifies the width of the pulses (in seconds). It is used to
 filter PPS samples when the driver provides samples for both rising and falling
-edges. Note that it reduces the maximum allowed error of the time source which
+edges. Note that it reduces the maximum allowed error of the time source that
 completes the PPS samples. If the duty cycle is configurable, 50% should be
 preferred in order to maximise the allowed error.
 *pps*:::
@@ -647,7 +672,7 @@ offset (in seconds) is applied to all samples produced by the reference clock.
 The default is 0.0.
 *delay* _delay_:::
 This option sets the NTP delay of the source (in seconds). Half of this value
-is included in the maximum assumed error which is used in the source selection
+is included in the maximum assumed error, which is used in the source selection
 algorithm. Increasing the delay is useful to avoid having no majority in the
 source selection or to make it prefer other sources. The default is 1e-9 (1
 nanosecond).
@@ -661,14 +686,13 @@ value is the estimated precision of the system clock.
 Maximum allowed dispersion for filtered samples (in seconds). Samples with
 larger estimated dispersion are ignored. By default, this limit is disabled.
 *filter* _samples_:::
-This option sets the length of the median filter which is used to reduce the
-noise in the measurements. With each poll about 40 percent of the stored
-samples are discarded and one final sample is calculated as an average of the
-remaining samples. If the length is 4 or more, at least 4 samples have to be
-collected between polls. For lengths below 4, the filter has to be full. The
-default is 64. With drivers that perform their own polling (PPS, PHC, SHM), the
-maximum value is adjusted to the number of driver polls per source poll, i.e.
-2^(_poll_ - _dpoll_).
+This option sets the maximum number of samples that can be stored in the median
+filter between polls of the source. The filter combines about 60 percent of the
+samples closest to the median offset into one sample. If more samples are
+received by the driver between polls, the oldest samples will be dropped. One
+sample per poll is sufficient for the source to be selectable. The default
+is 64. Note that the PHC driver has additional filtering based on the reading
+delay.
 *prefer*:::
 Prefer this source over other selectable sources without the *prefer* option.
 *noselect*:::
@@ -846,7 +870,7 @@ The following IDs are supported:
 * 30: AES-128-GCM-SIV
 {blank}::
 +
-The default list of IDs is _30 15_. AES-128-GCM-SIV is prefered over
+The default list of IDs is _30 15_. AES-128-GCM-SIV is preferred over
 AES-SIV-CMAC-256 for shorter keys, which makes NTS cookies shorter and improves
 reliability of NTS in networks that block or limit rate of longer NTP messages.
 +
@@ -889,7 +913,7 @@ refresh the keys on each poll and no NTP packets will be exchanged.
 
 [[ntstrustedcerts]]*ntstrustedcerts* [_set-ID_] _file_|_directory_::
 This directive specifies a file or directory containing trusted certificates
-(in the PEM format) which are needed to verify certificates of NTS-KE servers,
+(in the PEM format) that are needed to verify certificates of NTS-KE servers,
 e.g. certificates of trusted certificate authorities (CA) or self-signed
 certificates of the servers.
 +
@@ -924,7 +948,7 @@ specified by the *ntstrustedcerts* directive will be trusted.
 [[nocerttimecheck]]*nocerttimecheck* _limit_::
 This directive disables the checks of the activation and expiration times of
 certificates for the specified number of clock updates. It allows the NTS
-authentication mechanism to be used on computers which start with wrong time
+authentication mechanism to be used on computers which start with the wrong time
 (e.g. due to not having an RTC or backup battery). Disabling the time checks
 has important security implications and should be used only as a last resort,
 preferably with a minimal number of trusted certificates. The default value is
@@ -938,17 +962,18 @@ nocerttimecheck 1
 +
 This would disable the time checks until the clock is updated for the first
 time, assuming the first update corrects the clock and later checks can work
-with correct time.
+with the correct time.
 
 [[refresh]]*refresh* _interval_::
-This directive specifies the interval (in seconds) between refreshing IP
-addresses of NTP sources specified by hostname. If the hostname no longer
+This directive specifies the minimum interval (in seconds) between refreshing
+IP addresses of NTP sources specified by hostname. If the hostname no longer
 resolves to the currently used address, it will be replaced with one of the new
 addresses to avoid using a server which is no longer intended for service, even
 if it is still responding correctly and would not be replaced as unreachable.
-Only one source is refreshed at a time. The default value is 1209600 (2 weeks)
-and the maximum value is 2^31-1 (68 years). A value of 0 disables the periodic
-refreshment.
+Only one source is refreshed at a time and only when a valid response is
+received (unreachable sources are replaced independently). The default value is
+1209600 (2 weeks) and the maximum value is 2^31-1 (68 years). A value of 0
+disables the periodic refreshment.
 +
 The <<chronyc.adoc#refresh,*refresh*>> command can be used to refresh all
 sources immediately.
@@ -961,11 +986,11 @@ authentication to limit the impact of man-in-the-middle attacks. The
 attackers can drop or delay NTP packets (up to the *maxdelay* and
 <<maxdistance,*maxdistance*>> limits), but they cannot modify the timestamps
 contained in the packets. The attack can cause only a limited slew or step, and
-also cause the clock to run faster or slower than real time (up to double of
+also cause the clock to run faster or slower than real time (up to double
 the <<maxdrift,*maxdrift*>> limit).
 +
 When authentication is enabled for an NTP source, it is important to disable
-unauthenticated NTP sources which could be exploited in the attack, e.g. if
+unauthenticated NTP sources that could be exploited in the attack, e.g. if
 they are not reachable only over a trusted network. Alternatively, the source
 selection can be configured with the *require* and *trust* options to
 synchronise to the unauthenticated sources only if they agree with the
@@ -1041,7 +1066,7 @@ If the selected source was specified with the *prefer* option, it can be
 combined only with other sources specified with this option.
 +
 By default, the limit is 3. Setting the limit to 0 effectively disables the
-source combining algorithm and only the selected source will be used to control
+source-combining algorithm and only the selected source will be used to control
 the system clock.
 
 [[maxdistance]]*maxdistance* _distance_::
@@ -1070,14 +1095,14 @@ considered as selectable in the source selection algorithm before the local
 clock is updated. The default value is 1.
 +
 Setting this option to a larger number can be used to improve the reliability.
-More sources will have to agree with each other and the clock will not be
+More sources will have to agree with each other, and the clock will not be
 updated when only one source (which could be serving incorrect time) is
 reachable.
 
 [[reselectdist]]*reselectdist* _distance_::
 When *chronyd* selects a synchronisation source from available sources, it
-will prefer the one with the shortest synchronisation distance. However, to
-avoid frequent reselecting when there are sources with similar distance, a
+will prefer the one with the shortest synchronisation distance. To avoid
+frequent reselecting when there are sources with similar distance, however, a
 fixed distance is added to the distance for sources that are currently not
 selected. This can be set with the *reselectdist* directive. By default, the
 distance is 100 microseconds.
@@ -1097,11 +1122,11 @@ distances are in milliseconds.
 The *clockprecision* directive specifies the precision of the system clock (in
 seconds). It is used by *chronyd* to estimate the minimum noise in NTP
 measurements and randomise low-order bits of timestamps in NTP responses. By
-default, the precision is measured on start as the minimum time to read the
+default, the precision is measured on start-up as the minimum time to read the
 clock.
 +
-The measured value works well in most cases. However, it generally
-overestimates the precision and it can be sensitive to the CPU speed, which can
+The measured value works well in most cases. It generally overestimates the
+precision and it can be sensitive to the CPU speed, however, which can
 change over time to save power. In some cases with a high-precision clocksource
 (e.g. the Time Stamp Counter of the CPU) and hardware timestamping, setting the
 precision on the server to a smaller value can improve stability of clients'
@@ -1124,7 +1149,7 @@ The *corrtimeratio* directive sets the ratio between the duration in which the
 clock is slewed for an average correction according to the source history and
 the interval in which the corrections are done (usually the NTP polling
 interval). Corrections larger than the average take less time and smaller
-corrections take more time, the amount of the correction and the correction
+corrections take more time; the amount of the correction and the correction
 time are inversely proportional.
 +
 Increasing *corrtimeratio* improves the overall frequency error of the system
@@ -1137,7 +1162,7 @@ The maximum allowed slew rate can be set by the <<maxslewrate,*maxslewrate*>>
 directive. The current remaining correction is shown in the
 <<chronyc.adoc#tracking,*tracking*>> report as the *System time* value.
 
-[[driftfile]]*driftfile* _file_::
+[[driftfile]]*driftfile* _file_ [*interval* _interval_]::
 One of the main activities of the *chronyd* program is to work out the rate at
 which the system clock gains or loses time relative to real time.
 +
@@ -1155,6 +1180,10 @@ that when the system clock has advanced by a second, it has gained 100
 microseconds in reality (so the true time has only advanced by 999900
 microseconds). The second is an estimate of the error bound around the first
 value in which the true rate actually lies.
++
+The *interval* option specifies the minimum interval between updates of the
+file in seconds. The file is written only on an update of the local clock.
+The default interval is 3600 seconds.
 +
 An example of the driftfile directive is:
 +
@@ -1179,7 +1208,7 @@ fallbackdrift 16 19
 +
 In this example, the minimum interval is 16 (18 hours) and the maximum interval is
 19 (6 days). The system clock frequency will be set to the first fallback 18
-hours after last clock update, to the second after 36 hours, and so on. This
+hours after the last clock update, to the second after 36 hours, and so on. This
 might be a good setting to cover frequency changes due to daily and weekly
 temperature fluctuations. When the frequency is set to a fallback, the state of
 the clock will change to '`Not synchronised`'.
@@ -1238,7 +1267,7 @@ When smearing a leap second, the leap status is suppressed on the server and
 the served time is corrected slowly by slewing instead of stepping. The clients
 do not need any special configuration as they do not know there is any leap
 second and they follow the server time which eventually brings them back to
-UTC. Care must be taken to ensure they use only NTP servers which smear the
+UTC. Care must be taken to ensure they use only NTP servers that smear the
 leap second in exactly the same way for synchronisation.
 +
 This feature must be used carefully, because the server is intentionally not
@@ -1271,15 +1300,15 @@ duration = sqrt(4 / wander)
 
 [[leapsectz]]*leapsectz* _timezone_::
 This directive specifies a timezone in the system timezone database which
-*chronyd* can use to determine when will the next leap second occur and what is
-the current offset between TAI and UTC. It will periodically check if 23:59:59
+*chronyd* can use to determine when the next leap second occurs and what
+the current offset between TAI and UTC is. It will periodically check if 23:59:59
 and 23:59:60 are valid times in the timezone. This normally works with the
 _right/UTC_ timezone.
 +
 When a leap second is announced, the timezone needs to be updated at least 12
 hours before the leap second. It is not necessary to restart *chronyd*.
 +
-This directive is useful with reference clocks and other time sources which do
+This directive is useful with reference clocks and other time sources that do
 not announce leap seconds, or announce them too late for an NTP server to
 forward them to its own clients. Clients of leap smearing servers must not
 use this directive.
@@ -1321,7 +1350,7 @@ leapseclist /usr/share/zoneinfo/leap-seconds.list
 ----
 
 [[makestep]]*makestep* _threshold_ _limit_::
-Normally *chronyd* will cause the system to gradually correct any time offset,
+Normally *chronyd* will cause the system to gradually correct any time offset
 by slowing down or speeding up the clock as required. In certain situations,
 e.g. when *chronyd* is initially started, the system clock might be so far
 adrift that this slewing process would take a very long time to correct the
@@ -1343,6 +1372,9 @@ makestep 0.1 3
 +
 This would step the system clock if the adjustment is larger than 0.1 seconds, but
 only in the first three clock updates.
++
+Note that this directive does not work and should not be used when the system
+clock control is disabled by the *-x* option of *chronyd*.
 
 [[maxchange]]*maxchange* _offset_ _start_ _ignore_::
 This directive sets the maximum offset to be accepted on a clock update. The
@@ -1550,13 +1582,13 @@ allow all 1.2.0.0/16
 +
 In the first example, the effect is the same regardless of what order the three
 directives are given in. So the _1.2.0.0/16_ subnet is allowed access, except
-for the _1.2.3.0/24_ subnet, which is denied access, however the host _1.2.3.4_
+for the _1.2.3.0/24_ subnet, which is denied access, while the host _1.2.3.4_
 is allowed access.
 +
 In the second example, the *allow all 1.2.0.0/16* directive overrides the
 effect of _any_ previous directive relating to a subnet within the specified
 subnet. Within a configuration file this capability is probably rather moot;
-however, it is of greater use for reconfiguration at run-time via *chronyc*
+yet, it is of greater use for reconfiguration at run-time via *chronyc*
 with the <<chronyc.adoc#allow,*allow all*>> command.
 +
 The rules are internally represented as a tree of tables with one level per
@@ -1583,7 +1615,7 @@ This is similar to the <<allow,*allow*>> directive, except that it denies NTP
 and NTS-KE client access to a particular subnet or host, rather than allowing
 it.
 +
-The syntax is identical and the directive can be used multiple times too.
+The syntax is identical, and the directive can be used multiple times too.
 +
 There is also a *deny all* directive with similar behaviour to the *allow all*
 directive.
@@ -1601,7 +1633,7 @@ bindaddress 192.168.1.1
 ----
 +
 Currently, for each of the IPv4 and IPv6 protocols, only one *bindaddress*
-directive can be specified. Therefore, it is not useful on computers which
+directive can be specified. Therefore, it is not useful on computers that
 should serve NTP on multiple network interfaces.
 
 [[binddevice]]*binddevice* _interface_::
@@ -1695,16 +1727,19 @@ expected stratum in the network when external NTP servers are accessible.
 +
 Stratum 1 indicates a computer that has a true real-time reference directly
 connected to it (e.g. GPS, atomic clock, etc.), such computers are expected to
-be very close to real time. Stratum 2 computers are those which have a stratum
+be very close to real time. Stratum 2 computers are those that have a stratum
 1 server; stratum 3 computers have a stratum 2 server and so on. A value
 of 10 indicates that the clock is so many hops away from a reference clock that
 its time is fairly unreliable.
 *distance* _distance_:::
 This option sets the threshold for the root distance which will activate the local
-reference. If *chronyd* was synchronised to some source, the local reference
-will not be activated until its root distance reaches the specified value (the
-rate at which the distance is increasing depends on how well the clock was
-tracking the source). The default value is 1 second.
+reference. If *chronyd* was synchronised to a configured time source, the local
+reference will not be activated until its root distance reaches the specified
+value (the rate at which the distance is increasing depends on how well the
+clock was tracking the source). When the clock is not synchronised, it is
+considered to have an infinite root distance, i.e. the local reference
+activates as soon as allowed by the *waitunsynced* option. The default
+threshold is 1 second.
 +
 The current root distance can be calculated from root delay and root dispersion
 (reported by the <<chronyc.adoc#tracking,*tracking*>> command in *chronyc*) as:
@@ -1727,7 +1762,7 @@ unless no other source is selectable and their reference IDs are smaller than
 the local reference ID.
 +
 This allows multiple servers in the network to use the same *local*
-configuration and to be synchronised to one another, without confusing clients
+configuration and to be synchronised to one another without confusing clients
 that poll more than one server. Each server needs to be configured to poll all
 other servers with the *local* directive. This ensures only the server with the
 smallest reference ID has the local reference active and others are
@@ -1737,12 +1772,30 @@ smallest reference ID will take over when its local reference mode activates
 +
 The *orphan* mode is compatible with the *ntpd*'s orphan mode (enabled by the
 *tos orphan* command).
+*waitsynced* _interval_:::
+This option specifies the minimum interval (in seconds) between the last update
+of the clock and activation of the local reference as configured by the
+*distance* and *activate* options. The *distance* option can be set to 0 to
+ignore the root distance and control the activation only by the interval. In
+such case it should be at least as long as the maximum expected polling
+interval to prevent frequent activation in normal polling of the source.
+The default minimum interval is 0.
+*waitunsynced* _interval_:::
+This option specifies how long (in seconds) *chronyd* needs to wait before
+activating the local reference when the clock is not considered to be
+synchronised (e.g. after start or the source selection failing due to no
+majority). This delay prevents *chronyd* from serving incorrect time to clients
+before the configured time sources are given a chance to synchronise the local
+clock. The default interval is 300 seconds if the *orphan* option is set,
+otherwise it is 0 (i.e. local reference activates immediately).
 {blank}::
 +
-An example of the directive is:
+Examples of the directive are:
 +
 ----
+local stratum 5
 local stratum 10 orphan distance 0.1 activate 0.5
+local stratum 10 orphan distance 0.0 waitsynced 7200 waitunsynced 300
 ----
 
 [[ntpsigndsocket]]*ntpsigndsocket* _directory_::
@@ -1791,7 +1844,7 @@ the user under which *chronyd* is running after dropping root privileges. For
 security reasons, it should not be readable by other users.
 +
 This directive can be used multiple times to specify multiple keys. The number
-of keys must be the same as the number of certificates and the corresponding
+of keys must be the same as the number of certificates, and the corresponding
 files must be specified in the same order.
 
 [[ntsprocesses]]*ntsprocesses* _processes_::
@@ -1799,7 +1852,7 @@ This directive specifies how many helper processes will *chronyd* operating
 as an NTS server start for handling client NTS-KE requests in order to improve
 performance with multi-core CPUs and multithreading. If set to 0, no helper
 process will be started and all NTS-KE requests will be handled by the main
-*chronyd* process. The default value is 1.
+*chronyd* process. The default value is 1, and the maximum value is 1000.
 
 [[maxntsconnections]]*maxntsconnections* _connections_::
 This directive specifies the maximum number of concurrent NTS-KE connections
@@ -1820,7 +1873,7 @@ The following IDs are supported:
 * 30: AES-128-GCM-SIV
 {blank}::
 +
-The default list of IDs is _30 15_. AES-128-GCM-SIV is prefered over
+The default list of IDs is _30 15_. AES-128-GCM-SIV is preferred over
 AES-SIV-CMAC-256 for shorter keys, which makes NTS cookies shorter and improves
 reliability of NTS in networks that block or limit rate of longer NTP messages.
 +
@@ -1833,7 +1886,7 @@ ntsaeads 15
 This list is used also by the <<ntsaeads1,NTS client>>.
 +
 Note the the NTS specification (RFC 8915) requires servers to support
-AES-SIV-CMAC-256, i.e. 15 should be always included in the specified list.
+AES-SIV-CMAC-256, i.e. 15 should always be included in the specified list.
 +
 The AES-128-GCM-SIV keys used by *chronyd* do not comply to RFC 8915 for
 compatibility with older *chrony* clients unless the use of compliant keys is
@@ -1841,7 +1894,7 @@ negotiated with an
 https://chrony-project.org/doc/spec/nts-compliant-128gcm.html[NTS-KE record].
 Support for this record was added in version 4.6.1. As a client, *chronyd* can
 interoperate with a server that uses compliant keys, but does not support the
-negotiation, if it responds to incorrectly authenticated requests with an NTS
+negotiation if it responds to incorrectly authenticated requests with an NTS
 NAK.
 
 [[ntsdumpdir2]]*ntsdumpdir* _directory_::
@@ -1861,9 +1914,9 @@ This directory is used also by the <<ntsdumpdir1,NTS client>> to save NTS cookie
 
 [[ntsntpserver]]*ntsntpserver* _hostname_::
 This directive specifies the hostname (as a fully qualified domain name) or
-address of the NTP server(s) which is
+address of the NTP server(s) that is
 provided in the NTS-KE response to the clients. It allows the NTS-KE server to
-be separated from the NTP server. However, the servers need to share the keys,
+be separated from the NTP server. The servers need to share the keys, however,
 i.e. external key management needs to be enabled by setting
 <<ntsrotate,*ntsrotate*>> to 0. By default, no hostname or address is provided
 to the clients, which means they should use the same server for NTS-KE and NTP.
@@ -1915,7 +1968,7 @@ addresses. If multiple clients share one IP address (e.g. multiple hosts behind
 NAT), the sum of their traffic will be limited. If a client that increases its
 polling rate when it does not receive a reply is detected, its rate limiting
 will be temporarily suspended to avoid increasing the overall amount of
-traffic. The maximum number of IP addresses which can be monitored at the same
+traffic. The maximum number of IP addresses that can be monitored at the same
 time depends on the memory limit set by the <<clientloglimit,*clientloglimit*>>
 directive.
 +
@@ -1933,7 +1986,7 @@ than the specified interval).
 This option sets the maximum number of responses that can be sent in a burst,
 temporarily exceeding the limit specified by the *interval* option. This is
 useful for clients that make rapid measurements on start (e.g. *chronyd* with
-the *iburst* option). The default value is 8. The minimum value is 1 and the
+the *iburst* option). The default value is 8. The minimum value is 1, and the
 maximum value is 255.
 *leak* _rate_:::
 This option sets the rate at which responses are randomly allowed even if the
@@ -1941,7 +1994,7 @@ limits specified by the *interval* and *burst* options are exceeded. This is
 necessary to prevent an attacker who is sending requests with a spoofed
 source address from completely blocking responses to that address. The leak
 rate is defined as a power of 1/2 and it is 2 by default, i.e. on average at
-least every fourth request has a response. The minimum value is 1 and the
+least every fourth request has a response. The minimum value is 1, and the
 maximum value is 4.
 *kod* _rate_:::
 This option sets the rate at which Kiss-o'-Death (KoD) RATE responses are
@@ -1949,7 +2002,7 @@ randomly sent when the limits specified by the *interval* and *burst* options
 are exceeded. It is an additional stream of responses to the *leak* option. A
 KoD RATE response is a request for the client to reduce its polling rate. Few
 implementations actually support it. The rate is defined as a power of 1/2. The
-default value is 0, which means disabled. The minimum value is 0 and the
+default value is 0, which means disabled. The minimum value is 0, and the
 maximum value is 4.
 {blank}::
 +
@@ -1978,13 +2031,13 @@ ntsratelimit interval 3 burst 1
 The *smoothtime* directive can be used to enable smoothing of the time that
 *chronyd* serves to its clients to make it easier for them to track it and keep
 their clocks close together even when large offset or frequency corrections are
-applied to the server's clock, for example after being offline for a longer
+applied to the server's clock, for example, after being offline for a longer
 time.
 +
 BE WARNED: The server is intentionally not serving its best estimate of the
 true time. If a large offset has been accumulated, it can take a very long time
 to smooth it out. This directive should be used only when the clients are not
-configured to also poll another NTP server, because they could reject this
+configured to poll another NTP server also, because they could reject this
 server as a falseticker or fail to select a source completely.
 +
 The smoothing process is implemented with a quadratic spline function with two
@@ -1998,7 +2051,7 @@ reset*>> command.
 The first two arguments of the directive are the maximum frequency offset of
 the smoothed time to the tracked NTP time (in ppm) and the maximum rate at
 which the frequency offset is allowed to change (in ppm per second). *leaponly*
-is an optional third argument which enables a mode where only leap seconds are
+is an optional third argument that enables a mode where only leap seconds are
 smoothed out and normal offset and frequency changes are ignored. The *leaponly*
 option is useful in a combination with the <<leapsecmode,*leapsecmode slew*>>
 directive to allow the clients to use multiple time smoothing servers safely.
@@ -2082,6 +2135,9 @@ The syntax is identical to the *allow* directive.
 There is also a *cmdallow all* directive with similar behaviour to the *allow
 all* directive (but applying to monitoring access in this case, of course).
 +
+Addresses _127.0.0.1_ and _::1_ (i.e. the loopback interface) are always
+allowed.
++
 Note that *chronyd* has to be configured with the
 <<bindcmdaddress,*bindcmdaddress*>> directive to not listen only on the
 loopback interface to actually allow remote access.
@@ -2122,6 +2178,27 @@ An example of the use of the directive is:
 ----
 cmdratelimit interval 2
 ----
+
+[[opencommands]]*opencommands* [_command_]...::
+This directive specifies a list of monitoring commands to be enabled for the
+hosts allowed by the *cmdallow* directive. The following commands can be
+specified (the naming follows *chronyc*):
++
+*activity*+*+, *authdata*, *clients*, *manual*+*+, *ntpdata*, *rtcdata*+*+,
+*selectdata*, *serverstats*+*+, *smoothing*+*+, *sourcename*+*+, *sources*+*+,
+*sourcestats*, *tracking*+*+.
++
+The commands marked with +*+ are enabled by default. The protocol of these
+commands is considered stable and can be expected to work between different
+versions of *chronyc* and *chronyd*. The protocol of the other commands is not
+considered stable and different versions of *chronyc* and *chronyd* may not
+interoperate. When that happens, *chronyc* will print an '`Invalid command`' or
+'`Bad reply from daemon`' error.
++
+Note that some of the reported data can be potentially useful to attackers,
+enabling them to observe and predict better the internal state of *chronyd*.
+It is recommended to enable only commands that are actually needed for
+monitoring and limit the access to the hosts that need it.
 
 === Real-time clock (RTC)
 
@@ -2188,7 +2265,7 @@ option to *chronyd*) if the following three conditions apply:
 
 [[rtconutc]]*rtconutc*::
 *chronyd* assumes by default that the RTC keeps local time (including any
-daylight saving changes). This is convenient on PCs running Linux which are
+daylight saving changes). This is convenient on PCs running Linux that are
 dual-booted with Windows.
 +
 If you keep the RTC on local time and your computer is off when daylight saving
@@ -2203,7 +2280,8 @@ The directive takes no arguments. It is equivalent to specifying the *-u*
 switch to the Linux *hwclock* program.
 +
 Note that this setting is overridden by the <<hwclockfile,*hwclockfile*>> file
-and is not relevant for the <<rtcsync,*rtcsync*>> directive.
+and is not relevant for the <<rtcsync,*rtcsync*>> directive or when the RTC
+is used as reference clock.
 
 [[rtcsync]]*rtcsync*::
 The *rtcsync* directive enables a mode where the system time is periodically
@@ -2276,7 +2354,7 @@ from the example line above):
 +
 *measurements*:::
 This option is identical to the *rawmeasurements* option, except it logs only
-valid measurements from synchronised sources, i.e. measurements which passed
+valid measurements from synchronised sources, i.e. measurements that passed
 the RFC 5905 tests 1 through 7. This can be useful for producing graphs of the
 source's performance.
 +
@@ -2317,7 +2395,7 @@ from the example line above):
   used to prune old samples when it no longer looks like the measurements fit a
   linear model). [0, i.e. no samples discarded this time]
 . The number of runs. The number of runs of regression residuals with the same
-  sign is computed. If this is too small it indicates that the measurements are
+  sign is computed. If this is too small, it indicates that the measurements are
   no longer represented well by a linear model and that some older samples need
   to be discarded. The number of runs for the data that is being retained is
   tabulated. Values of approximately half the number of samples are expected.
@@ -2536,9 +2614,9 @@ log measurements statistics tracking
 A banner is periodically written to the log files enabled by the <<log,*log*>>
 directive to indicate the meanings of the columns.
 +
-The *logbanner* directive specifies after how many entries in the log file
-should be the banner written. The default is 32, and 0 can be used to disable
-it entirely.
+The *logbanner* directive specifies the cadence size of how many entries are
+written to the log file after which the banner is written anew. The default is
+32, and 0 can be used to disable it entirely.
 
 [[logchange]]*logchange* _threshold_::
 This directive sets the threshold for the adjustment of the system clock that
@@ -2628,7 +2706,7 @@ sourcedir /var/run/chrony-dhcp
 [[include]]*include* _pattern_::
 The *include* directive includes a configuration file, or multiple configuration
 files if a wildcard pattern is specified. Unlike with the *confdir* directive,
-the full name of the files needs to be specified and at least one file is
+the full name of the files needs to be specified, and at least one file is
 required to exist.
 +
 This directive can be used multiple times.
@@ -2714,8 +2792,8 @@ timestamp and the actual reception time at the physical layer. This value will
 be subtracted from receive timestamps obtained from the NIC. The default value
 is 0.
 *nocrossts*:::
-Some hardware can precisely cross timestamp the NIC clock with the system
-clock. This option disables the use of the cross timestamping.
+Some hardware can precisely cross-timestamp the NIC clock with the system
+clock. This option disables the use of the cross-timestamping.
 *rxfilter* _filter_:::
 This option selects the receive timestamping filter. The _filter_ can be one of
 the following:
@@ -2755,7 +2833,7 @@ To avoid calculating the offset with a less accurate transmit timestamp,
 *chronyd* can save the response for later processing and wait for the hardware
 transmit timestamp. There is no guarantee that the timestamp will be provided
 (NICs typically have a limited rate of transmit timestamping). This directive
-configures how long should *chronyd* wait for the timestamp after receiving a
+configures how long *chronyd* should wait for the timestamp after receiving a
 valid response from the server. If a second valid response is received from the
 server while waiting for the timestamp, they will be both processed
 immediately.
@@ -2770,7 +2848,7 @@ Note that the maximum timeout is limited by the NTP polling interval.
 
 [[keyfile]]*keyfile* _file_::
 This directive is used to specify the location of the file containing symmetric
-keys which are shared between NTP servers and clients, or peers, in order to
+keys, which are shared between NTP servers and clients, or peers, in order to
 authenticate NTP packets with a message authentication code (MAC) using a
 cryptographic hash function or cipher.
 +
@@ -2797,7 +2875,7 @@ Each line consists of an ID, optional type, and key.
 +
 The ID can be any positive integer in the range 1 through 2^32-1.
 +
-The type is a name of a cryptographic hash function or cipher which is used to
+The type is a name of a cryptographic hash function or cipher that is used to
 generate and verify the MAC. The default type is *MD5*, which is always
 supported.
 If *chronyd* was built with enabled support for hashing using a crypto library
@@ -2856,7 +2934,7 @@ Setting this directive to _/_ disables writing and checking of the PID file.
 [[ptpport]]*ptpport* _port_::
 The *ptpport* directive enables *chronyd* to send and receive NTP messages
 contained in PTP event messages (NTP-over-PTP) to enable hardware timestamping
-on NICs which cannot timestamp NTP packets, but can timestamp unicast PTP
+on NICs that cannot timestamp NTP packets, but can timestamp unicast PTP
 packets, and also use corrections provided by PTP one-step end-to-end
 transparent clocks in network switches and routers. The port recognized by the
 NICs and PTP transparent clocks is 319 (PTP event port). The default value is 0
@@ -2869,7 +2947,7 @@ The PTP port will be open even if *chronyd* is not configured to operate as a
 server or client. The directive does not change the default protocol of
 specified NTP sources. Each NTP source that should use NTP-over-PTP needs to
 be specified with the *port* option set to the PTP port. To actually enable
-hardware timestamping on NICs which can timestamp PTP packets only, the
+hardware timestamping on NICs that can timestamp PTP packets only, the
 *rxfilter* option of the *hwtimestamp* directive needs to be set to _ptp_. The
 extension field _F324_ needs to be enabled to use the corrections provided by
 the PTP transparent clocks.
@@ -2926,7 +3004,7 @@ The compiled-in default value is _@DEFAULT_USER@_.
 === NTP client with permanent connection to NTP servers
 
 This section shows how to configure *chronyd* for computers that are connected
-to the Internet (or to any network containing true NTP servers which ultimately
+to the Internet (or to any network containing true NTP servers that ultimately
 derive their time from a reference clock) permanently or most of the time.
 
 To operate in this mode, you will need to know the names of the NTP servers
@@ -2952,7 +3030,7 @@ server ntp2.example.net
 server ntp3.example.net
 ----
 
-However, you will probably want to include some of the other directives. The
+You will probably want to include some of the other directives, however. The
 <<driftfile,*driftfile*>>, <<makestep,*makestep*>> and <<rtcsync,*rtcsync*>>
 might be particularly useful. Also, the *iburst* option of the
 <<server,*server*>> directive is useful to speed up the initial
@@ -3041,7 +3119,7 @@ actually connected to the Internet.
 === Isolated networks
 
 This section shows how to configure *chronyd* for computers that never have
-network connectivity to any computer which ultimately derives its time from a
+network connectivity to any computer that ultimately derives its time from a
 reference clock.
 
 In this situation, one computer is selected to be the primary timeserver. The
@@ -3056,7 +3134,7 @@ in the form of the <<manual,*manual*>> directive and the
 <<chronyc.adoc#settime,*settime*>> command in the *chronyc* program.
 
 If the server is rebooted, *chronyd* can re-read the drift rate from the drift
-file. However, the server has no accurate estimate of the current time. To get
+file. The server has no accurate estimate of the current time, however. To get
 around this, the system can be configured so that the server can initially set
 itself to a '`majority-vote`' of selected clients' times; this allows the
 clients to '`flywheel`' the server while it is rebooting.
@@ -3124,7 +3202,7 @@ clients might be configured to poll all three servers.
 
 === RTC tracking
 
-This section considers a computer which has occasional connections to the
+This section considers a computer that has occasional connections to the
 Internet and is turned off between '`sessions`'. In this case, *chronyd* relies
 on the computer's RTC to maintain the time between the periods when it is
 powered up. It assumes that Linux is run exclusively on the computer. Dual-boot
@@ -3135,7 +3213,7 @@ enable the *HPET_EMULATE_RTC* option in your kernel configuration. Otherwise,
 using it.
 
 When the computer is connected to the Internet, *chronyd* has access to
-external NTP servers which it makes measurements from. These measurements are
+external NTP servers that it makes measurements from. These measurements are
 saved, and straight-line fits are performed on them to provide an estimate of
 the computer's time error and rate of gaining or losing time.
 
@@ -3178,7 +3256,7 @@ take *chronyd* offline; because *chronyd* free-runs between online sessions, no
 parameters will change significantly between going offline from the Internet
 and any power failure.
 
-A final point regards computers which are left running for extended periods and
+A final point regards computers that are left running for extended periods and
 where it is desired to spin down the hard disc when it is not in use (e.g. when
 not accessed for 15 minutes). *chronyd* has been planned so it supports such
 operation; this is the reason why the RTC tracking parameters are not saved to

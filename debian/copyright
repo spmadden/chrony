@@ -111,6 +111,11 @@ Files: refclock_phc.c
 Copyright: 2013, 2017, 2023, Miroslav Lichvar
 License: GPL-2
 
+Files: refclock_rtc.c
+Copyright: 2021, Uwe Kleine-König, Pengutronix
+           2024, Ahmad Fatoum, Pengutronix
+License: GPL-2
+
 Files: regress.c
 Copyright: 1997-2003, Richard P. Curnow
            2011, 2016-2017, Miroslav Lichvar
