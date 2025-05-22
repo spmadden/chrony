@@ -98,6 +98,10 @@ rm -f getdate.c
 mv clknetsim-*-%{clknetsim_ver}* test/simulation/clknetsim
 
 %build
+%ifarch aarch64
+# workaround for bug #2367978
+CFLAGS="$RPM_OPT_FLAGS -fno-inline"
+%endif
 %configure \
 %{?with_debug: --enable-debug} \
         --enable-ntp-signd \
