@@ -1,12 +1,8 @@
 __no_system_clock_control() {
+    printf "[Unit]\nConditionVirtualization=\n" | systemctl edit --stdin --drop-in=10-container chrony.service 2>/dev/null
     if ! dpkg-vendor --derives-from Ubuntu; then
         sed -i '/^DAEMON_OPTS=/s/"\(.*\)"/"\1 -x"/' /etc/default/chrony
-        mkdir -p /etc/systemd/system/chrony.service.d
-        cat <<EOF > /etc/systemd/system/chrony.service.d/override.conf
-[Unit]
-ConditionCapability=
-EOF
-        systemctl daemon-reload
+        printf "[Unit]\nConditionCapability=\n" | systemctl edit --stdin chrony.service 2>/dev/null
     fi
 }
 
