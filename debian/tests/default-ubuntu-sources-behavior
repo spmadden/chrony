@@ -2,10 +2,13 @@
 
 set -e
 
+. debian/tests/helper-functions
+
 UBUNTU_NTP_POOLS="/etc/chrony/sources.d/ubuntu-ntp-pools.sources"
 
 cleanup() {
     ret=$?
+    __cleanup
     set +e
     if [ ${ret} -ne 0 ]; then
         echo "## ERROR, something failed"
@@ -122,6 +125,8 @@ EOF
     fi
 }
 
+__no_system_clock_control
+__restart_chronyd
 # these tests must be run in this order, because they don't reset the state
 # each time
 test_fresh_install_has_nts_sources

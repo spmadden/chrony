@@ -1,7 +1,7 @@
 # Keep this as the first test, to check default installation behavior more
 # easily.
 Tests: default-ubuntu-sources-behavior
-Depends: chrony
+Depends: chrony, dpkg-dev
 Restrictions: isolation-container, needs-root
 
 Tests: upstream-simulation-test-suite
