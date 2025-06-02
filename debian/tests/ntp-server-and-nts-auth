@@ -45,6 +45,8 @@ EOF
     __restart_chronyd
 }
 
+trap __cleanup EXIT
+
 echo "$server_addr $server_name" >> /etc/hosts
 
 create_cert_template && __test_ok || __test_skip "unable to create certificate template"

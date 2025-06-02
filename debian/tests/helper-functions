@@ -1,6 +1,14 @@
+__cleanup() {
+    mv -f /etc/default/chrony.bak /etc/default/chrony
+    rm -rf /etc/systemd/system/chrony.service.d
+    systemctl daemon-reload
+    systemctl --quiet restart chrony.service
+}
+
 __no_system_clock_control() {
     printf "[Unit]\nConditionVirtualization=\n" | systemctl edit --stdin --drop-in=10-container chrony.service 2>/dev/null
     if ! dpkg-vendor --derives-from Ubuntu; then
+        cp /etc/default/chrony /etc/default/chrony.bak
         sed -i '/^DAEMON_OPTS=/s/"\(.*\)"/"\1 -x"/' /etc/default/chrony
         printf "[Unit]\nConditionCapability=\n" | systemctl edit --stdin chrony.service 2>/dev/null
     fi
