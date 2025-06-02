@@ -1,5 +1,5 @@
 __cleanup() {
-    mv -f /etc/default/chrony.bak /etc/default/chrony
+    [ -f /etc/default/chrony.bak ] && mv /etc/default/chrony.bak /etc/default/chrony
     rm -rf /etc/systemd/system/chrony.service.d
     systemctl daemon-reload
     systemctl --quiet restart chrony.service
