@@ -1,2 +1,3 @@
+conf:_fix_sourcedir_reloading_to_not_multiply_sources.patch
 debianize-chronyd-restricted-unit-file.patch
 nm-dispatcher-dhcp_Move-server_dir-to-run.patch
