@@ -1,3 +1,14 @@
+chrony (4.6.1-1ubuntu2) questing; urgency=medium
+
+  * d/chrony.service: Do not run inside containers by default (LP: #2111535)
+    Still allow running tests in containers, by installing override
+    configs in /etc/systemd/system/chrony.service.d/
+  * d/tests: Clean up after __no_system_clock_control()
+  * d/t/helper-functions: Do not fail if backup does not exist
+  * d/t/default-ubuntu-sources-behavior: Adopt to upstream container handling.
+
+ -- Lukas Märdian <slyon@ubuntu.com>  Tue, 03 Jun 2025 10:13:08 +0200
+
 chrony (4.6.1-1ubuntu1) plucky; urgency=medium
 
   * Merge with Debian unstable (LP: #2085221). Remaining changes:

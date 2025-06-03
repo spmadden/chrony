@@ -5,6 +5,7 @@ Conflicts=openntpd.service ntp.service ntpsec.service
 Wants=time-sync.target
 Before=time-sync.target
 After=network.target
+ConditionVirtualization=!container
 
 [Service]
 Type=forking

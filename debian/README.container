@@ -58,3 +58,15 @@ a default config working in those cases Ubuntu intends to use that and drop
 the current workaround.
 
  -- Christian Ehrhardt <christian.ehrhardt@canonical.com>  Fri, 16 Mar 2018 12:25:44 +0100
+
+
+In addition to the above mentioned SYNC_IN_CONTAINER="yes" enablement one also
+needs to disable the "ConditionVirtualization=!container" check in
+chrony.service (LP: #2111535), e.g. by placing an override config in
+/etc/systemd/system/chrony.service.d/10-container.conf:
+```
+[Unit]
+ConditionVirtualization=
+```
+
+ -- Lukas Märdian <slyon@ubuntu.com>  Mon, 02 Jun 2025 11:31:37 +0200
