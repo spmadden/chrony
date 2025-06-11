@@ -3,7 +3,7 @@
 
  **********************************************************************
  * Copyright (C) Richard P. Curnow  1997-2003
- * Copyright (C) Miroslav Lichvar  2009-2017, 2020, 2024
+ * Copyright (C) Miroslav Lichvar  2009-2017, 2020, 2024-2025
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -1872,8 +1872,8 @@ reload_source_dirs(void)
   NTP_Source *prev_sources, *new_sources, *source;
   unsigned int i, j, prev_size, new_size, unresolved;
   char buf[MAX_LINE_LENGTH];
+  int d, pass, was_added;
   NSR_Status s;
-  int d, pass;
 
   /* Ignore reload command before adding configured sources */
   if (!conf_ntp_sources_added)
@@ -1912,13 +1912,16 @@ reload_source_dirs(void)
       else
         d = i < prev_size ? -1 : 1;
 
+      was_added = d <= 0 && (prev_sources[i].status == NSR_Success ||
+                             prev_sources[i].status == NSR_UnresolvedName);
+
       /* Remove missing sources before adding others to avoid conflicts */
-      if (pass == 0 && d < 0 && prev_sources[i].status == NSR_Success) {
+      if (pass == 0 && d < 0 && was_added) {
         NSR_RemoveSourcesById(prev_sources[i].conf_id);
       }
 
       /* Add new sources and sources that could not be added before */
-      if (pass == 1 && (d > 0 || (d == 0 && prev_sources[i].status != NSR_Success))) {
+      if (pass == 1 && (d > 0 || (d == 0 && !was_added))) {
         source = &new_sources[j];
         s = NSR_AddSourceByName(source->params.name, source->params.family, source->params.port,
                                 source->pool, source->type, &source->params.params,

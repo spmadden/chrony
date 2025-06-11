@@ -2,12 +2,12 @@
 .\"     Title: chrony.conf
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2025-05-21
+.\"      Date: 2025-06-11
 .\"    Manual: Configuration Files
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONY.CONF" "5" "2025-05-21" "chrony @CHRONY_VERSION@" "Configuration Files"
+.TH "CHRONY.CONF" "5" "2025-06-11" "chrony @CHRONY_VERSION@" "Configuration Files"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -323,11 +323,11 @@ synchronisation only if they agree with the trusted and required source.
 .sp
 \fBxleave\fP
 .RS 4
-This option enables the interleaved mode of NTP. It enables the server to
-respond with more accurate transmit timestamps (e.g. kernel or hardware
-timestamps), which cannot be contained in the transmitted packet itself and
-need to refer to a previous packet instead. This can significantly improve the
-accuracy and stability of the measurements.
+This option enables the interleaved mode of NTP (RFC 9769). It enables the
+server to respond with more accurate transmit timestamps (e.g. kernel or
+hardware timestamps), which cannot be contained in the transmitted packet
+itself and need to refer to a previous packet instead. This can significantly
+improve the accuracy and stability of the measurements.
 .sp
 The interleaved mode is compatible with servers that support only the basic
 mode. Note that even

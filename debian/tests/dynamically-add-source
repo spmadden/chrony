@@ -5,6 +5,8 @@ set -e
 
 . debian/tests/helper-functions
 
+trap __cleanup EXIT
+
 server_addr="192.0.2.1"
 
 printf "Preparing chronyd configuration: "

@@ -2,12 +2,12 @@
 .\"     Title: chronyc
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2025-05-21
+.\"      Date: 2025-06-11
 .\"    Manual: User manual
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONYC" "1" "2025-05-21" "chrony @CHRONY_VERSION@" "User manual"
+.TH "CHRONYC" "1" "2025-06-11" "chrony @CHRONY_VERSION@" "User manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -2645,7 +2645,7 @@ Note that log files enabled by the \fBlog\fP directive are opened when the first
 entry is made. The message log file specified by the \fBchronyd\fP\*(Aqs \fB\-l\fP option is
 opened early on start and closed on the \fBcyclelogs\fP command only if opening of
 the new file succeeds to avoid losing messages. If \fBchronyd\fP is configured to
-drop root privileges and the directory containg the log file is not writable
+drop root privileges and the directory containing the log file is not writable
 for the specified user, \fBchronyd\fP will not be able to open the file again.
 .RE
 .sp
