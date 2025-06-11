@@ -1,6 +1,5 @@
 %global _hardened_build 1
-%global clknetsim_ver d60afc
-%global prerelease -pre1
+%global clknetsim_ver 83cf9c
 %bcond_without debug
 %bcond_without nts
 
@@ -26,6 +25,8 @@ Source10:       https://gitlab.com/chrony/clknetsim/-/archive/master/clknetsim-%
 
 # add distribution-specific bits to DHCP dispatcher
 Patch1:         chrony-nm-dispatcher-dhcp.patch
+# revert upstream changes in default config
+Patch2:         chrony-defconfig.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
@@ -60,6 +61,7 @@ service to other computers in the network.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch -P 0 -p1}
 %patch -P 1 -p1 -b .nm-dispatcher-dhcp
+%patch -P 2 -p1 -R -b .defconfig
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
