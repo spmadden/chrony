@@ -1,7 +1,7 @@
 /tier1-internal:
   plan:
     import:
-      url: https://src.fedoraproject.org/tests/chrony.git
+      url: https://gitlab.com/redhat/centos-stream/tests/chrony.git
       name: /plans/tier1/internal
   adjust:
     enabled: false
@@ -11,13 +11,13 @@
 /tier1-public:
   plan:
     import:
-      url: https://src.fedoraproject.org/tests/chrony.git
+      url: https://gitlab.com/redhat/centos-stream/tests/chrony.git
       name: /plans/tier1/public
 
 /tier2-tier3-internal:
   plan:
     import:
-      url: https://src.fedoraproject.org/tests/chrony.git
+      url: https://gitlab.com/redhat/centos-stream/tests/chrony.git
       name: /plans/tier2-tier3/internal
   adjust:
     enabled: false
@@ -27,13 +27,13 @@
 /tier2-tier3-public:
   plan:
     import:
-      url: https://src.fedoraproject.org/tests/chrony.git
+      url: https://gitlab.com/redhat/centos-stream/tests/chrony.git
       name: /plans/tier2-tier3/public
 
 /others-internal:
   plan:
     import:
-      url: https://src.fedoraproject.org/tests/chrony.git
+      url: https://gitlab.com/redhat/centos-stream/tests/chrony.git
       name: /plans/others/internal
   adjust:
     enabled: false
@@ -43,5 +43,5 @@
 /others-public:
   plan:
     import:
-      url: https://src.fedoraproject.org/tests/chrony.git
+      url: https://gitlab.com/redhat/centos-stream/tests/chrony.git
       name: /plans/others/public
