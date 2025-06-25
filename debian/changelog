@@ -1,3 +1,67 @@
+chrony (4.7-1ubuntu1) questing; urgency=medium
+
+  * Merge with Debian experimental. Remaining changes: (LP: #2110435)
+    - Set -x as default if unable to set time (e.g. in containers) (LP #1589780)
+      Chrony is a single service which acts as both NTP client (i.e. syncing the
+      local clock) and NTP server (i.e. providing NTP services to the network),
+      and that is both desired and expected in the vast majority of cases.
+      But in containers syncing the local clock is usually impossible, but this
+      shall not break the providing of NTP services to the network.
+      To some extent this makes chrony's default config more similar to 'ntpd',
+      which complained in syslog but still provided NTP server service in those
+      cases.
+      + debian/chrony.service: allow the service to run without CAP_SYS_TIME
+      + d/control: add new dependency libcap2-bin for capsh (usually
+        installed anyway, but make them explicit to be sure).
+      + d/chrony.default: new option SYNC_IN_CONTAINER to not fall
+        back (Default off)
+      + d/chronyd-starter.sh: wrapper to handle special cases in
+        containers and if CAP_SYS_TIME is missing. Effectively allows
+        running the NTP server in containers on a default installation
+        and avoid failing to sync time (or if allowed to sync, avoid
+        multiple containers fighting over it by accident).
+      + d/install: Make chrony-starter.sh available on install.
+      + d/docs, d/README.container: Provide documentation about the
+        handling of this case.
+    - d/rules, d/chrony.examples: Ship restricted service as an example
+      not installed to the system for use.  (See LP #2051028)
+    - d/chrony.conf: remove Debian NTP pool
+    - Install Ubuntu NTP sources in
+      /etc/chrony/sources.d/ubuntu-ntp-pools.sources, gated on a low priority
+      (default yes) debconf question (LP #2048876):
+      + d/templates: Add debconf question to customize installation of
+        /etc/chrony/sources.d/ubuntu-ntp-pools.sources
+      + d/install, d/ubuntu-ntp-pools.sources: Install ubuntu-ntp-pools.sources
+        in /usr/share/chrony
+      + d/control: add dependency on debconf
+      + d/postinst: handle Ubuntu pools via debconf and ucf
+      + d/postrm: handle Ubuntu pools via debconf and ucf
+      + d/NEWS: Add information about default time sources moving out from
+        chrony.conf to /etc/chrony/sources.d/ubuntu-ntp-pools.sources.
+      + d/chrony.config: debconf script to handle Ubuntu pools
+      + d/t/control, d/t/default-ubuntu-sources-behavior: new test to check the
+        debconf behavior
+    - Use Ubuntu NTS servers by default (LP #2084585):
+      + d/conf.d/ubuntu-nts.conf: refer to the CA used to sign the NTS bootstrap
+        server
+      + d/nts-bootstrap-{,staging}-ubuntu.crt: CA certificate for the NTS
+        bootstrap servers
+      + d/install: install the NTS bootstrap CAs
+      + d/ubuntu-ntp-pools.sources: use NTS by default
+      + d/t/default-ubuntu-sources-behavior: update tests for NTS support
+      + d/NEWS: add news entry about the NTS change
+  * Drop Changes:
+    - d/t/helper-functions: Do not fail if backup does not exist
+      [Fixed in 4.7-1]
+    - d/tests: Clean up after __no_system_clock_control()
+      [Fixed in 4.7-1]
+    - d/chrony.service: Do not run inside containers by default (LP 2111535)
+      [Fixed in 4.7-1]
+    - d/t/default-ubuntu-sources-behavior: Adopt to upstream container handling.
+      [Squashed into "new test to check the debconf behavior"]
+
+ -- Lukas Märdian <slyon@ubuntu.com>  Wed, 25 Jun 2025 15:14:17 +0200
+
 chrony (4.7-1) experimental; urgency=medium
 
   [ Vincent Blut ]
