@@ -14,11 +14,10 @@ ConditionCapability=CAP_SYS_TIME
 [Service]
 Type=notify
 PIDFile=/run/chrony/chronyd.pid
-Environment="OPTIONS="
-EnvironmentFile=-/etc/sysconfig/chronyd
-ExecStart=/usr/sbin/chronyd -n -U $OPTIONS
+EnvironmentFile=-/etc/default/chrony
+ExecStart=/usr/sbin/chronyd -n -U $DAEMON_OPTS
 
-User=chrony
+User=_chrony
 LogsDirectory=chrony
 LogsDirectoryMode=0750
 RuntimeDirectory=chrony
