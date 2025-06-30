@@ -1,7 +1,8 @@
 Source: chrony
 Section: net
 Priority: optional
-Maintainer: Vincent Blut <vincent.debian@free.fr>
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Vincent Blut <vincent.debian@free.fr>
 Standards-Version: 4.7.2
 Build-Depends: asciidoctor,
                bison,
@@ -26,8 +27,10 @@ Package: chrony
 Architecture: linux-any
 Pre-Depends: ${misc:Pre-Depends}
 Depends: adduser (>= 3.130),
+         debconf (>= 0.5),
          iproute2 [linux-any],
          tzdata,
+         libcap2-bin (>= 1:2.32-1),
          ucf,
          ${misc:Depends},
          ${shlibs:Depends}
