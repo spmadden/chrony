@@ -11,6 +11,8 @@ EnvironmentFile=-/etc/default/chrony
 User=_chrony
 # Daemon is started as root, but still sandboxed
 ExecStart=!/usr/lib/systemd/scripts/chronyd-starter.sh -n $DAEMON_OPTS
+# Allow real chronyd to notify "READY=1" for chronyd-starter.sh
+NotifyAccess=all
 
 CapabilityBoundingSet=~CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_AUDIT_WRITE
 CapabilityBoundingSet=~CAP_BLOCK_SUSPEND CAP_KILL CAP_LEASE CAP_LINUX_IMMUTABLE
