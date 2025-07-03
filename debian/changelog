@@ -63,6 +63,7 @@ chrony (4.7-1ubuntu1) questing; urgency=medium
     - d/chrony.service: Allow real chronyd to send READY=1 via sd_notify in
       place of the chronyd-starter.sh wrapper.
     - d/usr.sbin.chronyd: Grant access to NOTIFY_SOCKET in AppArmor profile.
+    - d/chrony.conf: Document non-NTS sources from DHCP (LP: #2115565)
 
  -- Lukas Märdian <slyon@ubuntu.com>  Mon, 30 Jun 2025 13:26:18 +0200
 
