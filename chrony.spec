@@ -9,7 +9,7 @@
 
 Name:           chrony
 Version:        4.7
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An NTP client/server
 
 License:        GPL-2.0-only
@@ -205,6 +205,11 @@ fi
 %ghost %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Thu Jul 10 2025 Miroslav Lichvar <mlichvar@redhat.com> 4.7-2
+- let systemd create /var/lib/chrony and /var/log/chrony (#2372944)
+- drop workaround for broken build on aarch64
+- drop old conflict with NetworkManager
+
 * Wed Jun 11 2025 Miroslav Lichvar <mlichvar@redhat.com> 4.7-1
 - update to 4.7
 
