@@ -37,9 +37,6 @@ BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
 # Needed by the leapseclist directive in default chrony.conf
 Requires:       tzdata
 
-# Old NetworkManager expects the dispatcher scripts in a different place
-Conflicts:      NetworkManager < 1.20
-
 # suggest drivers for hardware reference clocks
 Suggests:       ntp-refclock
 
