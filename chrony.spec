@@ -25,6 +25,8 @@ Source10:       https://gitlab.com/chrony/clknetsim/-/archive/master/clknetsim-%
 
 # add distribution-specific bits to DHCP dispatcher
 Patch1:         chrony-nm-dispatcher-dhcp.patch
+# let systemd create /var/lib/chrony and /var/log/chrony
+Patch2:         chrony-servicedirs.patch
 
 BuildRequires:  libcap-devel libedit-devel nettle-devel pps-tools-devel
 BuildRequires:  gcc gcc-c++ make bison systemd gnupg2
@@ -56,6 +58,7 @@ service to other computers in the network.
 %setup -q -n %{name}-%{version}%{?prerelease} -a 10
 %{?gitpatch:%patch -P 0 -p1}
 %patch -P 1 -p1 -b .nm-dispatcher-dhcp
+%patch -P 2 -p1 -b .servicedirs
 
 %{?gitpatch: echo %{version}-%{gitpatch} > version.txt}
 
@@ -66,7 +69,7 @@ md5sum -c <<-EOF | (! grep -v 'OK$')
         6a3178c4670de7de393d9365e2793740  examples/chrony.logrotate
         c3992e2f985550739cd1cd95f98c9548  examples/chrony.nm-dispatcher.dhcp
         4e85d36595727318535af3387411070c  examples/chrony.nm-dispatcher.onoffline
-        274a44cd51981d6d4d3a44dfc92c94ab  examples/chronyd.service
+        607c82f56639486f52c31105632909eb  examples/chronyd.service
         5ddbb8a8055f587cb6b0b462ca73ea46  examples/chronyd-restricted.service
 EOF
 
@@ -200,10 +203,10 @@ fi
 %{_unitdir}/chrony*.service
 %{_sysusersdir}/chrony.conf
 %{_mandir}/man[158]/%{name}*.[158]*
-%dir %attr(750,chrony,chrony) %{_localstatedir}/lib/chrony
+%ghost %dir %attr(750,chrony,chrony) %{_localstatedir}/lib/chrony
 %ghost %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony/drift
 %ghost %attr(-,chrony,chrony) %{_localstatedir}/lib/chrony/rtc
-%dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
+%ghost %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
 * Wed Jun 11 2025 Miroslav Lichvar <mlichvar@redhat.com> 4.7-1
