@@ -78,6 +78,9 @@ abi <abi/3.0>,
   # Allow read-write access to the socket path(s).
   @{run}/timemaster/chrony.SOCK[0-9]* rw,
 
+  # Allow systemd Type=notify using sd_notify's $NOTIFY_SOCKET
+  @{run}/systemd/notify w,
+
   # For use with clocks that report via shared memory (e.g. gpsd),
   # you may need to give ntpd access to all of shared memory, though
   # this can be considered dangerous. See https://launchpad.net/bugs/722815

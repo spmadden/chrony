@@ -32,6 +32,7 @@ Depends: adduser (>= 3.130),
          ${misc:Depends},
          ${shlibs:Depends}
 Suggests: dnsutils,
+          gpsd,
           networkd-dispatcher
 Breaks: network-manager (<< 1.20.0-1~)
 Conflicts: time-daemon
