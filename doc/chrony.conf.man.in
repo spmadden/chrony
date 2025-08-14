@@ -2,12 +2,12 @@
 .\"     Title: chrony.conf
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.20
-.\"      Date: 2025-06-11
+.\"      Date: 2025-08-14
 .\"    Manual: Configuration Files
 .\"    Source: chrony @CHRONY_VERSION@
 .\"  Language: English
 .\"
-.TH "CHRONY.CONF" "5" "2025-06-11" "chrony @CHRONY_VERSION@" "Configuration Files"
+.TH "CHRONY.CONF" "5" "2025-08-14" "chrony @CHRONY_VERSION@" "Configuration Files"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -265,6 +265,15 @@ Set the minimum number of samples kept for this source. This overrides the
 .RS 4
 Set the maximum number of samples kept for this source. This overrides the
 \fBmaxsamples\fP directive.
+.RE
+.sp
+\fBmaxunreach\fP \fIpolls\fP
+.RS 4
+This option specifies the maximum number of polls that this source can stay
+selected for synchronisation when it is unreachable (i.e. no valid response was
+received to the last 8 requests). Only sources with at least one sample more
+recent than the oldest sample of all reachable sources can be selected. The
+default is 100000.
 .RE
 .sp
 \fBfilter\fP \fIpolls\fP
@@ -985,6 +994,15 @@ Set the minimum number of samples kept for this source. This overrides the
 .RS 4
 Set the maximum number of samples kept for this source. This overrides the
 \fBmaxsamples\fP directive.
+.RE
+.sp
+\fBmaxunreach\fP \fIpolls\fP
+.RS 4
+This option specifies the maximum number of polls that this source can stay
+selected for synchronisation when it is unreachable (i.e. no valid sample was
+received in the last 8 polls). Only sources with at least one sample more
+recent than the oldest sample of all reachable sources can be selected.
+The default is 100000.
 .RE
 .RE
 .sp

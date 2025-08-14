@@ -1,3 +1,20 @@
+chrony (4.8~pre1-1) experimental; urgency=medium
+
+  * Import upstream version 4.8-pre1:
+    - Please see /usr/share/doc/chrony/NEWS.gz for the release notes.
+
+  * debian/control:
+    - Drop 'Priority: optional'. dpkg sets it by default if omitted.
+    - Drop 'Rules-Requires-Root: no'. dpkg sets it by default if omitted.
+
+  * debian/copyright:
+    - Add a few entries and update copyright year.
+
+  * debian/test/upstream-simulation-test-suite:
+    - Update clknetsim version.
+
+ -- Vincent Blut <vincent.debian@free.fr>  Thu, 14 Aug 2025 17:46:23 +0200
+
 chrony (4.7-2) unstable; urgency=medium
 
   [ Vincent Blut ]

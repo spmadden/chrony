@@ -66,7 +66,7 @@ static int phc_initialise(RCL_Instance instance)
 {
   const char *options[] = {"nocrossts", "extpps", "pin", "channel", "clear", NULL};
   struct phc_instance *phc;
-  int phc_fd, rising_edge;
+  int rising_edge;
   struct stat st;
   char *path, *s;
 
@@ -74,19 +74,20 @@ static int phc_initialise(RCL_Instance instance)
 
   path = RCL_GetDriverParameter(instance);
  
-  phc_fd = SYS_Linux_OpenPHC(path);
-  if (phc_fd < 0)
-    LOG_FATAL("Could not open PHC");
-
   phc = MallocNew(struct phc_instance);
-  phc->fd = phc_fd;
-  if (fstat(phc_fd, &st) < 0 || !S_ISCHR(st.st_mode))
-    LOG_FATAL("Could not get PHC index");
-  phc->dev_index = minor(st.st_rdev);
   phc->mode = 0;
   phc->nocrossts = RCL_GetDriverOption(instance, "nocrossts") ? 1 : 0;
   phc->extpps = RCL_GetDriverOption(instance, "extpps") ? 1 : 0;
   UTI_ZeroTimespec(&phc->last_extts);
+
+  phc->fd = SYS_Linux_OpenPHC(path, phc->extpps ? O_RDWR : O_RDONLY);
+  if (phc->fd < 0)
+    LOG_FATAL("Could not open PHC");
+
+  if (fstat(phc->fd, &st) < 0 || !S_ISCHR(st.st_mode))
+    LOG_FATAL("Could not get PHC index");
+  phc->dev_index = minor(st.st_rdev);
+
   phc->clock = HCL_CreateInstance(0, 16, UTI_Log2ToDouble(RCL_GetDriverPoll(instance)),
                                   RCL_GetPrecision(instance));
 
@@ -154,13 +155,11 @@ static void process_ext_pulse(RCL_Instance instance, struct timespec *phc_ts)
   }
   phc->last_extts = *phc_ts;
 
-  RCL_UpdateReachability(instance);
-
   if (!HCL_CookTime(phc->clock, phc_ts, &local_ts, &local_err))
     return;
 
   RCL_AddCookedPulse(instance, &local_ts, 1.0e-9 * local_ts.tv_nsec, local_err,
-                     UTI_DiffTimespecsToDouble(phc_ts, &local_ts));
+                     UTI_DiffTimespecsToDouble(phc_ts, &local_ts), 1);
 }
 
 static void read_ext_pulse(int fd, int event, void *anything)
@@ -197,7 +196,7 @@ static int phc_poll(RCL_Instance instance)
   struct timespec phc_ts, sys_ts, local_ts, readings[PHC_READINGS][3];
   struct phc_instance *phc;
   double phc_err, local_err;
-  int n_readings;
+  int n_readings, quality;
 
   phc = (struct phc_instance *)RCL_GetDriverData(instance);
 
@@ -206,14 +205,13 @@ static int phc_poll(RCL_Instance instance)
   if (n_readings < 1)
     return 0;
 
-  if (!phc->extpps)
-    RCL_UpdateReachability(instance);
-
-  if (!HCL_ProcessReadings(phc->clock, n_readings, readings, &phc_ts, &sys_ts, &phc_err))
+  if (!HCL_ProcessReadings(phc->clock, n_readings, readings,
+                           &phc_ts, &sys_ts, &phc_err, &quality))
     return 0;
 
   LCL_CookTime(&sys_ts, &local_ts, &local_err);
-  HCL_AccumulateSample(phc->clock, &phc_ts, &local_ts, phc_err + local_err);
+  if (quality > 0)
+    HCL_AccumulateSample(phc->clock, &phc_ts, &local_ts, phc_err + local_err);
 
   if (phc->extpps)
     return 0;
@@ -221,7 +219,7 @@ static int phc_poll(RCL_Instance instance)
   DEBUG_LOG("PHC offset: %+.9f err: %.9f",
             UTI_DiffTimespecsToDouble(&phc_ts, &sys_ts), phc_err);
 
-  return RCL_AddSample(instance, &sys_ts, &phc_ts, LEAP_Normal);
+  return RCL_AddSample(instance, &sys_ts, &phc_ts, LEAP_Normal, quality);
 }
 
 RefclockDriver RCL_PHC_driver = {
