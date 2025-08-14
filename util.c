@@ -545,12 +545,14 @@ UTI_CompareIPs(const IPAddr *a, const IPAddr *b, const IPAddr *mask)
 char *
 UTI_IPSockAddrToString(const IPSockAddr *sa)
 {
-  char *result;
+  char buf[BUFFER_LENGTH], *result;
+
+  /* Copy to a separate buffer to avoid a compiler warning */
+  snprintf(buf, sizeof (buf), "%s", UTI_IPToString(&sa->ip_addr));
 
   result = NEXT_BUFFER;
   snprintf(result, BUFFER_LENGTH,
-           sa->ip_addr.family != IPADDR_INET6 ? "%s:%hu" : "[%s]:%hu",
-           UTI_IPToString(&sa->ip_addr), sa->port);
+           sa->ip_addr.family != IPADDR_INET6 ? "%s:%hu" : "[%s]:%hu", buf, sa->port);
 
   return result;
 }
@@ -1364,6 +1366,7 @@ FILE *
 UTI_OpenFile(const char *basedir, const char *name, const char *suffix,
              char mode, mode_t perm)
 {
+  uint64_t attempts = 0, warn_attempts = 100;
   const char *file_mode;
   char path[PATH_MAX];
   LOG_Severity severity;
@@ -1407,6 +1410,12 @@ try_again:
         return NULL;
       }
       DEBUG_LOG("Removed %s", path);
+
+      if (++attempts == warn_attempts) {
+        LOG(LOGS_WARN, "Failing to replace %s (%"PRIu64" attempts)", path, attempts);
+        warn_attempts *= 10;
+      }
+
       goto try_again;
     }
     LOG(severity, "Could not open %s : %s", path, strerror(errno));

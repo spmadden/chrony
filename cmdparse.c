@@ -3,7 +3,7 @@
 
  **********************************************************************
  * Copyright (C) Richard P. Curnow  1997-2003
- * Copyright (C) Miroslav Lichvar  2013-2014, 2016, 2021
+ * Copyright (C) Miroslav Lichvar  2013-2014, 2016, 2021, 2025
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -66,6 +66,7 @@ CPS_ParseNTPSourceAdd(char *line, CPS_NTP_Source *src)
   src->params.max_sources = SRC_DEFAULT_MAXSOURCES;
   src->params.min_samples = SRC_DEFAULT_MINSAMPLES;
   src->params.max_samples = SRC_DEFAULT_MAXSAMPLES;
+  src->params.max_unreach = SRC_DEFAULT_MAXUNREACH;
   src->params.filter_length = 0;
   src->params.interleaved = 0;
   src->params.sel_options = 0;
@@ -157,6 +158,9 @@ CPS_ParseNTPSourceAdd(char *line, CPS_NTP_Source *src)
         return CPS_InvalidValue;
     } else if (!strcasecmp(cmd, "maxsources")) {
       if (!SSCANF_IN_RANGE(line, "%d%n", &src->params.max_sources, &n, 1, INT_MAX))
+        return CPS_InvalidValue;
+    } else if (!strcasecmp(cmd, "maxunreach")) {
+      if (!SSCANF_IN_RANGE(line, "%d%n", &src->params.max_unreach, &n, 0, INT_MAX))
         return CPS_InvalidValue;
     } else if (!strcasecmp(cmd, "mindelay")) {
       if (sscanf(line, "%lf%n", &src->params.min_delay, &n) != 1)

@@ -94,7 +94,7 @@ License: GPL-2
 Files: doc/chronyc.adoc
 Copyright: 1997-2003, Richard P. Curnow
            2016, Stephen Wadeley
-           2009-2017, 2019-2024, Miroslav Lichvar
+           2009-2017, 2019-2025, Miroslav Lichvar
 License: GPL-2
 
 Files: doc/faq.adoc
@@ -172,6 +172,20 @@ Files: reference.c
 Copyright: 1997-2003, Richard P. Curnow
            2009-2018, 2020, 2022, Miroslav Lichvar
            2024, Andy Fiddaman
+License: GPL-2
+
+Files: nts_ke_session.c
+Copyright: 2020-2021, Miroslav Lichvar
+           2025, Anthony Brandon
+License: GPL-2
+
+Files: tls.h
+Copyright: 2025, Anthony Brandon
+License: GPL-2
+
+Files: tls_gnutls.c
+Copyright: 2020-2021, Miroslav Lichvar
+           2025, Anthony Brandon
 License: GPL-2
 
 Files: md5.*

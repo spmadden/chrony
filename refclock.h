@@ -42,6 +42,7 @@ typedef struct {
   int pps_rate;
   int min_samples;
   int max_samples;
+  int max_unreach;
   int sel_options;
   int max_lock_age;
   int stratum;
@@ -77,11 +78,12 @@ extern char *RCL_GetDriverParameter(RCL_Instance instance);
 extern void RCL_CheckDriverOptions(RCL_Instance instance, const char **options);
 extern char *RCL_GetDriverOption(RCL_Instance instance, char *name);
 extern int RCL_AddSample(RCL_Instance instance, struct timespec *sample_time,
-                         struct timespec *ref_time, int leap);
-extern int RCL_AddPulse(RCL_Instance instance, struct timespec *pulse_time, double second);
+                         struct timespec *ref_time, int leap, int quality);
+extern int RCL_AddPulse(RCL_Instance instance, struct timespec *pulse_time, double second,
+                        int quality);
 extern int RCL_AddCookedPulse(RCL_Instance instance, struct timespec *cooked_time,
-                              double second, double dispersion, double raw_correction);
-extern void RCL_UpdateReachability(RCL_Instance instance);
+                              double second, double dispersion, double raw_correction,
+                              int quality);
 extern double RCL_GetPrecision(RCL_Instance instance);
 extern int RCL_GetDriverPoll(RCL_Instance instance);
 

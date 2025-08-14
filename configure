@@ -133,6 +133,7 @@ For better control, use the options below.
   --with-ntp-era=SECONDS Specify earliest assumed NTP time in seconds
                          since 1970-01-01 [50*365 days ago]
   --with-user=USER       Specify default chronyd user [root]
+  --with-chronyc-user=USER Specify default chronyc user [root]
   --with-hwclockfile=PATH Specify default path to hwclock(8) adjtime file
   --with-pidfile=PATH    Specify default pidfile [/var/run/chrony/chronyd.pid]
   --with-rtcdevice=PATH  Specify default path to RTC device [/dev/rtc]
@@ -250,6 +251,7 @@ try_timestamping=0
 feat_ntp_signd=0
 ntp_era_split=""
 default_user="root"
+default_chronyc_user="root"
 default_hwclockfile=""
 default_pidfile="/var/run/chrony/chronyd.pid"
 default_rtcdevice="/dev/rtc"
@@ -353,6 +355,9 @@ do
     ;;
     --with-user=* )
       default_user=`echo $option | sed -e 's/^.*=//;'`
+    ;;
+    --with-chronyc-user=* )
+      default_chronyc_user=`echo $option | sed -e 's/^.*=//;'`
     ;;
     --with-hwclockfile=* )
       default_hwclockfile=`echo $option | sed -e 's/^.*=//;'`
@@ -661,13 +666,15 @@ then
 fi
 
 if [ $try_clock_gettime = "1" ]; then
-  if test_code 'clock_gettime()' 'time.h' '' '' \
-    'clock_gettime(CLOCK_REALTIME, (void *)1);'
+  if test_code 'clock_gettime()' 'time.h' '' '' '
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);'
   then
     add_def HAVE_CLOCK_GETTIME
   else
-    if test_code 'clock_gettime() in -lrt' 'time.h' '' '-lrt' \
-      'clock_gettime(CLOCK_REALTIME, (void *)1);'
+    if test_code 'clock_gettime() in -lrt' 'time.h' '' '-lrt' '
+      struct timespec ts;
+      clock_gettime(CLOCK_REALTIME, &ts);'
     then
       add_def HAVE_CLOCK_GETTIME
       EXTRA_LIBS="$EXTRA_LIBS -lrt"
@@ -694,13 +701,16 @@ else
 fi
 
 if [ $try_arc4random = "1" ] && \
-  test_code 'arc4random_buf()' 'stdlib.h' '' '' \
-    'arc4random_buf((void *)1, 1);'
+  test_code 'arc4random_buf()' 'stdlib.h' '' '' '
+    char c;
+    arc4random_buf(&c, 1);'
 then
   add_def HAVE_ARC4RANDOM
 else
-  if test_code 'getrandom()' 'stdlib.h sys/random.h' '' '' \
-      'return getrandom((void *)1, 1, 0);'; then
+  if test_code 'getrandom()' 'stdlib.h sys/random.h' '' '' '
+    char c;
+    return getrandom(&c, 1, 0);'
+  then
     add_def HAVE_GETRANDOM
   fi
 fi
@@ -1011,7 +1021,7 @@ if [ $feat_nts = "1" ] && [ $try_gnutls = "1" ]; then
     fi
 
     if grep '#define HAVE_SIV' config.h > /dev/null; then
-      EXTRA_OBJECTS="$EXTRA_OBJECTS nts_ke_client.o nts_ke_server.o nts_ke_session.o"
+      EXTRA_OBJECTS="$EXTRA_OBJECTS nts_ke_client.o nts_ke_server.o nts_ke_session.o tls_gnutls.o"
       EXTRA_OBJECTS="$EXTRA_OBJECTS nts_ntp_auth.o nts_ntp_client.o nts_ntp_server.o"
       LIBS="$LIBS $test_link"
       MYCPPFLAGS="$MYCPPFLAGS $test_cflags"
@@ -1080,6 +1090,7 @@ add_def DEFAULT_HWCLOCK_FILE "\"$default_hwclockfile\""
 add_def DEFAULT_PID_FILE "\"$default_pidfile\""
 add_def DEFAULT_RTC_DEVICE "\"$default_rtcdevice\""
 add_def DEFAULT_USER "\"$default_user\""
+add_def DEFAULT_CHRONYC_USER "\"$default_chronyc_user\""
 add_def DEFAULT_COMMAND_SOCKET "\"$CHRONYRUNDIR/chronyd.sock\""
 add_def MAIL_PROGRAM "\"$mail_program\""
 
@@ -1123,6 +1134,7 @@ do
           s%@DEFAULT_PID_FILE@%${default_pidfile}%;\
           s%@DEFAULT_RTC_DEVICE@%${default_rtcdevice}%;\
           s%@DEFAULT_USER@%${default_user}%;\
+          s%@DEFAULT_CHRONYC_USER@%${default_chronyc_user}%;\
           s%@CHRONY_VERSION@%${CHRONY_VERSION}%;" \
           < ${f}.in > $f
 done
