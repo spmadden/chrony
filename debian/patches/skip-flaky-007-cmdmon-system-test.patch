@@ -1,0 +1,46 @@
+Description: Skip flaky upstream 007-cmdmon system test
+Author: Vincent Blut <vincent.debian@free.fr>
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1111222
+Forwarded: not-needed
+Last-Update: 2025-08-15
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+Index: chrony/test/system/099-scfilter
+===================================================================
+--- chrony.orig/test/system/099-scfilter
++++ chrony/test/system/099-scfilter
+@@ -9,18 +9,23 @@ check_chronyd_features SCFILTER || test_
+ test_start "system call filter in non-destructive tests"
+ 
+ for level in 1 2 -1 -2; do
+-	test_message 1 1 "level $level:"
+-	for test in 0[0-8][0-9]-*[^_]; do
+-		test_message 2 0 "$test"
+-		TEST_SCFILTER=$level "./$test" > /dev/null 2> /dev/null
+-		result=$?
++    test_message 1 1 "level $level:"
++    for test in 0[0-8][0-9]-*[^_]; do
++        if [ $test = "007-cmdmon" ]; then
++            test_message 2 1 "$test. Skip, flaky!"
++            continue
++        fi
+ 
+-		if [ $result != 0 ] && [ $result != 9 ] ; then
+-			test_bad
+-			test_fail
+-		fi
+-		test_ok
+-	done
++        test_message 2 0 "$test"
++        TEST_SCFILTER=$level "./$test" > /dev/null 2> /dev/null
++        result=$?
++
++        if [ $result != 0 ] && [ $result != 9 ] ; then
++            test_bad
++            test_fail
++        fi
++        test_ok
++    done
+ done
+ 
+ test_pass

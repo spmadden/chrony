@@ -1,3 +1,11 @@
+chrony (4.7-3) unstable; urgency=medium
+
+  * debian/patches/:
+    - Add skip-flaky-007-cmdmon-system-test.patch. Upstream system test
+    007-cmdmon fails intermittently. Skip it! (Closes: #1111222)
+
+ -- Vincent Blut <vincent.debian@free.fr>  Sat, 16 Aug 2025 13:34:52 +0200
+
 chrony (4.7-2) unstable; urgency=medium
 
   [ Vincent Blut ]
