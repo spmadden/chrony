@@ -10,7 +10,23 @@ GITHOST=https://github.com/spmadden/chrony
 SIGNKEY=0x..
 
 apt update
-apt install git
+apt -y install \
+	git \
+	dpkg-dev \
+	dpkg-cross \
+	asciidoctor \
+	bison \
+	debhelper-compat \
+	dh-apparmor \
+	gnutls-bin \
+	iproute2 \
+	libcap-dev \
+	libedit-dev \
+	libgnutls28-dev \
+	libseccomp-dev \
+	nettle-dev \
+	pkg-config \
+	pps-tools
 
 git clone $GITHOST
 cd chrony
