@@ -1,10 +1,10 @@
 #!/bin/bash
 
 set -euxo pipefail
-if [[ -z "$CHRONYBRANCH" ]] ; do
-	echo "usage: $0 <chrony_branch_id>"
-	exit 1;
-done
+#if [[ -z "$CHRONYBRANCH" ]] ; then
+#	echo "usage: $0 <chrony_branch_id>"
+#	exit 1;
+#fi
 
 GITHOST=https://github.com/spmadden/chrony
 SIGNKEY=0x..
@@ -12,6 +12,8 @@ SIGNKEY=0x..
 apt update
 apt install git
 
+git clone $GITHOST
+cd chrony
 git worktree add ../ubuntu-chrony ubuntu/applied/debian/bookworm
 pushd ../ubuntu-chrony
 
