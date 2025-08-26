@@ -30,10 +30,10 @@ apt -y install \
 
 git clone $GITHOST
 cd chrony
-git worktree add ../ubuntu-chrony ubuntu/applied/debian/bookworm
-pushd ../ubuntu-chrony
+git worktree add ubuntu-chrony ubuntu/applied/4.7-3
+pushd ubuntu-chrony
 
 export DEB_SIGN_KEYID=$SIGNKEY
 export DEB_TARGET=x86_64
-dpkg-buildpackage 
+dpkg-buildpackage -nc -d
 popd
