@@ -30,7 +30,7 @@ apt -y install \
 
 git clone $GITHOST
 cd chrony
-git worktree add ubuntu-chrony ubuntu/applied/4.7-3
+git worktree add ubuntu-chrony spm-4.7-3
 pushd ubuntu-chrony
 
 export DEB_SIGN_KEYID=$SIGNKEY
