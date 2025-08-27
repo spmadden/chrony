@@ -208,6 +208,10 @@ fi
 %dir %attr(750,chrony,chrony) %{_localstatedir}/log/chrony
 
 %changelog
+* Wed Aug 27 2025 Miroslav Lichvar <mlichvar@redhat.com> 4.8-1
+- update to 4.8
+- drop workaround for broken build on aarch64
+
 * Wed Jun 11 2025 Miroslav Lichvar <mlichvar@redhat.com> 4.7-1.fc42
 - update to 4.7
 
