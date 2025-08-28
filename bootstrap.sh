@@ -44,15 +44,15 @@ popd
 #make repo
 mkdir -p repo/pool/main
 cp chrony_4.7-3_amd64.deb repo/pool/main/
-mkdir -p repo/dists/stable/main/binary-amd64
-dpkg-scanpackages --arch amd64 repo/pool > repo/dists/stable/main/binary-amd64/Packages
+mkdir -p repo/dists/noble2404/main/binary-amd64
+dpkg-scanpackages --arch amd64 repo/pool > repo/dists/noble2404/main/binary-amd64/Packages
 
 # make release file
-pushd repo/dists/stable
+pushd repo/dists/noble2404
 bash ../../../make_release.sh > Release
 popd
 # sign release file
-cat repo/dists/stable/Release | gpg -abs > repo/dists/stable/Release.gpg
+cat repo/dists/noble2404/Release | gpg -abs > repo/dists/noble2404/Release.gpg
 # make InRelease file
-cat repo/dists/stable/Release | gpg -abs --clearsign > repo/dists/stable/InRelease
+cat repo/dists/noble2404/Release | gpg -abs --clearsign > repo/dists/noble2404/InRelease
 
