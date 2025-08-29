@@ -10,12 +10,24 @@ set -e
 
 case "$1" in
     configure)
-
-        adduser --system \
-                --group \
-                --quiet \
-                --home /var/lib/chrony \
-                --no-create-home _chrony
+        source /etc/os-release
+        if [ "${UBUNTU_CODENAME}" == "jammy" ]; then
+            adduser --system \
+             --force-badname \
+             --gecos "Chrony daemon" \
+                        --group \
+                        --quiet \
+                        --home /var/lib/chrony \
+                        --no-create-home _chrony
+        elif ["${UBUNTU_CODENAME}" == "noble" ]; then
+            adduser --system \
+             --allow-bad-names \
+             --comment "Chrony daemon" \
+                        --group \
+                        --quiet \
+                        --home /var/lib/chrony \
+                        --no-create-home _chrony
+        fi
 
         if command -v ucf >/dev/null
         then
