@@ -40,19 +40,26 @@ export DEB_SIGN_KEYID=$SIGNKEY
 export DEB_TARGET=x86_64
 dpkg-buildpackage -nc
 popd
-
+source /etc/os-release
+if [[ -z "$UBUNTU_CODENAME" ]]; then
+	echo "Not running on ubuntu?  skipping repo creation."
+	exit 0
+fi
 #make repo
-mkdir -p repo/pool/main
-cp chrony_4.7-3_amd64.deb repo/pool/main/
-mkdir -p repo/dists/noble2404/main/binary-amd64
-dpkg-scanpackages --arch amd64 repo/pool > repo/dists/noble2404/main/binary-amd64/Packages
+POOLPATH="repo/pool/${UBUNTU_CODENAME}"
+DISTPATH="repo/dists/${UBUNTU_CODENAME}"
+DISTBINPATH="${DISTPATH}/main/binary-amd64"
+mkdir -p ${POOLPATH}
+cp chrony_4.7-3_amd64.deb ${POOLPATH}
+mkdir -p ${DISTBINPATH}
+dpkg-scanpackages --arch amd64 ${POOLPATH} > ${DISTBINPATH}/Packages
 
 # make release file
-pushd repo/dists/noble2404
+pushd ${DISTPATH}
 bash ../../../make_release.sh > Release
 popd
 # sign release file
-cat repo/dists/noble2404/Release | gpg -abs > repo/dists/noble2404/Release.gpg
+cat ${DISTPATH}/Release | gpg -abs > ${DISTPATH}/Release.gpg
 # make InRelease file
-cat repo/dists/noble2404/Release | gpg -abs --clearsign > repo/dists/noble2404/InRelease
+cat ${DISTPATH}/Release | gpg -abs --clearsign > ${DISTPATH}/InRelease
 
