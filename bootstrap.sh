@@ -57,7 +57,7 @@ dpkg-scanpackages --arch amd64 pool/${UBUNTU_CODENAME} > ${DISTBINPATH}/Packages
 
 # make release file
 pushd ${DISTPATH}
-bash ../../../../make_release.sh > Release
+bash ../../../make_release.sh > Release
 popd
 # sign release file
 cat ${DISTPATH}/Release | gpg -abs > ${DISTPATH}/Release.gpg
