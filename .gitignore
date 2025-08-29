@@ -1,0 +1,8 @@
+*.o
+*.man
+chronyc
+chronyd
+*.test
+.deps
+*.log
+*.debhelper
