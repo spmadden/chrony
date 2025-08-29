@@ -47,19 +47,21 @@ if [[ -z "$UBUNTU_CODENAME" ]]; then
 fi
 #make repo
 POOLPATH="repo/pool/${UBUNTU_CODENAME}"
-DISTPATH="repo/dists/${UBUNTU_CODENAME}"
+DISTPATH="dists/${UBUNTU_CODENAME}"
 DISTBINPATH="${DISTPATH}/main/binary-amd64"
 mkdir -p ${POOLPATH}
 cp chrony_4.7-3_amd64.deb ${POOLPATH}
+pushd repo
 mkdir -p ${DISTBINPATH}
-dpkg-scanpackages --arch amd64 ${POOLPATH} > ${DISTBINPATH}/Packages
+dpkg-scanpackages --arch amd64 pool/${UBUNTU_CODENAME} > ${DISTBINPATH}/Packages
 
 # make release file
 pushd ${DISTPATH}
-bash ../../../make_release.sh > Release
+bash ../../../../make_release.sh > Release
 popd
 # sign release file
 cat ${DISTPATH}/Release | gpg -abs > ${DISTPATH}/Release.gpg
 # make InRelease file
 cat ${DISTPATH}/Release | gpg -abs --clearsign > ${DISTPATH}/InRelease
 
+popd
