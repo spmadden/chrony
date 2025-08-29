@@ -13,12 +13,13 @@ do_hash() {
         echo " $(${HASH_CMD} ${f}  | cut -d" " -f1) $(wc -c $f)"
     done
 }
+source /etc/os-release
 
 cat << EOF
 Origin: SPM's Ubuntu Repository
 Label: SPM
-Suite: noble2404
-Codename: noble2404
+Suite: ${UBUNTU_CODENAME}
+Codename: ${UBUNTU_CODENAME}
 Version: 1.0
 Architectures: amd64 arm64 
 Components: main
