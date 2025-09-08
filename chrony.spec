@@ -105,6 +105,7 @@ mv clknetsim-*-%{clknetsim_ver}* test/simulation/clknetsim
         --chronyrundir=/run/chrony \
         --docdir=%{_docdir} \
         --with-ntp-era=$(date -d '1970-01-01 00:00:00+00:00' +'%s') \
+        --with-chronyc-user=chrony \
         --with-user=chrony \
         --with-hwclockfile=%{_sysconfdir}/adjtime \
         --with-pidfile=/run/chrony/chronyd.pid \
